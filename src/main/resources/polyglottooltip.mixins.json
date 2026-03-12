@@ -10,6 +10,8 @@
     "ae2.Ae2PatternContainerRecordMixin",
     "ae2.Ae2FluidKeyRenderHandlerMixin",
     "emi.EmiFluidEmiStackMixin",
+    "emi.EmiNameQueryMixin",
+    "emi.EmiTooltipQueryMixin",
     "jei.JeiGeneralizedSuffixTreeMixin",
     "jec.JecFakeTreeMixin",
     "jei.JeiElementSearchLowMemMixin",

@@ -5,11 +5,13 @@ plugins {
     id 'idea'
 }
 
+def artifact_version = "${minecraft_version}-${mod_version}"
+
 tasks.named('wrapper', Wrapper).configure {
     distributionType = Wrapper.DistributionType.BIN
 }
 
-version = mod_version
+version = artifact_version
 group = mod_group_id
 
 repositories {
