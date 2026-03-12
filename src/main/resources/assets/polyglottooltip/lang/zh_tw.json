@@ -1,0 +1,11 @@
+{
+  "polyglottooltip.configuration.title": "多語系工具提示",
+  "polyglottooltip.configuration.section.polyglottooltip.client.toml": "《多語系工具提示》設定",
+  "polyglottooltip.configuration.section.polyglottooltip.client.toml.title": "《多語系工具提示》設定",
+  "polyglottooltip.configuration.displayLanguage": "顯示語言",
+  "polyglottooltip.configuration.displayLanguage.tooltip": "在此填入語言代碼，以顯示其他語言的物品名稱。",
+  "polyglottooltip.configuration.alwaysShow": "始終顯示",
+  "polyglottooltip.configuration.alwaysShow.tooltip": "即使次要語言與目前的遊戲語言相同，仍然顯示。",
+  "polyglottooltip.configuration.enableChineseScriptMatching": "簡繁互搜",
+  "polyglottooltip.configuration.enableChineseScriptMatching.tooltip": "讓搜尋可同時比對簡體字與繁體字。"
+}

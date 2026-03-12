@@ -1,0 +1,11 @@
+{
+  "polyglottooltip.configuration.title": "PolyglotTooltip",
+  "polyglottooltip.configuration.section.polyglottooltip.client.toml": "PolyglotTooltip Settings",
+  "polyglottooltip.configuration.section.polyglottooltip.client.toml.title": "PolyglotTooltip Settings",
+  "polyglottooltip.configuration.displayLanguage": "Display Languages",
+  "polyglottooltip.configuration.displayLanguage.tooltip": "Enter language codes here to show item names in additional languages.",
+  "polyglottooltip.configuration.alwaysShow": "Always Show",
+  "polyglottooltip.configuration.alwaysShow.tooltip": "Show them even when an additional language matches the current game language.",
+  "polyglottooltip.configuration.enableChineseScriptMatching": "Simplified/Traditional Cross-Search",
+  "polyglottooltip.configuration.enableChineseScriptMatching.tooltip": "Allow searches to match both Simplified and Traditional Chinese."
+}

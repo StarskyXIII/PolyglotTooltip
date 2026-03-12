@@ -1,0 +1,33 @@
+# eclipse
+bin
+*.launch
+.settings
+.metadata
+.classpath
+.project
+
+# idea
+out
+*.ipr
+*.iws
+*.iml
+.idea
+
+# editor / local tooling
+.vscode
+.claude
+
+# gradle
+build
+.gradle
+
+# other
+eclipse
+run
+runs
+run-data
+repo
+
+# local artifacts / references
+/Reference/
+/META-INF/
