@@ -5,6 +5,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public final class SecondaryTooltipUtil {
@@ -27,9 +28,10 @@ public final class SecondaryTooltipUtil {
      */
     public static void insertSecondaryName(List<Component> tooltip, ItemStack stack) {
         if (!shouldShowSecondaryLanguage()) return;
-        insertNames(tooltip,
+        insertNames(tooltip, getSecondaryNames(
                 LanguageCache.getInstance().resolveDisplayNamesForAll(stack),
-                stack.getHoverName().getString());
+                stack.getHoverName().getString()
+        ));
     }
 
     /**
@@ -38,21 +40,50 @@ public final class SecondaryTooltipUtil {
      */
     public static void insertSecondaryName(List<Component> tooltip, Component sourceName) {
         if (!shouldShowSecondaryLanguage()) return;
-        insertNames(tooltip,
+        insertNames(tooltip, getSecondaryNames(
                 LanguageCache.getInstance().resolveComponentsForAll(sourceName),
-                sourceName.getString());
+                sourceName.getString()
+        ));
     }
 
-    private static void insertNames(List<Component> tooltip, List<String> names, String primaryText) {
+    public static List<Component> getSecondaryNameLines(Component sourceName) {
+        if (!shouldShowSecondaryLanguage()) return List.of();
+        List<String> names = getSecondaryNames(
+                LanguageCache.getInstance().resolveComponentsForAll(sourceName),
+                sourceName.getString()
+        );
+        List<Component> lines = new ArrayList<>(names.size());
+        for (String secondary : names) {
+            lines.add(createSecondaryLine(secondary));
+        }
+        return lines;
+    }
+
+    private static void insertNames(List<Component> tooltip, List<String> names) {
         int insertAt = tooltip.isEmpty() ? 0 : 1;
-        // Insert in reverse order so config order ends up top-to-bottom.
+        // Insert at the same index in reverse order: inserting A then B at index 1
+        // yields [name, B, A, ...], so iterating in reverse (B first, then A) gives
+        // the correct top-to-bottom config order: [name, A, B, ...].
         for (int i = names.size() - 1; i >= 0; i--) {
             String secondary = names.get(i);
-            if (secondary.equals(primaryText)) continue;
             removeLine(tooltip, secondary);
-            tooltip.add(insertAt, Component.literal(getMarkedSecondaryText(secondary))
-                    .withStyle(s -> s.withColor(ChatFormatting.GRAY)));
+            tooltip.add(insertAt, createSecondaryLine(secondary));
         }
+    }
+
+    private static List<String> getSecondaryNames(List<String> names, String primaryText) {
+        List<String> filtered = new ArrayList<>(names.size());
+        for (String secondary : names) {
+            if (!secondary.equals(primaryText)) {
+                filtered.add(secondary);
+            }
+        }
+        return filtered;
+    }
+
+    private static Component createSecondaryLine(String secondary) {
+        return Component.literal(getMarkedSecondaryText(secondary))
+                .withStyle(s -> s.withColor(ChatFormatting.GRAY));
     }
 
     public static String getMarkedSecondaryText(String secondary) {

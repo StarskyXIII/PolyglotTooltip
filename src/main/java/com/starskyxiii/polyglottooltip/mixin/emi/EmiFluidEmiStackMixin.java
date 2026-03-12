@@ -20,7 +20,7 @@ import java.util.List;
 @Mixin(targets = "dev.emi.emi.api.stack.FluidEmiStack", remap = false)
 public class EmiFluidEmiStackMixin {
 
-    @Inject(method = "getTooltipText", at = @At("RETURN"), cancellable = true)
+    @Inject(method = "getTooltipText", at = @At("RETURN"), cancellable = true, remap = false)
     private void onGetTooltipText(CallbackInfoReturnable<List<Component>> cir) {
         List<Component> tooltip = new ArrayList<>(cir.getReturnValue());
         if (tooltip.isEmpty()) {

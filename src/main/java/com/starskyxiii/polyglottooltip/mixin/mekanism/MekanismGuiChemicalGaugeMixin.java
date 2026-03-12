@@ -11,19 +11,12 @@ import org.spongepowered.asm.mixin.injection.Coerce;
 
 import java.util.List;
 
-/**
- * Inserts secondary-language chemical names into Mekanism's JEI renderer tooltip.
- *
- * <p>In Mekanism for Minecraft 1.20.1, JEI chemical tooltips are built in
- * {@code ChemicalStackRenderer.getTooltip()}, not in {@code ChemicalStack} itself,
- * so this is the correct injection point for that JEI integration.
- */
 @Pseudo
-@Mixin(targets = "mekanism.client.jei.ChemicalStackRenderer", remap = false)
-public class MekanismJeiChemicalStackRendererMixin {
+@Mixin(targets = "mekanism.client.gui.element.gauge.GuiChemicalGauge", remap = false)
+public class MekanismGuiChemicalGaugeMixin {
 
     @WrapOperation(
-            method = "getTooltip",
+            method = "getTooltipText",
             at = @At(
                     value = "INVOKE",
                     target = "Lmekanism/common/util/ChemicalUtil;addChemicalDataToTooltip(Ljava/util/List;Lmekanism/api/chemical/Chemical;Z)V"

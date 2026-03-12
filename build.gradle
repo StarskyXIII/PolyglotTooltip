@@ -1,155 +1,169 @@
 plugins {
     id 'java-library'
     id 'maven-publish'
-    id 'net.neoforged.moddev' version '2.0.140'
-    id 'idea'
+    id 'net.minecraftforge.gradle' version '6.0.+'
+    id 'org.parchmentmc.librarian.forgegradle' version '1.+'
 }
 
 tasks.named('wrapper', Wrapper).configure {
     distributionType = Wrapper.DistributionType.BIN
 }
 
-version = mod_version
+version = "${minecraft_version}-${mod_version}"
 group = mod_group_id
-
-repositories {
-    mavenCentral()
-    maven {
-        name = "JEI"
-        url = "https://maven.blamejared.com/"
-    }
-    maven {
-        name = "Modrinth"
-        url = "https://api.modrinth.com/maven"
-    }
-    maven {
-        name = "RefinedMods"
-        url = "https://maven.creeperhost.net/"
-    }
-}
 
 base {
     archivesName = mod_id
 }
 
-java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 
-neoForge {
-    version = project.neo_version
-
-    parchment {
-        mappingsVersion = project.parchment_mappings_version
-        minecraftVersion = project.parchment_minecraft_version
-    }
+minecraft {
+    mappings channel: 'parchment', version: "${parchment_mappings_version}-${parchment_minecraft_version}"
 
     runs {
         client {
-            client()
-            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            workingDirectory project.file('run')
+            property 'forge.logging.markers', 'REGISTRIES'
+            property 'forge.logging.console.level', 'debug'
+            mods {
+                polyglottooltip { source sourceSets.main }
+            }
         }
 
         server {
-            server()
-            programArgument '--nogui'
-            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
-        }
-
-        gameTestServer {
-            type = "gameTestServer"
-            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            workingDirectory project.file('run')
+            property 'forge.logging.markers', 'REGISTRIES'
+            property 'forge.logging.console.level', 'debug'
+            args '--nogui'
+            mods {
+                polyglottooltip { source sourceSets.main }
+            }
         }
 
         data {
-            data()
-            programArguments.addAll '--mod', project.mod_id, '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
-        }
-
-        configureEach {
-            systemProperty 'forge.logging.markers', 'REGISTRIES'
-            logLevel = org.slf4j.event.Level.DEBUG
-        }
-    }
-
-    mods {
-        "${mod_id}" {
-            sourceSet(sourceSets.main)
+            workingDirectory project.file('run')
+            property 'forge.logging.markers', 'REGISTRIES'
+            property 'forge.logging.console.level', 'debug'
+            args '--mod', mod_id, '--all',
+                 '--output', file('src/generated/resources/').absolutePath,
+                 '--existing', file('src/main/resources/').absolutePath
+            mods {
+                polyglottooltip { source sourceSets.main }
+            }
         }
     }
 }
 
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
-// Keep optional dev-only mods on the local runtime classpath without publishing them as dependencies.
+
+// Excluded modules — no 1.20.1 reference source; kept on disk for future porting.
+
 configurations {
     runtimeClasspath.extendsFrom localRuntime
 }
 
+repositories {
+    maven {
+        name = 'ParchmentMC'
+        url = 'https://maven.parchmentmc.org'
+    }
+    mavenCentral()
+    maven { url = 'https://maven.blamejared.com' }          // JEI
+    maven { url = 'https://modmaven.dev' }                  // AE2
+    maven { url = 'https://maven.terraformersmc.com' }      // EMI
+    maven { url = 'https://www.cursemaven.com' }            // Jade, ExtendedAE, etc.
+    maven { url = 'https://dl.cloudsmith.io/public/klikli-dev/mods/maven' }  // Occultism
+    maven { url = 'https://maven.tterrag.com' }             // Industrial Foregoing / Titanium
+    maven { url = 'https://cdn.hrzn.studio/maven' }         // Titanium
+    maven { url = 'https://maven.theillusivec4.top' }       // Ars Nouveau
+    maven { url = 'https://www.jitpack.io' }                // JEC
+    maven { url = 'https://maven.modrinth.com' }            // Jade (Modrinth mirror)
+}
+
 dependencies {
+    minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+
     def opencc4jVersion = '1.14.0'
     def heavenVersion = '0.13.0'
     def nlpCommonVersion = '0.0.5'
+    def mixinExtrasVersion = '0.2.0-beta.8'
 
-    // JEI integration: compile against the API, but only load the full mod in local dev runs.
-    compileOnly "mezz.jei:jei-${minecraft_version}-common-api:${jei_version}"
-    compileOnly "mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}"
-    localRuntime "mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}"
-    // AE2 integration for terminal name search and tooltip-search matching.
-    compileOnly "org.appliedenergistics:appliedenergistics2:${ae2_version}"
-    // Refined Storage 2 integration for resource tooltips and grid search.
-    compileOnly "com.refinedmods.refinedstorage:refinedstorage-common:${rs2_version}"
-    // Jade integration for block-name secondary tooltip lines.
-    compileOnly "maven.modrinth:jade:${jade_version}"
+    // implementation with exact version for compile classpath (no transitive bleed into jarJar)
+    implementation("com.github.houbb:opencc4j:${opencc4jVersion}") { transitive = false }
+    implementation("com.github.houbb:heaven:${heavenVersion}") { transitive = false }
+    implementation("com.github.houbb:nlp-common:${nlpCommonVersion}") { transitive = false }
 
-    // Chinese script matching support bundled into the published jar.
-    jarJar(implementation("com.github.houbb:opencc4j:${opencc4jVersion}")) {
-        version {
-            strictly "[${opencc4jVersion},2.0)"
-            prefer opencc4jVersion
-        }
+    // jarJar bundles exact jars into the distributable; version range is for mod compatibility metadata
+    jarJar("com.github.houbb:opencc4j:[${opencc4jVersion},2.0)") { transitive = false; jarJar.pin(it, opencc4jVersion) }
+    jarJar("com.github.houbb:heaven:[${heavenVersion},1.0)") { transitive = false; jarJar.pin(it, heavenVersion) }
+    jarJar("com.github.houbb:nlp-common:[${nlpCommonVersion},1.0)") { transitive = false; jarJar.pin(it, nlpCommonVersion) }
+    implementation(annotationProcessor("com.github.llamalad7.mixinextras:mixinextras-common:${mixinExtrasVersion}"))
+    implementation(jarJar("com.github.llamalad7.mixinextras:mixinextras-forge:${mixinExtrasVersion}")) {
+        jarJar.ranged(it, "[${mixinExtrasVersion},)")
     }
-    jarJar(implementation("com.github.houbb:heaven:${heavenVersion}")) {
-        version {
-            strictly "[${heavenVersion},1.0)"
-            prefer heavenVersion
-        }
-    }
-    jarJar(implementation("com.github.houbb:nlp-common:${nlpCommonVersion}")) {
-        version {
-            strictly "[${nlpCommonVersion},1.0)"
-            prefer nlpCommonVersion
-        }
-    }
+    annotationProcessor("com.github.LlamaLad7:MixinExtras:${mixinExtrasVersion}")
 
-    // Older NeoForge dev runtimes still need these libraries on the plain runtime classpath.
-    additionalRuntimeClasspath "com.github.houbb:opencc4j:${opencc4jVersion}"
-    additionalRuntimeClasspath "com.github.houbb:heaven:${heavenVersion}"
-    additionalRuntimeClasspath "com.github.houbb:nlp-common:${nlpCommonVersion}"
+    // Only keep integrations that are directly imported by source.
+    // The remaining optional integrations use string mixin targets or reflection
+    // and compile cleanly without the target mod jars present.
+    compileOnly fg.deobf("mezz.jei:jei-1.20.1-common-api:15.20.0.129")
+    compileOnly fg.deobf("mezz.jei:jei-1.20.1-forge-api:15.20.0.129")
+    compileOnly fg.deobf("appeng:appliedenergistics2-forge:${ae2_version}")
+    compileOnly fg.deobf("curse.maven:jade-324717:4573193")
 }
 
-// Expand mod metadata templates such as neoforge.mods.toml during the build.
-var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {
+jarJar.enable()
+
+tasks.named('processResources', ProcessResources).configure {
     var replaceProperties = [
-            minecraft_version      : minecraft_version,
-            minecraft_version_range: minecraft_version_range,
-            neo_version            : neo_version,
-            loader_version_range   : loader_version_range,
-            mod_id                 : mod_id,
-            mod_name               : mod_name,
-            mod_license            : mod_license,
-            mod_version            : mod_version,
+        minecraft_version      : minecraft_version,
+        minecraft_version_range: minecraft_version_range,
+        forge_version          : forge_version,
+        loader_version_range   : loader_version_range,
+        mod_id                 : mod_id,
+        mod_name               : mod_name,
+        mod_license            : mod_license,
+        mod_version            : mod_version,
     ]
     inputs.properties replaceProperties
-    expand replaceProperties
-    from "src/main/templates"
-    into "build/generated/sources/modMetadata"
+    filesMatching('META-INF/mods.toml') {
+        expand replaceProperties
+    }
 }
-sourceSets.main.resources.srcDir generateModMetadata
-neoForge.ideSyncTask generateModMetadata
+
+// jarJar must carry the same manifest and go through reobf
+tasks.named('jarJar').configure {
+    archiveClassifier.set('')
+    manifest {
+        attributes([
+            'Specification-Title'     : mod_id,
+            'Specification-Vendor'    : 'StarskyXIII',
+            'Specification-Version'   : '1',
+            'Implementation-Title'    : project.name,
+            'Implementation-Version'  : project.jar.archiveVersion,
+            'Implementation-Vendor'   : 'StarskyXIII',
+            'MixinConfigs'            : "${mod_id}.mixins.json"
+        ])
+    }
+    finalizedBy 'reobfJarJar'
+}
+
+// Register a reobf task for the jarJar output so method names are remapped to SRG at runtime
+reobf {
+    jarJar {}
+}
+
+jar {
+    archiveClassifier.set('dev')
+    finalizedBy 'reobfJar'
+}
 
 publishing {
     publications {
         register('mavenJava', MavenPublication) {
-            from components.java
+            artifact jar
         }
     }
     repositories {
@@ -161,11 +175,4 @@ publishing {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
-}
-
-idea {
-    module {
-        downloadSources = true
-        downloadJavadoc = true
-    }
 }

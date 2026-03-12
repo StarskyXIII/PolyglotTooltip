@@ -2,35 +2,29 @@ package com.starskyxiii.polyglottooltip;
 
 import com.starskyxiii.polyglottooltip.integration.arsnouveau.ArsNouveauNameHelper;
 import com.starskyxiii.polyglottooltip.integration.industrialforegoing.IndustrialForegoingNameHelper;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.ModContainer;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.fml.common.Mod;
-import net.neoforged.fml.event.config.ModConfigEvent;
-import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
-import net.neoforged.neoforge.client.gui.ConfigurationScreen;
-import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.client.event.RegisterClientReloadListenersEvent;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.event.config.ModConfigEvent;
 
-@Mod(value = PolyglotTooltip.MODID, dist = Dist.CLIENT)
-@EventBusSubscriber(modid = PolyglotTooltip.MODID, value = Dist.CLIENT)
+@Mod.EventBusSubscriber(modid = PolyglotTooltip.MODID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class PolyglotTooltipClient {
 
-    public PolyglotTooltipClient(ModContainer container) {
-        container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
-
-        // Keep integration-specific naming rules decoupled from LanguageCache.
+    public static void init() {
+        // Triggers class loading, which registers this class with the mod event bus
+        // via @Mod.EventBusSubscriber. Called from PolyglotTooltip via DistExecutor.
         LanguageCache.registerSpecialNameResolver(ArsNouveauNameHelper::tryResolveSpecialName);
         LanguageCache.registerSpecialNameResolver(IndustrialForegoingNameHelper::tryResolveSpecialName);
     }
 
     @SubscribeEvent
-    static void onRegisterReloadListeners(RegisterClientReloadListenersEvent event) {
+    public static void onRegisterReloadListeners(RegisterClientReloadListenersEvent event) {
         event.registerReloadListener(LanguageCache.getInstance());
     }
 
     @SubscribeEvent
-    static void onConfigReloading(ModConfigEvent.Reloading event) {
+    public static void onConfigReloading(ModConfigEvent.Reloading event) {
         if (event.getConfig().getSpec() == Config.SPEC) {
             LanguageCache.getInstance().reloadImmediate();
         }

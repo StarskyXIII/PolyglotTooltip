@@ -15,6 +15,6 @@ public class Ae2FluidKeyRenderHandlerMixin {
 
     @Inject(method = "getTooltip", at = @At("RETURN"))
     private void onGetTooltip(AEFluidKey ingredient, CallbackInfoReturnable<List<Component>> cir) {
-        SecondaryTooltipUtil.insertSecondaryName(cir.getReturnValue(), ingredient.toStack(1).getHoverName());
+        SecondaryTooltipUtil.insertSecondaryName(cir.getReturnValue(), ingredient.toStack(1).getDisplayName());
     }
 }

@@ -1,5 +1,7 @@
 package com.starskyxiii.polyglottooltip;
 
+import com.starskyxiii.polyglottooltip.integration.occultism.OccultismSearchUtil;
+import com.starskyxiii.polyglottooltip.search.ChineseScriptSearchMatcher;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.language.ClientLanguage;
 import net.minecraft.network.chat.Component;
@@ -8,18 +10,20 @@ import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
 import net.minecraft.util.profiling.InactiveProfiler;
 import net.minecraft.util.profiling.ProfilerFiller;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
 /**
  * Caches secondary-language translations using {@link ClientLanguage#loadFrom},
- * which internally calls {@code ResourceManager.listResourceStacks} to merge
- * translations key-by-key across all resource packs — the same strategy
- * Minecraft's own LanguageManager uses.
+ * which merges translations key-by-key across all resource packs — the same
+ * strategy Minecraft's own {@code LanguageManager} uses.
  *
  * <p>Supports multiple simultaneously loaded languages; each configured language
  * code gets its own {@link ClientLanguage} instance so they can be queried
@@ -51,6 +55,13 @@ public class LanguageCache extends SimplePreparableReloadListener<List<ClientLan
 
     private List<ClientLanguage> loadedLanguages = new ArrayList<>();
 
+    // Per-item secondary-name cache.  Item instances are registered singletons, so
+    // identity-keyed lookup is correct and O(1).  Cleared whenever languages reload.
+    // Note: caching by Item (not ItemStack) means custom-renamed items will return the
+    // base translation, which is intentional — the secondary language shows the translated
+    // registry name, not the player-assigned alias.
+    private final Map<Item, List<String>> displayNameCache = new HashMap<>();
+
     public static LanguageCache getInstance() {
         return INSTANCE;
     }
@@ -80,6 +91,9 @@ public class LanguageCache extends SimplePreparableReloadListener<List<ClientLan
     @Override
     protected void apply(List<ClientLanguage> languages, ResourceManager resourceManager, ProfilerFiller profiler) {
         this.loadedLanguages = languages;
+        this.displayNameCache.clear();
+        OccultismSearchUtil.clearTooltipCache();
+        ChineseScriptSearchMatcher.clearCaches();
     }
 
     // -------------------------------------------------------------------------
@@ -91,6 +105,10 @@ public class LanguageCache extends SimplePreparableReloadListener<List<ClientLan
      * Languages that have no translation for this item are omitted.
      */
     public List<String> resolveDisplayNamesForAll(ItemStack stack) {
+        return displayNameCache.computeIfAbsent(stack.getItem(), item -> resolveDisplayNamesUncached(stack));
+    }
+
+    private List<String> resolveDisplayNamesUncached(ItemStack stack) {
         List<String> results = new ArrayList<>();
         for (ClientLanguage lang : loadedLanguages) {
             Function<Component, Optional<String>> resolver = comp -> resolveComponentWithLang(comp, lang);

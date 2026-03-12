@@ -13,10 +13,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(targets = "com.buuz135.industrial.item.LaserLensItem", remap = false)
 public class IndustrialForegoingLaserLensItemMixin {
 
-    @Shadow private DyeColor color;
+    @Shadow private int color;
 
     @Inject(method = "getName", at = @At("HEAD"), cancellable = true)
     private void onGetName(ItemStack stack, CallbackInfoReturnable<Component> cir) {
-        cir.setReturnValue(IndustrialForegoingNameHelper.createLaserLensName(color));
+        cir.setReturnValue(IndustrialForegoingNameHelper.createLaserLensName(DyeColor.byId(color)));
     }
 }

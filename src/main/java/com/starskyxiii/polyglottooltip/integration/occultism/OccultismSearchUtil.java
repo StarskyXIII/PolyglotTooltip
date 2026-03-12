@@ -9,8 +9,10 @@ import net.minecraft.world.item.TooltipFlag;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 public final class OccultismSearchUtil {
 
@@ -20,6 +22,15 @@ public final class OccultismSearchUtil {
     private static Method getInsertItemStackMethod;
     private static Field customNameField;
     private static boolean reflectionInitialized;
+
+    // Tooltip search text is expensive to build (calls getTooltipLines on every item).
+    // Cache by Item since tooltip content is determined by item type, not NBT, for
+    // the vast majority of Occultism storage items.
+    private static final Map<Item, String> tooltipSearchCache = new HashMap<>();
+
+    public static void clearTooltipCache() {
+        tooltipSearchCache.clear();
+    }
 
     private OccultismSearchUtil() {
     }
@@ -70,21 +81,21 @@ public final class OccultismSearchUtil {
     }
 
     private static String buildTooltipSearchText(ItemStack stack) {
-        Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.level == null || minecraft.player == null) {
-            return "";
-        }
-        List<Component> tooltip = stack.getTooltipLines(
-                Item.TooltipContext.of(minecraft.level),
-                minecraft.player,
-                TooltipFlag.Default.NORMAL
-        );
-
-        SearchTextCollector collector = new SearchTextCollector();
-        for (Component line : tooltip) {
-            collector.addComponent(line);
-        }
-        return collector.build();
+        return tooltipSearchCache.computeIfAbsent(stack.getItem(), item -> {
+            Minecraft minecraft = Minecraft.getInstance();
+            if (minecraft.level == null || minecraft.player == null) {
+                return "";
+            }
+            List<Component> tooltip = stack.getTooltipLines(
+                    minecraft.player,
+                    TooltipFlag.Default.NORMAL
+            );
+            SearchTextCollector collector = new SearchTextCollector();
+            for (Component line : tooltip) {
+                collector.addComponent(line);
+            }
+            return collector.build();
+        });
     }
 
     private static ItemStack getInsertItemStack(Object machine) {
