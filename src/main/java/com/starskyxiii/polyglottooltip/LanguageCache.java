@@ -4,6 +4,7 @@ import com.starskyxiii.polyglottooltip.integration.occultism.OccultismSearchUtil
 import com.starskyxiii.polyglottooltip.search.ChineseScriptSearchMatcher;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.language.ClientLanguage;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -55,12 +56,11 @@ public class LanguageCache extends SimplePreparableReloadListener<List<ClientLan
 
     private List<ClientLanguage> loadedLanguages = new ArrayList<>();
 
-    // Per-item secondary-name cache.  Item instances are registered singletons, so
-    // identity-keyed lookup is correct and O(1).  Cleared whenever languages reload.
-    // Note: caching by Item (not ItemStack) means custom-renamed items will return the
-    // base translation, which is intentional — the secondary language shows the translated
-    // registry name, not the player-assigned alias.
-    private final Map<Item, List<String>> displayNameCache = new HashMap<>();
+    // Per-stack secondary-name cache. Some mods reuse one Item for many visible names
+    // and derive the final text from NBT, so Item-only caching is too coarse.
+    // We intentionally still ignore custom hover names and only key off the stack data
+    // that affects generated translations.
+    private final Map<DisplayNameCacheKey, List<String>> displayNameCache = new HashMap<>();
 
     public static LanguageCache getInstance() {
         return INSTANCE;
@@ -105,7 +105,7 @@ public class LanguageCache extends SimplePreparableReloadListener<List<ClientLan
      * Languages that have no translation for this item are omitted.
      */
     public List<String> resolveDisplayNamesForAll(ItemStack stack) {
-        return displayNameCache.computeIfAbsent(stack.getItem(), item -> resolveDisplayNamesUncached(stack));
+        return displayNameCache.computeIfAbsent(DisplayNameCacheKey.from(stack), key -> resolveDisplayNamesUncached(stack));
     }
 
     private List<String> resolveDisplayNamesUncached(ItemStack stack) {
@@ -203,5 +203,12 @@ public class LanguageCache extends SimplePreparableReloadListener<List<ClientLan
         if (mc == null) return;
         List<ClientLanguage> langs = prepare(mc.getResourceManager(), InactiveProfiler.INSTANCE);
         apply(langs, mc.getResourceManager(), InactiveProfiler.INSTANCE);
+    }
+
+    private record DisplayNameCacheKey(Item item, int damageValue, CompoundTag tag) {
+        private static DisplayNameCacheKey from(ItemStack stack) {
+            CompoundTag tag = stack.getTag();
+            return new DisplayNameCacheKey(stack.getItem(), stack.getDamageValue(), tag == null ? null : tag.copy());
+        }
     }
 }

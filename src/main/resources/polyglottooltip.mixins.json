@@ -18,6 +18,7 @@
     "emi.EmiTooltipQueryMixin",
     "jei.JeiGeneralizedSuffixTreeMixin",
     "jei.JeiListElementInfoMixin",
+    "jei.JeiSafeIngredientUtilMixin$TooltipMixin",
     "jec.JecFakeTreeMixin",
     "jei.JeiElementSearchLowMemMixin",
     "jei.JeiFluidHelperMixin",
