@@ -13,6 +13,7 @@
     "emi.EmiNameQueryMixin",
     "emi.EmiTooltipQueryMixin",
     "jei.JeiGeneralizedSuffixTreeMixin",
+    "jei.JeiListElementInfoMixin",
     "jec.JecFakeTreeMixin",
     "jei.JeiElementSearchLowMemMixin",
     "jei.JeiFluidHelperMixin",
