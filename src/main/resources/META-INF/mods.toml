@@ -1,14 +1,17 @@
 modLoader="javafml"
 loaderVersion="${loader_version_range}"
 license="${mod_license}"
+issueTrackerURL="https://github.com/StarskyXIII/PolyglotTooltip/issues"
 
 [[mods]]
 modId="${mod_id}"
 version="${mod_version}"
 displayName="${mod_name}"
+displayURL="https://github.com/StarskyXIII/PolyglotTooltip"
+logoFile="icon.png"
 authors="StarskyXIII"
 description='''
-Bilingual tooltips and cross-language search for Minecraft mod UIs.
+Extra translated name lines to tooltips and improves cross-language search in supported mod UIs.
 '''
 
 [[mixins]]
