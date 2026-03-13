@@ -59,8 +59,9 @@ public class TooltipHandler {
         ItemStack stack = event.getItemStack();
         if (stack.isEmpty() || !SecondaryTooltipUtil.shouldShowSecondaryLanguage()) return;
 
-        List<String> names = LanguageCache.getInstance().resolveDisplayNamesForAll(stack);
-        String primaryText = stack.getHoverName().getString();
+        LanguageCache cache = LanguageCache.getInstance();
+        List<String> names = cache.resolveDisplayNamesForAll(stack);
+        String primaryText = cache.resolveCurrentDisplayName(stack);
         List<Either<FormattedText, TooltipComponent>> elements = event.getTooltipElements();
 
         // Keep generated secondary-name lines grouped directly under the title.

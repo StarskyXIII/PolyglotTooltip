@@ -28,9 +28,10 @@ public final class SecondaryTooltipUtil {
      */
     public static void insertSecondaryName(List<Component> tooltip, ItemStack stack) {
         if (!shouldShowSecondaryLanguage()) return;
+        String primaryText = LanguageCache.getInstance().resolveCurrentDisplayName(stack);
         insertNames(tooltip, getSecondaryNames(
                 LanguageCache.getInstance().resolveDisplayNamesForAll(stack),
-                stack.getHoverName().getString()
+                primaryText
         ));
     }
 

@@ -106,15 +106,20 @@ public class LanguageCache extends SimplePreparableReloadListener<List<ClientLan
         return displayNameCache.computeIfAbsent(DisplayNameCacheKey.from(stack), key -> resolveDisplayNamesUncached(stack));
     }
 
+    /**
+     * Returns the stack display name in the currently active game language,
+     * preferring integration-provided special naming rules when available.
+     */
+    public String resolveCurrentDisplayName(ItemStack stack) {
+        return resolveSpecialDisplayName(stack, component -> Optional.of(component.getString()))
+                .orElseGet(() -> stack.getHoverName().getString());
+    }
+
     private List<String> resolveDisplayNamesUncached(ItemStack stack) {
         List<String> results = new ArrayList<>();
         for (ClientLanguage lang : loadedLanguages) {
             Function<Component, Optional<String>> resolver = comp -> resolveComponentWithLang(comp, lang);
-            Optional<String> name = Optional.empty();
-            for (SpecialNameResolver sr : SPECIAL_NAME_RESOLVERS) {
-                name = sr.resolve(stack, resolver);
-                if (name.isPresent()) break;
-            }
+            Optional<String> name = resolveSpecialDisplayName(stack, resolver);
             if (name.isEmpty()) {
                 name = resolveComponentWithLang(stack.getHoverName(), lang);
             }
@@ -138,6 +143,17 @@ public class LanguageCache extends SimplePreparableReloadListener<List<ClientLan
     // -------------------------------------------------------------------------
     // Private per-language resolution
     // -------------------------------------------------------------------------
+
+    private Optional<String> resolveSpecialDisplayName(ItemStack stack,
+                                                       Function<Component, Optional<String>> componentResolver) {
+        for (SpecialNameResolver resolver : SPECIAL_NAME_RESOLVERS) {
+            Optional<String> name = resolver.resolve(stack, componentResolver);
+            if (name.isPresent()) {
+                return name;
+            }
+        }
+        return Optional.empty();
+    }
 
     /**
      * Recursively resolves a {@link Component} using the given language cache,
