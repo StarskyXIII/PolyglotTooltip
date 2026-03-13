@@ -2,6 +2,7 @@ package com.starskyxiii.polyglottooltip.mixin.jei;
 
 import com.llamalad7.mixinextras.sugar.Local;
 import com.starskyxiii.polyglottooltip.LanguageCache;
+import com.starskyxiii.polyglottooltip.integration.productivebees.ProductiveBeesNameHelper;
 import mezz.jei.api.ingredients.ITypedIngredient;
 import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Final;
@@ -46,11 +47,13 @@ public class JeiListElementInfoMixin {
     private void appendSecondaryLanguageNames(
             CallbackInfo ci,
             @Local ITypedIngredient<?> value) {
+        LanguageCache cache = LanguageCache.getInstance();
         Optional<ItemStack> optStack = value.getItemStack();
-        if (optStack.isEmpty()) return;
-
-        List<String> secondaryNames = LanguageCache.getInstance()
-                .resolveDisplayNamesForAll(optStack.get());
+        List<String> secondaryNames = optStack.isPresent()
+                ? cache.resolveDisplayNamesForAll(optStack.get())
+                : ProductiveBeesNameHelper.tryCreateBeeIngredientName(value.getIngredient())
+                        .map(cache::resolveComponentsForAll)
+                        .orElse(List.of());
         if (secondaryNames.isEmpty()) return;
 
         String primaryName = names.isEmpty() ? "" : names.get(0);

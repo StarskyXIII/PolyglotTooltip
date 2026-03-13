@@ -2,6 +2,7 @@ package com.starskyxiii.polyglottooltip;
 
 import com.starskyxiii.polyglottooltip.integration.arsnouveau.ArsNouveauNameHelper;
 import com.starskyxiii.polyglottooltip.integration.industrialforegoing.IndustrialForegoingNameHelper;
+import com.starskyxiii.polyglottooltip.integration.productivebees.ProductiveBeesNameHelper;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
@@ -22,6 +23,7 @@ public class PolyglotTooltipClient {
         // Keep integration-specific naming rules decoupled from LanguageCache.
         LanguageCache.registerSpecialNameResolver(ArsNouveauNameHelper::tryResolveSpecialName);
         LanguageCache.registerSpecialNameResolver(IndustrialForegoingNameHelper::tryResolveSpecialName);
+        LanguageCache.registerSpecialNameResolver(ProductiveBeesNameHelper::tryResolveSpecialName);
     }
 
     @SubscribeEvent
