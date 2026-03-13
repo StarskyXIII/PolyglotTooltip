@@ -1,5 +1,7 @@
 package com.starskyxiii.polyglottooltip;
 
+import com.starskyxiii.polyglottooltip.integration.occultism.OccultismSearchUtil;
+import com.starskyxiii.polyglottooltip.search.ChineseScriptSearchMatcher;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.language.ClientLanguage;
 import net.minecraft.network.chat.Component;
@@ -11,15 +13,16 @@ import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
 /**
  * Caches secondary-language translations using {@link ClientLanguage#loadFrom},
- * which internally calls {@code ResourceManager.listResourceStacks} to merge
- * translations key-by-key across all resource packs — the same strategy
- * Minecraft's own LanguageManager uses.
+ * which merges translations key-by-key across all resource packs — the same
+ * strategy Minecraft's own {@code LanguageManager} uses.
  *
  * <p>Supports multiple simultaneously loaded languages; each configured language
  * code gets its own {@link ClientLanguage} instance so they can be queried
@@ -51,6 +54,12 @@ public class LanguageCache extends SimplePreparableReloadListener<List<ClientLan
 
     private List<ClientLanguage> loadedLanguages = new ArrayList<>();
 
+    // Per-stack secondary-name cache. Some mods reuse one Item for many visible names
+    // and derive the final text from NBT, so Item-only caching is too coarse.
+    // We intentionally still ignore custom hover names and only key off the stack data
+    // that affects generated translations.
+    private final Map<DisplayNameCacheKey, List<String>> displayNameCache = new HashMap<>();
+
     public static LanguageCache getInstance() {
         return INSTANCE;
     }
@@ -80,6 +89,9 @@ public class LanguageCache extends SimplePreparableReloadListener<List<ClientLan
     @Override
     protected void apply(List<ClientLanguage> languages, ResourceManager resourceManager, ProfilerFiller profiler) {
         this.loadedLanguages = languages;
+        this.displayNameCache.clear();
+        OccultismSearchUtil.clearTooltipCache();
+        ChineseScriptSearchMatcher.clearCaches();
     }
 
     // -------------------------------------------------------------------------
@@ -91,6 +103,10 @@ public class LanguageCache extends SimplePreparableReloadListener<List<ClientLan
      * Languages that have no translation for this item are omitted.
      */
     public List<String> resolveDisplayNamesForAll(ItemStack stack) {
+        return displayNameCache.computeIfAbsent(DisplayNameCacheKey.from(stack), key -> resolveDisplayNamesUncached(stack));
+    }
+
+    private List<String> resolveDisplayNamesUncached(ItemStack stack) {
         List<String> results = new ArrayList<>();
         for (ClientLanguage lang : loadedLanguages) {
             Function<Component, Optional<String>> resolver = comp -> resolveComponentWithLang(comp, lang);
@@ -185,5 +201,24 @@ public class LanguageCache extends SimplePreparableReloadListener<List<ClientLan
         if (mc == null) return;
         List<ClientLanguage> langs = prepare(mc.getResourceManager(), InactiveProfiler.INSTANCE);
         apply(langs, mc.getResourceManager(), InactiveProfiler.INSTANCE);
+    }
+
+    private record DisplayNameCacheKey(ItemStack stackSnapshot, int hash) {
+        private static DisplayNameCacheKey from(ItemStack stack) {
+            ItemStack snapshot = stack.copyWithCount(1);
+            return new DisplayNameCacheKey(snapshot, ItemStack.hashItemAndComponents(snapshot));
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) return true;
+            if (!(obj instanceof DisplayNameCacheKey other)) return false;
+            return ItemStack.isSameItemSameComponents(this.stackSnapshot, other.stackSnapshot);
+        }
+
+        @Override
+        public int hashCode() {
+            return hash;
+        }
     }
 }

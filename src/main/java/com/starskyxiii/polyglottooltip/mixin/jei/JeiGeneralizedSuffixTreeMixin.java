@@ -1,15 +1,12 @@
 package com.starskyxiii.polyglottooltip.mixin.jei;
 
-import com.starskyxiii.polyglottooltip.search.ChineseScriptSearchMatcher;
+import com.starskyxiii.polyglottooltip.search.ChineseScriptVariantIndexer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-
-import java.util.Locale;
-import java.util.Set;
 
 /**
  * Injects Chinese script variant indexing into JEI's GeneralizedSuffixTree.
@@ -34,21 +31,11 @@ public abstract class JeiGeneralizedSuffixTreeMixin {
     @Inject(method = "put", at = @At("HEAD"), remap = false)
     private void putChineseVariants(String key, Object value, CallbackInfo ci) {
         if (polyglot$inVariantInsertion) return;
-
-        Set<String> variants = ChineseScriptSearchMatcher.getSearchVariants(key);
-        if (variants.size() <= 1) return;
-
-        // normalizedKey is what getSearchVariants() treats as the "original"
-        String normalizedKey = key == null ? "" : key.trim().toLowerCase(Locale.ROOT);
         polyglot$inVariantInsertion = true;
         try {
-            for (String variant : variants) {
-                if (!variant.equals(normalizedKey)) {
-                    // put() always resets activeLeaf = root as its first line,
-                    // so recursive calls do not corrupt the suffix tree state.
-                    this.put(variant, value);
-                }
-            }
+            // put() always resets activeLeaf = root as its first line,
+            // so recursive calls do not corrupt the suffix tree state.
+            ChineseScriptVariantIndexer.putVariants(key, value, this::put);
         } finally {
             polyglot$inVariantInsertion = false;
         }

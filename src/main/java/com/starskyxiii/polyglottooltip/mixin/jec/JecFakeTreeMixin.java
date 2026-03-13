@@ -1,15 +1,12 @@
 package com.starskyxiii.polyglottooltip.mixin.jec;
 
-import com.starskyxiii.polyglottooltip.search.ChineseScriptSearchMatcher;
+import com.starskyxiii.polyglottooltip.search.ChineseScriptVariantIndexer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-
-import java.util.Locale;
-import java.util.Set;
 
 /**
  * JEC compatibility: injects Chinese script variant indexing into JEC's FakeTree.
@@ -37,18 +34,9 @@ public abstract class JecFakeTreeMixin {
     @Inject(method = "put", at = @At("HEAD"), remap = false)
     private void putChineseVariants(String key, Object value, CallbackInfo ci) {
         if (polyglot$inVariantInsertion) return;
-
-        Set<String> variants = ChineseScriptSearchMatcher.getSearchVariants(key);
-        if (variants.size() <= 1) return;
-
-        String normalizedKey = key == null ? "" : key.trim().toLowerCase(Locale.ROOT);
         polyglot$inVariantInsertion = true;
         try {
-            for (String variant : variants) {
-                if (!variant.equals(normalizedKey)) {
-                    this.put(variant, value);
-                }
-            }
+            ChineseScriptVariantIndexer.putVariants(key, value, this::put);
         } finally {
             polyglot$inVariantInsertion = false;
         }
