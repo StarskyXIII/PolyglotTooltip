@@ -9,6 +9,7 @@
     "ae2.Ae2PatternAccessTermScreenMixin",
     "ae2.Ae2PatternContainerRecordMixin",
     "ae2.Ae2FluidKeyRenderHandlerMixin",
+    "controlling.ControllingConstantsMixin",
     "emi.EmiFluidEmiStackMixin",
     "emi.EmiNameQueryMixin",
     "emi.EmiTooltipQueryMixin",

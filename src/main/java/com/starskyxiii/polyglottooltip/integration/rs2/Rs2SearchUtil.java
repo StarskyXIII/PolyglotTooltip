@@ -76,7 +76,7 @@ public final class Rs2SearchUtil {
     private static List<String> resolveSecondaryNames(GridResource resource) {
         Object platformResource = resource.getResourceForRecipeMods();
         if (platformResource instanceof ItemResource itemResource) {
-            return LanguageCache.getInstance().resolveDisplayNamesForAll(itemResource.toItemStack());
+            return LanguageCache.getInstance().resolveSearchNamesForAll(itemResource.toItemStack());
         }
         if (platformResource instanceof FluidResource fluidResource) {
             // Use Platform.getFluidRenderer() to match the tooltip mixin paths

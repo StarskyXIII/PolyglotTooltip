@@ -11,9 +11,13 @@ import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
 import net.minecraft.util.profiling.InactiveProfiler;
 import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.ItemEnchantments;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -59,6 +63,7 @@ public class LanguageCache extends SimplePreparableReloadListener<List<ClientLan
     // We intentionally still ignore custom hover names and only key off the stack data
     // that affects generated translations.
     private final Map<DisplayNameCacheKey, List<String>> displayNameCache = new HashMap<>();
+    private final Map<DisplayNameCacheKey, List<String>> searchNameCache = new HashMap<>();
 
     public static LanguageCache getInstance() {
         return INSTANCE;
@@ -90,6 +95,7 @@ public class LanguageCache extends SimplePreparableReloadListener<List<ClientLan
     protected void apply(List<ClientLanguage> languages, ResourceManager resourceManager, ProfilerFiller profiler) {
         this.loadedLanguages = languages;
         this.displayNameCache.clear();
+        this.searchNameCache.clear();
         OccultismSearchUtil.clearTooltipCache();
         ChineseScriptSearchMatcher.clearCaches();
     }
@@ -104,6 +110,14 @@ public class LanguageCache extends SimplePreparableReloadListener<List<ClientLan
      */
     public List<String> resolveDisplayNamesForAll(ItemStack stack) {
         return displayNameCache.computeIfAbsent(DisplayNameCacheKey.from(stack), key -> resolveDisplayNamesUncached(stack));
+    }
+
+    /**
+     * Returns secondary-language search text for the stack, including the stack
+     * display name plus any enchantment names shown in the tooltip.
+     */
+    public List<String> resolveSearchNamesForAll(ItemStack stack) {
+        return searchNameCache.computeIfAbsent(DisplayNameCacheKey.from(stack), key -> resolveSearchNamesUncached(stack));
     }
 
     /**
@@ -126,6 +140,20 @@ public class LanguageCache extends SimplePreparableReloadListener<List<ClientLan
             name.ifPresent(results::add);
         }
         return results;
+    }
+
+    private List<String> resolveSearchNamesUncached(ItemStack stack) {
+        LinkedHashSet<String> results = new LinkedHashSet<>(resolveDisplayNamesUncached(stack));
+
+        ItemEnchantments enchantments = EnchantmentHelper.getEnchantmentsForCrafting(stack);
+        if (!enchantments.isEmpty()) {
+            for (var entry : enchantments.entrySet()) {
+                Component fullName = Enchantment.getFullname(entry.getKey(), entry.getIntValue());
+                results.addAll(resolveComponentsForAll(fullName));
+            }
+        }
+
+        return List.copyOf(results);
     }
 
     /**
