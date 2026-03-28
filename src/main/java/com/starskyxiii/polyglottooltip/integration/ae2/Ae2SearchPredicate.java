@@ -42,7 +42,7 @@ public class Ae2SearchPredicate implements Predicate<GridInventoryEntry> {
     private List<String> resolveSecondaryNames(AEKey key) {
         LanguageCache cache = LanguageCache.getInstance();
         if (key instanceof AEItemKey itemKey) {
-            return cache.resolveDisplayNamesForAll(itemKey.toStack());
+            return cache.resolveSearchNamesForAll(itemKey.toStack());
         }
         return cache.resolveComponentsForAll(key.getDisplayName());
     }

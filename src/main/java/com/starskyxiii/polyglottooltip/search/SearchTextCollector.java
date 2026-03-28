@@ -56,7 +56,7 @@ public final class SearchTextCollector {
         }
 
         addNormalized(stack.getHoverName().getString());
-        return addAll(LanguageCache.getInstance().resolveDisplayNamesForAll(stack));
+        return addAll(LanguageCache.getInstance().resolveSearchNamesForAll(stack));
     }
 
     public String build() {

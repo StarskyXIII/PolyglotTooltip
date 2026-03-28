@@ -50,7 +50,7 @@ public class JeiListElementInfoMixin {
         LanguageCache cache = LanguageCache.getInstance();
         Optional<ItemStack> optStack = value.getItemStack();
         List<String> secondaryNames = optStack.isPresent()
-                ? cache.resolveDisplayNamesForAll(optStack.get())
+                ? cache.resolveSearchNamesForAll(optStack.get())
                 : ProductiveBeesNameHelper.tryCreateBeeIngredientName(value.getIngredient())
                         .map(cache::resolveComponentsForAll)
                         .orElse(List.of());

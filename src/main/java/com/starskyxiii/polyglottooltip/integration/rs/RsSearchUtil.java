@@ -74,7 +74,7 @@ public final class RsSearchUtil {
 
         Object ingredient = invoke(gridStack, "getIngredient");
         if (ingredient instanceof ItemStack itemStack) {
-            return LanguageCache.getInstance().resolveDisplayNamesForAll(itemStack);
+            return LanguageCache.getInstance().resolveSearchNamesForAll(itemStack);
         }
         return LanguageCache.getInstance().resolveComponentsForAll(displayName);
     }
