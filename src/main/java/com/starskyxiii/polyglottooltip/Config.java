@@ -30,7 +30,7 @@ public final class Config {
     public static List<String> displayLanguages = Arrays.asList("en_US");
     public static boolean alwaysShow = false;
     public static String secondaryNameColor = "";
-    public static String wailaSecondaryNameColor = "";
+    public static String wailaSecondaryNameColor = "&7";
     public static boolean enableChineseScriptMatching = true;
 
     private Config() {}

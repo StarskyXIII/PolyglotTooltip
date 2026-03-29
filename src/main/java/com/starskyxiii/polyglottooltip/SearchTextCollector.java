@@ -57,6 +57,10 @@ public final class SearchTextCollector {
             addName(searchableNames, translatedName);
         }
 
+        for (String enchantmentName : EnchantmentTooltipUtil.collectSearchableEnchantmentNames(stack)) {
+            addName(searchableNames, enchantmentName);
+        }
+
         List<String> resolved = Collections.unmodifiableList(new ArrayList<String>(searchableNames));
         synchronized (SEARCH_TEXT_CACHE) {
             List<String> cached = SEARCH_TEXT_CACHE.get(cacheKey);

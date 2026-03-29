@@ -17,6 +17,7 @@ import net.minecraft.util.EnumChatFormatting;
 public final class DisplayNameResolver {
 
     private static final String AE2_FACADE_CLASS_NAME = "appeng.items.parts.ItemFacade";
+    private static final String AE2_MULTIPART_CLASS_NAME = "appeng.items.parts.ItemMultiPart";
     private static final String POTION_GRENADE_PREFIX = "potion.prefix.grenade";
     private static final String EMPTY_POTION_NAME = "item.emptyPotion.name";
     private static final String PLAYER_SKULL_NAME = "item.skull.player.name";
@@ -78,7 +79,12 @@ public final class DisplayNameResolver {
             return dynamicDisplayName;
         }
 
-        return resolveGenericDisplayName(stack, languageCode);
+        String genericDisplayName = resolveGenericDisplayName(stack, languageCode);
+        if (genericDisplayName != null && !genericDisplayName.isEmpty()) {
+            return genericDisplayName;
+        }
+
+        return LanguageCache.resolveItemDisplayName(languageCode, stack);
     }
 
     private static String resolveFacadeDisplayName(ItemStack stack, String languageCode, int depth) {
@@ -157,6 +163,11 @@ public final class DisplayNameResolver {
     }
 
     private static String resolveDynamicDisplayName(ItemStack stack, String languageCode, int depth) {
+        String ae2MultiPartDisplayName = resolveAe2MultiPartDisplayName(stack, languageCode);
+        if (ae2MultiPartDisplayName != null && !ae2MultiPartDisplayName.isEmpty()) {
+            return ae2MultiPartDisplayName;
+        }
+
         return ManaMetalDisplayNameResolver.tryResolveDisplayName(stack, languageCode, depth);
     }
 
@@ -176,6 +187,20 @@ public final class DisplayNameResolver {
         return stack != null
             && stack.getItem() != null
             && AE2_FACADE_CLASS_NAME.equals(stack.getItem().getClass().getName());
+    }
+
+    private static String resolveAe2MultiPartDisplayName(ItemStack stack, String languageCode) {
+        if (!isAe2MultiPart(stack)) {
+            return null;
+        }
+
+        return LanguageCache.resolveItemDisplayName(languageCode, stack);
+    }
+
+    private static boolean isAe2MultiPart(ItemStack stack) {
+        return stack != null
+            && stack.getItem() != null
+            && AE2_MULTIPART_CLASS_NAME.equals(stack.getItem().getClass().getName());
     }
 
     static String resolveDisplayNameForLanguage(ItemStack stack, String languageCode, int depth) {

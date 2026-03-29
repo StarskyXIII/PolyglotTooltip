@@ -20,6 +20,34 @@ public final class EnchantmentTooltipUtil {
 
     private EnchantmentTooltipUtil() {}
 
+    public static List<String> collectSearchableEnchantmentNames(ItemStack stack) {
+        LinkedHashSet<String> enchantmentNames = new LinkedHashSet<String>();
+        if (stack == null || stack.getItem() == null) {
+            return new ArrayList<String>(enchantmentNames);
+        }
+
+        List<EnchantmentEntry> enchantmentEntries = getEnchantmentEntries(stack);
+        for (EnchantmentEntry entry : enchantmentEntries) {
+            if (entry == null || entry.enchantment == null) {
+                continue;
+            }
+
+            String primaryText = entry.enchantment.getTranslatedName(entry.level);
+            if (primaryText != null && !primaryText.trim().isEmpty()) {
+                enchantmentNames.add(primaryText);
+            }
+
+            for (String languageCode : Config.displayLanguages) {
+                String secondaryText = translateEnchantment(languageCode, entry.enchantment, entry.level);
+                if (secondaryText != null && !secondaryText.trim().isEmpty()) {
+                    enchantmentNames.add(secondaryText);
+                }
+            }
+        }
+
+        return new ArrayList<String>(enchantmentNames);
+    }
+
     public static void insertSecondaryEnchantments(List<String> tooltip, ItemStack stack) {
         if (tooltip == null || stack == null || stack.getItem() == null || !SecondaryTooltipUtil.shouldShowSecondaryLanguage()) {
             return;
