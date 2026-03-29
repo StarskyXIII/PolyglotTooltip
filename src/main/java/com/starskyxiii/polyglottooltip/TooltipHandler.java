@@ -12,5 +12,6 @@ public class TooltipHandler {
         }
 
         SecondaryTooltipUtil.insertSecondaryNames(event.toolTip, event.itemStack);
+        EnchantmentTooltipUtil.insertSecondaryEnchantments(event.toolTip, event.itemStack);
     }
 }

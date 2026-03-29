@@ -1,0 +1,11 @@
+option.polyglottooltip.wailaSecondaryLanguage=Show secondary language
+tooltip=Tooltip
+tooltip.tooltip=Tooltip display settings.
+search=Search
+search.tooltip=Search integration settings.
+displayLanguages=Display Languages
+displayLanguages.tooltip=Extra language codes shown in tooltips, in display order.
+alwaysShow=Always Show Secondary Language
+alwaysShow.tooltip=Show secondary tooltip lines even when the current language already matches.
+enableChineseScriptMatching=Enable Chinese Script Matching
+enableChineseScriptMatching.tooltip=Treat Simplified and Traditional Chinese as interchangeable during search.

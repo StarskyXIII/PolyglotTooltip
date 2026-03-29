@@ -14,6 +14,7 @@ import cpw.mods.fml.common.event.FMLServerStartingEvent;
     modid = PolyglotTooltip.MODID,
     version = Tags.VERSION,
     name = PolyglotTooltip.MOD_NAME,
+    guiFactory = "com.starskyxiii.polyglottooltip.client.config.PolyglotTooltipGuiFactory",
     acceptedMinecraftVersions = "[1.7.10]")
 public class PolyglotTooltip {
 

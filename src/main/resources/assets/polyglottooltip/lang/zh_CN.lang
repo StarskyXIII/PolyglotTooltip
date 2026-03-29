@@ -1,0 +1,11 @@
+option.polyglottooltip.wailaSecondaryLanguage=显示次要语言
+tooltip=提示框
+tooltip.tooltip=提示框显示设置。
+search=搜索
+search.tooltip=搜索整合设置。
+displayLanguages=显示语言
+displayLanguages.tooltip=按显示顺序在提示框中显示的额外语言代码。
+alwaysShow=总是显示次要语言
+alwaysShow.tooltip=即使当前语言已经匹配，也显示次要提示框文本。
+enableChineseScriptMatching=启用简繁中文互搜
+enableChineseScriptMatching.tooltip=搜索时将简体中文和繁体中文视为可互相匹配。

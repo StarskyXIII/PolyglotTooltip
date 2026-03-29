@@ -20,7 +20,7 @@ public final class SearchTextCollector {
 
         addName(searchableNames, stack.getDisplayName());
 
-        for (String translatedName : LanguageCache.resolveDisplayNames(stack)) {
+        for (String translatedName : DisplayNameResolver.resolveSecondaryDisplayNames(stack)) {
             addName(searchableNames, translatedName);
         }
 
@@ -39,7 +39,7 @@ public final class SearchTextCollector {
 
         normalized = normalized.trim();
         if (!normalized.isEmpty()) {
-            searchableNames.add(normalized);
+            searchableNames.addAll(ChineseScriptSearchMatcher.getSearchVariants(normalized));
         }
     }
 }
