@@ -8,7 +8,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 
-import com.starskyxiii.polyglottooltip.SecondaryTooltipUtil;
+import com.starskyxiii.polyglottooltip.tooltip.SecondaryTooltipUtil;
 
 import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.item.ItemStack;

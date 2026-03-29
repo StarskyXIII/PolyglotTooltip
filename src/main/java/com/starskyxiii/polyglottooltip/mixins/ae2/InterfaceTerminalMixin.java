@@ -8,8 +8,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Coerce;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
-import com.starskyxiii.polyglottooltip.Ae2InterfaceSearchHelper;
-import com.starskyxiii.polyglottooltip.SearchTextCollector;
+import com.starskyxiii.polyglottooltip.ae2.Ae2InterfaceSearchHelper;
+import com.starskyxiii.polyglottooltip.search.SearchTextCollector;
 
 import appeng.api.storage.data.IAEItemStack;
 import appeng.util.Platform;

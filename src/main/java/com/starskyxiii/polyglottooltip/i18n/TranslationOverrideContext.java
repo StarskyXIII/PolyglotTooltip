@@ -1,4 +1,4 @@
-package com.starskyxiii.polyglottooltip;
+package com.starskyxiii.polyglottooltip.i18n;
 
 import java.util.ArrayDeque;
 import java.util.Deque;

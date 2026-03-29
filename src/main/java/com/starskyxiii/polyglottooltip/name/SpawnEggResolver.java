@@ -1,7 +1,9 @@
-package com.starskyxiii.polyglottooltip;
+package com.starskyxiii.polyglottooltip.name;
 
 import java.lang.reflect.Method;
 import java.util.List;
+
+import com.starskyxiii.polyglottooltip.i18n.LanguageCache;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityList;

@@ -1,4 +1,4 @@
-package com.starskyxiii.polyglottooltip;
+package com.starskyxiii.polyglottooltip.ae2;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

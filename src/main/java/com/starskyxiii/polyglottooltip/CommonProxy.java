@@ -1,5 +1,7 @@
 package com.starskyxiii.polyglottooltip;
 
+import com.starskyxiii.polyglottooltip.config.Config;
+import com.starskyxiii.polyglottooltip.config.ConfigChangeHandler;
 import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.event.FMLInterModComms;
 import cpw.mods.fml.common.Loader;

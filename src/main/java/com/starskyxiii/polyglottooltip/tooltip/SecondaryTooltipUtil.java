@@ -1,4 +1,4 @@
-package com.starskyxiii.polyglottooltip;
+package com.starskyxiii.polyglottooltip.tooltip;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -9,6 +9,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.Map;
+
+import com.starskyxiii.polyglottooltip.config.Config;
+import com.starskyxiii.polyglottooltip.name.DisplayNameResolver;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.item.ItemStack;

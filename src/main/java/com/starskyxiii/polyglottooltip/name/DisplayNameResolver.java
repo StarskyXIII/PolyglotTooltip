@@ -1,9 +1,12 @@
-package com.starskyxiii.polyglottooltip;
+package com.starskyxiii.polyglottooltip.name;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+
+import com.starskyxiii.polyglottooltip.config.Config;
+import com.starskyxiii.polyglottooltip.i18n.LanguageCache;
 
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemPotion;

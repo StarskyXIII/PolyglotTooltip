@@ -1,4 +1,4 @@
-package com.starskyxiii.polyglottooltip;
+package com.starskyxiii.polyglottooltip.i18n;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;

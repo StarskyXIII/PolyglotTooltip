@@ -12,7 +12,7 @@ import codechicken.nei.SearchTokenParser.ISearchParserProvider;
 import codechicken.nei.SearchTokenParser.SearchMode;
 import codechicken.nei.api.ItemFilter;
 
-import com.starskyxiii.polyglottooltip.SearchTextCollector;
+import com.starskyxiii.polyglottooltip.search.SearchTextCollector;
 
 public class NeiSearchProvider implements ISearchParserProvider {
 

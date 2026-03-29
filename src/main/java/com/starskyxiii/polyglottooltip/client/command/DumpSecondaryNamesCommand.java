@@ -26,10 +26,10 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ChatComponentTranslation;
 import net.minecraft.util.EnumChatFormatting;
 
-import com.starskyxiii.polyglottooltip.Config;
-import com.starskyxiii.polyglottooltip.DisplayNameResolver;
-import com.starskyxiii.polyglottooltip.SearchTextCollector;
-import com.starskyxiii.polyglottooltip.SecondaryTooltipUtil;
+import com.starskyxiii.polyglottooltip.config.Config;
+import com.starskyxiii.polyglottooltip.name.DisplayNameResolver;
+import com.starskyxiii.polyglottooltip.search.SearchTextCollector;
+import com.starskyxiii.polyglottooltip.tooltip.SecondaryTooltipUtil;
 
 public class DumpSecondaryNamesCommand extends CommandBase {
 

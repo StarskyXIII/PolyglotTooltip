@@ -6,7 +6,7 @@ import java.util.Set;
 
 import com.gtnewhorizon.gtnhmixins.ILateMixinLoader;
 import com.gtnewhorizon.gtnhmixins.LateMixin;
-import com.starskyxiii.polyglottooltip.Ae2VersionDetector;
+import com.starskyxiii.polyglottooltip.ae2.Ae2VersionDetector;
 
 @LateMixin
 public class PolyglotTooltipLateMixinLoader implements ILateMixinLoader {

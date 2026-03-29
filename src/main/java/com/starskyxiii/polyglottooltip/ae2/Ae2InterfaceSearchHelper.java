@@ -1,10 +1,14 @@
-package com.starskyxiii.polyglottooltip;
+package com.starskyxiii.polyglottooltip.ae2;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Set;
+
+import com.starskyxiii.polyglottooltip.config.Config;
+import com.starskyxiii.polyglottooltip.i18n.LanguageCache;
+import com.starskyxiii.polyglottooltip.search.ChineseScriptSearchMatcher;
 
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.StatCollector;

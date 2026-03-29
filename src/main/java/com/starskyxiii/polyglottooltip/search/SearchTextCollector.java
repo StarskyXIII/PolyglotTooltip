@@ -1,4 +1,4 @@
-package com.starskyxiii.polyglottooltip;
+package com.starskyxiii.polyglottooltip.search;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -7,6 +7,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
+import com.starskyxiii.polyglottooltip.name.DisplayNameResolver;
+import com.starskyxiii.polyglottooltip.tooltip.EnchantmentTooltipUtil;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumChatFormatting;

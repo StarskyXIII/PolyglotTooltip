@@ -1,15 +1,16 @@
 package com.starskyxiii.polyglottooltip;
 
 import codechicken.nei.api.API;
+import com.starskyxiii.polyglottooltip.client.command.DumpSecondaryNamesCommand;
+import com.starskyxiii.polyglottooltip.config.LanguageCacheReloadListener;
+import com.starskyxiii.polyglottooltip.integration.nei.NeiSearchProvider;
+import com.starskyxiii.polyglottooltip.tooltip.TooltipHandler;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.Loader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.IReloadableResourceManager;
 import net.minecraftforge.client.ClientCommandHandler;
 import net.minecraftforge.common.MinecraftForge;
-
-import com.starskyxiii.polyglottooltip.client.command.DumpSecondaryNamesCommand;
-import com.starskyxiii.polyglottooltip.integration.nei.NeiSearchProvider;
 
 public class ClientProxy extends CommonProxy {
 

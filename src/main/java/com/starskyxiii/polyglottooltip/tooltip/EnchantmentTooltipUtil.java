@@ -1,10 +1,13 @@
-package com.starskyxiii.polyglottooltip;
+package com.starskyxiii.polyglottooltip.tooltip;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+
+import com.starskyxiii.polyglottooltip.config.Config;
+import com.starskyxiii.polyglottooltip.i18n.LanguageCache;
 
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.init.Items;

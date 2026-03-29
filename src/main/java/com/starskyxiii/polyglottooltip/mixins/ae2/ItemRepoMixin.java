@@ -7,7 +7,7 @@ import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
-import com.starskyxiii.polyglottooltip.SearchTextCollector;
+import com.starskyxiii.polyglottooltip.search.SearchTextCollector;
 
 import appeng.api.storage.data.IAEItemStack;
 import appeng.util.Platform;

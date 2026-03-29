@@ -12,9 +12,9 @@ import mcp.mobius.waila.api.IWailaConfigHandler;
 import mcp.mobius.waila.api.IWailaEntityAccessor;
 import mcp.mobius.waila.api.IWailaEntityProvider;
 
-import com.starskyxiii.polyglottooltip.Config;
-import com.starskyxiii.polyglottooltip.EntityDisplayNameResolver;
-import com.starskyxiii.polyglottooltip.SecondaryTooltipUtil;
+import com.starskyxiii.polyglottooltip.config.Config;
+import com.starskyxiii.polyglottooltip.name.EntityDisplayNameResolver;
+import com.starskyxiii.polyglottooltip.tooltip.SecondaryTooltipUtil;
 
 public class WailaEntityTooltipProvider implements IWailaEntityProvider {
 

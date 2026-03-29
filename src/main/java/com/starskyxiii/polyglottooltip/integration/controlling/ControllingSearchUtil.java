@@ -12,9 +12,9 @@ import java.util.function.Predicate;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.util.StatCollector;
 
-import com.starskyxiii.polyglottooltip.ChineseScriptSearchMatcher;
-import com.starskyxiii.polyglottooltip.Config;
-import com.starskyxiii.polyglottooltip.LanguageCache;
+import com.starskyxiii.polyglottooltip.config.Config;
+import com.starskyxiii.polyglottooltip.i18n.LanguageCache;
+import com.starskyxiii.polyglottooltip.search.ChineseScriptSearchMatcher;
 
 public final class ControllingSearchUtil {
 

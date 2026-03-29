@@ -7,7 +7,7 @@ import org.spongepowered.asm.mixin.injection.Coerce;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import com.starskyxiii.polyglottooltip.Ae2UnofficialInterfaceSearchHelper;
+import com.starskyxiii.polyglottooltip.ae2.Ae2UnofficialInterfaceSearchHelper;
 
 @Pseudo
 @Mixin(targets = "appeng.client.gui.implementations.GuiInterfaceTerminal", remap = false)

@@ -1,4 +1,4 @@
-package com.starskyxiii.polyglottooltip;
+package com.starskyxiii.polyglottooltip.search;
 
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.github.houbb.opencc4j.util.ZhConverterUtil;
+import com.starskyxiii.polyglottooltip.config.Config;
 
 public final class ChineseScriptSearchMatcher {
 
