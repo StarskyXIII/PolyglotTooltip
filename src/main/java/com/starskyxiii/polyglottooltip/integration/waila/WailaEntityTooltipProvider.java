@@ -12,6 +12,7 @@ import mcp.mobius.waila.api.IWailaConfigHandler;
 import mcp.mobius.waila.api.IWailaEntityAccessor;
 import mcp.mobius.waila.api.IWailaEntityProvider;
 
+import com.starskyxiii.polyglottooltip.Config;
 import com.starskyxiii.polyglottooltip.EntityDisplayNameResolver;
 import com.starskyxiii.polyglottooltip.SecondaryTooltipUtil;
 
@@ -35,8 +36,11 @@ public class WailaEntityTooltipProvider implements IWailaEntityProvider {
         String primaryName = EnumChatFormatting.getTextWithoutFormattingCodes(entity.getCommandSenderName());
         SecondaryTooltipUtil.insertSecondaryNames(
             currenttip,
+            currenttip == null || currenttip.isEmpty() ? 0 : 1,
             EntityDisplayNameResolver.resolveSecondaryDisplayNames(entity),
-            primaryName);
+            primaryName,
+            "",
+            Config.wailaSecondaryNameColor);
         return currenttip;
     }
 

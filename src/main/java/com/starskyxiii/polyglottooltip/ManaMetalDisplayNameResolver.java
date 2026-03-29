@@ -13,6 +13,8 @@ final class ManaMetalDisplayNameResolver {
         "project.studio.manametalmod.items.armor.ItemToolArmorSpecial";
     private static final String ITEM_ALCHEMY_GEM_CLASS_NAME =
         "project.studio.manametalmod.produce.gemcraft.ItemAlchemyGem";
+    private static final String MAGIC_ITEM_MEDAL_FX_CLASS_NAME =
+        "project.studio.manametalmod.magic.magicItem.MagicItemMedalFX";
     private static final String[] ARMOR_PART_TRANSLATION_KEYS = new String[]{
         "IASPT.0", "IASPT.1", "IASPT.2", "IASPT.3"
     };
@@ -27,6 +29,15 @@ final class ManaMetalDisplayNameResolver {
         String specialArmorDisplayName = tryResolveSpecialArmorDisplayName(stack, languageCode);
         if (specialArmorDisplayName != null && !specialArmorDisplayName.isEmpty()) {
             return specialArmorDisplayName;
+        }
+
+        if (isMagicItemMedal(stack)) {
+            String medalDisplayName = tryResolveMagicItemMedalDisplayName(stack, languageCode);
+            if (medalDisplayName != null && !medalDisplayName.isEmpty()) {
+                return medalDisplayName;
+            }
+
+            return DisplayNameResolver.resolveGenericDisplayNameForLanguage(stack, languageCode);
         }
 
         String numericDisplayName = tryResolveNumericSuffixDisplayName(stack, languageCode);
@@ -73,6 +84,25 @@ final class ManaMetalDisplayNameResolver {
         }
 
         return baseName + partName;
+    }
+
+    private static boolean isMagicItemMedal(ItemStack stack) {
+        return stack != null
+            && stack.getItem() != null
+            && MAGIC_ITEM_MEDAL_FX_CLASS_NAME.equals(stack.getItem().getClass().getName());
+    }
+
+    private static String tryResolveMagicItemMedalDisplayName(ItemStack stack, String languageCode) {
+        if (!isMagicItemMedal(stack)) {
+            return null;
+        }
+
+        String translationKey = stack.getUnlocalizedName();
+        if (translationKey == null || translationKey.isEmpty()) {
+            return null;
+        }
+
+        return LanguageCache.translate(languageCode, translationKey + ".name");
     }
 
     private static int getArmorPowerType(ItemStack stack) {

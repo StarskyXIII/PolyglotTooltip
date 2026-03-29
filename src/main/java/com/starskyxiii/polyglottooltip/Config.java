@@ -21,6 +21,7 @@ public final class Config {
     private static final String LANG_DISPLAY_LANGUAGES = "displayLanguages";
     private static final String LANG_ALWAYS_SHOW = "alwaysShow";
     private static final String LANG_SECONDARY_NAME_COLOR = "secondaryNameColor";
+    private static final String LANG_WAILA_SECONDARY_NAME_COLOR = "wailaSecondaryNameColor";
     private static final String LANG_ENABLE_CHINESE_SCRIPT_MATCHING = "enableChineseScriptMatching";
 
     private static File configFile;
@@ -29,6 +30,7 @@ public final class Config {
     public static List<String> displayLanguages = Arrays.asList("en_US");
     public static boolean alwaysShow = false;
     public static String secondaryNameColor = "";
+    public static String wailaSecondaryNameColor = "";
     public static boolean enableChineseScriptMatching = true;
 
     private Config() {}
@@ -81,6 +83,15 @@ public final class Config {
         secondaryNameColorProperty.setLanguageKey(LANG_SECONDARY_NAME_COLOR);
         secondaryNameColor = secondaryNameColorProperty.getString();
         tooltipPropertyOrder.add(secondaryNameColorProperty.getName());
+
+        Property wailaSecondaryNameColorProperty = activeConfiguration.get(
+            CATEGORY_TOOLTIP,
+            "wailaSecondaryNameColor",
+            wailaSecondaryNameColor,
+            "Formatting used for inserted secondary name lines in Waila. Leave empty to reuse secondaryNameColor. Supports color/style names like gray, gold, bold, italic, and codes like 7, l, &7, &l, \u00A77, or \u00A7l. Combine values with spaces or commas, like 'gold italic'.");
+        wailaSecondaryNameColorProperty.setLanguageKey(LANG_WAILA_SECONDARY_NAME_COLOR);
+        wailaSecondaryNameColor = wailaSecondaryNameColorProperty.getString();
+        tooltipPropertyOrder.add(wailaSecondaryNameColorProperty.getName());
 
         Property chineseScriptMatchingProperty = activeConfiguration.get(
             CATEGORY_SEARCH,

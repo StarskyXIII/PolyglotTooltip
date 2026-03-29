@@ -14,3 +14,5 @@ enableChineseScriptMatching.tooltip=Treat Simplified and Traditional Chinese as 
 command.polyglottooltip.dump.started=Dumping item names, this may freeze the game for a while...
 command.polyglottooltip.dump.failed=Dump failed: %s
 command.polyglottooltip.dump.complete=Dump complete: %s
+wailaSecondaryNameColor=Waila Secondary Name Color
+wailaSecondaryNameColor.tooltip=Color for inserted secondary name lines in Waila. Leave empty to reuse the normal secondary name color.

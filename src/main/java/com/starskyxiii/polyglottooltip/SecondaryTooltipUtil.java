@@ -38,6 +38,10 @@ public final class SecondaryTooltipUtil {
     }
 
     public static void insertSecondaryNames(List<String> tooltip, ItemStack stack) {
+        insertSecondaryNames(tooltip, stack, Config.secondaryNameColor);
+    }
+
+    public static void insertSecondaryNames(List<String> tooltip, ItemStack stack, String configuredFormatting) {
         if (tooltip == null || stack == null || stack.getItem() == null || !shouldShowSecondaryLanguage()) {
             return;
         }
@@ -49,7 +53,8 @@ public final class SecondaryTooltipUtil {
             1,
             DisplayNameResolver.resolveSecondaryDisplayNames(stack),
             primaryName,
-            resolveItemPrimaryFormatting(stack));
+            resolveItemPrimaryFormatting(stack),
+            configuredFormatting);
         cacheInsertedSecondaryLines(stack, tooltip, originalSize);
     }
 
@@ -82,16 +87,33 @@ public final class SecondaryTooltipUtil {
     }
 
     public static void insertSecondaryNames(List<String> tooltip, Collection<String> secondaryNames, String primaryName) {
-        insertSecondaryNames(tooltip, tooltip == null || tooltip.isEmpty() ? 0 : 1, secondaryNames, primaryName, "");
+        insertSecondaryNames(
+            tooltip,
+            tooltip == null || tooltip.isEmpty() ? 0 : 1,
+            secondaryNames,
+            primaryName,
+            "",
+            Config.secondaryNameColor);
     }
 
     public static void insertSecondaryNames(List<String> tooltip, int insertIndex, Collection<String> secondaryNames,
             String primaryName) {
-        insertSecondaryNames(tooltip, insertIndex, secondaryNames, primaryName, "");
+        insertSecondaryNames(tooltip, insertIndex, secondaryNames, primaryName, "", Config.secondaryNameColor);
     }
 
     public static void insertSecondaryNames(List<String> tooltip, int insertIndex, Collection<String> secondaryNames,
             String primaryName, String primaryFormattingFallback) {
+        insertSecondaryNames(
+            tooltip,
+            insertIndex,
+            secondaryNames,
+            primaryName,
+            primaryFormattingFallback,
+            Config.secondaryNameColor);
+    }
+
+    public static void insertSecondaryNames(List<String> tooltip, int insertIndex, Collection<String> secondaryNames,
+            String primaryName, String primaryFormattingFallback, String configuredFormatting) {
         if (tooltip == null || secondaryNames == null || secondaryNames.isEmpty() || !shouldShowSecondaryLanguage()) {
             return;
         }
@@ -118,7 +140,9 @@ public final class SecondaryTooltipUtil {
         insertIndex = Math.max(0, Math.min(insertIndex, tooltip.size()));
         String primaryLine = resolvePrimaryLine(tooltip, insertIndex);
         for (int i = filteredSecondaryNames.size() - 1; i >= 0; i--) {
-            tooltip.add(insertIndex, formatSecondaryLine(filteredSecondaryNames.get(i), primaryLine, primaryFormattingFallback));
+            tooltip.add(
+                insertIndex,
+                formatSecondaryLine(filteredSecondaryNames.get(i), primaryLine, primaryFormattingFallback, configuredFormatting));
         }
     }
 
@@ -143,16 +167,24 @@ public final class SecondaryTooltipUtil {
     }
 
     public static String formatSecondaryLine(String translatedName) {
-        return formatSecondaryLine(translatedName, "", "");
+        return formatSecondaryLine(translatedName, "", "", Config.secondaryNameColor);
     }
 
     public static String formatSecondaryLine(String translatedName, String primaryLine) {
-        return formatSecondaryLine(translatedName, primaryLine, "");
+        return formatSecondaryLine(translatedName, primaryLine, "", Config.secondaryNameColor);
     }
 
     public static String formatSecondaryLine(String translatedName, String primaryLine, String primaryFormattingFallback) {
-        String resolvedFormatting = resolveSecondaryFormatting(primaryLine, primaryFormattingFallback);
-        if (hasConfiguredSecondaryFormatting()) {
+        return formatSecondaryLine(translatedName, primaryLine, primaryFormattingFallback, Config.secondaryNameColor);
+    }
+
+    public static String formatSecondaryLine(
+            String translatedName,
+            String primaryLine,
+            String primaryFormattingFallback,
+            String configuredFormatting) {
+        String resolvedFormatting = resolveSecondaryFormatting(primaryLine, primaryFormattingFallback, configuredFormatting);
+        if (hasConfiguredSecondaryFormatting(configuredFormatting)) {
             translatedName = EnumChatFormatting.getTextWithoutFormattingCodes(translatedName);
         }
         return resolvedFormatting + (translatedName == null ? "" : translatedName);
@@ -202,11 +234,14 @@ public final class SecondaryTooltipUtil {
         return "";
     }
 
-    private static String resolveSecondaryFormatting(String primaryLine, String primaryFormattingFallback) {
+    private static String resolveSecondaryFormatting(
+            String primaryLine,
+            String primaryFormattingFallback,
+            String configuredFormattingValue) {
         FormattingSpec inheritedFormatting = FormattingSpec.fromFormattingCodes(
             extractLeadingFormattingCodes(primaryLine),
             extractLeadingFormattingCodes(primaryFormattingFallback));
-        FormattingSpec configuredFormatting = parseConfiguredFormatting(Config.secondaryNameColor);
+        FormattingSpec configuredFormatting = parseConfiguredFormatting(resolveConfiguredFormattingValue(configuredFormattingValue));
 
         if (configuredFormatting.hasFormatting()) {
             String colorFormatting = configuredFormatting.colorFormatting;
@@ -231,8 +266,16 @@ public final class SecondaryTooltipUtil {
         return EnumChatFormatting.GRAY.toString();
     }
 
-    private static boolean hasConfiguredSecondaryFormatting() {
-        return parseConfiguredFormatting(Config.secondaryNameColor).hasFormatting();
+    private static boolean hasConfiguredSecondaryFormatting(String configuredFormattingValue) {
+        return parseConfiguredFormatting(resolveConfiguredFormattingValue(configuredFormattingValue)).hasFormatting();
+    }
+
+    private static String resolveConfiguredFormattingValue(String configuredFormattingValue) {
+        if (configuredFormattingValue != null && !configuredFormattingValue.trim().isEmpty()) {
+            return configuredFormattingValue;
+        }
+
+        return Config.secondaryNameColor;
     }
 
     private static FormattingSpec parseConfiguredFormatting(String configuredFormatting) {
@@ -380,35 +423,6 @@ public final class SecondaryTooltipUtil {
             }
 
             builder.append(text.charAt(i)).append(text.charAt(i + 1));
-            i += 2;
-        }
-        return builder.toString();
-    }
-
-    private static String extractLeadingStyleFormattingCodes(String text) {
-        if (text == null || text.isEmpty()) {
-            return "";
-        }
-
-        StringBuilder builder = new StringBuilder();
-        for (int i = 0; i + 1 < text.length();) {
-            if (text.charAt(i) != SECTION_SIGN) {
-                break;
-            }
-
-            char code = Character.toLowerCase(text.charAt(i + 1));
-            EnumChatFormatting formatting = resolveFormatting(code);
-            if (formatting == null) {
-                i += 2;
-                continue;
-            }
-
-            if (formatting == EnumChatFormatting.RESET) {
-                builder.setLength(0);
-            } else if (!formatting.isColor()) {
-                builder.append(SECTION_SIGN).append(code);
-            }
-
             i += 2;
         }
         return builder.toString();
