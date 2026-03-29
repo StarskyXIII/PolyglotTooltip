@@ -7,5 +7,7 @@ displayLanguages=显示语言
 displayLanguages.tooltip=按显示顺序在提示框中显示的额外语言代码。
 alwaysShow=总是显示次要语言
 alwaysShow.tooltip=即使当前语言已经匹配，也显示次要提示框文本。
+secondaryNameColor=次要名称颜色
+secondaryNameColor.tooltip=插入的次要名称行颜色。留空时沿用主名称颜色。可使用 gray、gold 这类名称，或 7、&7、§7 这类代码。
 enableChineseScriptMatching=启用简繁中文互搜
 enableChineseScriptMatching.tooltip=搜索时将简体中文和繁体中文视为可互相匹配。

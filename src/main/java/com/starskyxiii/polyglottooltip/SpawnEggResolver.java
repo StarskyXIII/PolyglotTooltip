@@ -173,7 +173,7 @@ public final class SpawnEggResolver {
             return null;
         }
 
-        String unlocalizedName = stack.getItem().getUnlocalizedNameInefficiently(stack);
+        String unlocalizedName = stack.getUnlocalizedName();
         if (unlocalizedName == null || unlocalizedName.isEmpty()) {
             return null;
         }

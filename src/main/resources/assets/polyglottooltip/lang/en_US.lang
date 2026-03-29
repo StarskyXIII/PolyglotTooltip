@@ -7,5 +7,7 @@ displayLanguages=Display Languages
 displayLanguages.tooltip=Extra language codes shown in tooltips, in display order.
 alwaysShow=Always Show Secondary Language
 alwaysShow.tooltip=Show secondary tooltip lines even when the current language already matches.
+secondaryNameColor=Secondary Name Color
+secondaryNameColor.tooltip=Color for inserted secondary name lines. Leave empty to inherit the primary name color. Supports names like gray or gold, and codes like 7, &7, or §7.
 enableChineseScriptMatching=Enable Chinese Script Matching
 enableChineseScriptMatching.tooltip=Treat Simplified and Traditional Chinese as interchangeable during search.

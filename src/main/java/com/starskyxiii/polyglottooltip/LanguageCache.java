@@ -1,9 +1,9 @@
 package com.starskyxiii.polyglottooltip;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -11,6 +11,7 @@ import java.util.regex.Pattern;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.IResourceManager;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.EnumChatFormatting;
 
 public final class LanguageCache {
 
@@ -23,34 +24,6 @@ public final class LanguageCache {
     private static Field localePropertiesField;
 
     private LanguageCache() {}
-
-    public static void preloadConfiguredLanguages() {
-        for (String languageCode : Config.displayLanguages) {
-            getLocale(languageCode);
-        }
-    }
-
-    public static List<String> resolveDisplayNames(ItemStack stack) {
-        LinkedHashSet<String> resolvedNames = new LinkedHashSet<String>();
-
-        if (stack == null || stack.getItem() == null) {
-            return new ArrayList<String>(resolvedNames);
-        }
-
-        String translationKey = getTranslationKey(stack);
-        if (translationKey == null || translationKey.isEmpty()) {
-            return new ArrayList<String>(resolvedNames);
-        }
-
-        for (String languageCode : Config.displayLanguages) {
-            String localized = translate(languageCode, translationKey);
-            if (localized != null && !localized.isEmpty()) {
-                resolvedNames.add(localized);
-            }
-        }
-
-        return new ArrayList<String>(resolvedNames);
-    }
 
     public static synchronized void clear() {
         LOCALES.clear();
@@ -100,12 +73,63 @@ public final class LanguageCache {
         return translated.trim();
     }
 
-    private static String getTranslationKey(ItemStack stack) {
-        String unlocalizedName = stack.getItem().getUnlocalizedNameInefficiently(stack);
-        if (unlocalizedName == null || unlocalizedName.isEmpty()) {
+    public static synchronized String resolveItemDisplayName(String languageCode, ItemStack stack) {
+        if (stack == null || stack.getItem() == null) {
             return null;
         }
-        return unlocalizedName + ".name";
+
+        net.minecraft.client.resources.Locale locale = getLocale(languageCode);
+        if (locale == null) {
+            return null;
+        }
+
+        Map<String, String> localeProperties = getLocaleProperties(locale);
+        if (localeProperties == null || localeProperties.isEmpty()) {
+            return null;
+        }
+
+        try {
+            TranslationOverrideContext.push(localeProperties);
+            String displayName = invokeDisplayNameMethod(stack);
+            if (displayName == null) {
+                return null;
+            }
+
+            displayName = EnumChatFormatting.getTextWithoutFormattingCodes(displayName);
+            if (displayName == null) {
+                return null;
+            }
+
+            displayName = displayName.trim();
+            return displayName.isEmpty() ? null : displayName;
+        } catch (Exception ignored) {
+            return null;
+        } finally {
+            TranslationOverrideContext.pop();
+        }
+    }
+
+    private static String invokeDisplayNameMethod(ItemStack stack) {
+        String displayName = invokeDisplayNameMethod(stack, "func_77653_i");
+        if (displayName != null && !displayName.trim().isEmpty()) {
+            return displayName;
+        }
+
+        return invokeDisplayNameMethod(stack, "getItemStackDisplayName");
+    }
+
+    private static String invokeDisplayNameMethod(ItemStack stack, String methodName) {
+        if (stack == null || stack.getItem() == null || methodName == null || methodName.isEmpty()) {
+            return null;
+        }
+
+        try {
+            Method method = stack.getItem().getClass().getMethod(methodName, ItemStack.class);
+            Object value = method.invoke(stack.getItem(), stack);
+            return value instanceof String ? (String) value : null;
+        } catch (Exception ignored) {
+            return null;
+        }
     }
 
     private static String getRawTranslation(String languageCode, String key) {
@@ -224,4 +248,5 @@ public final class LanguageCache {
         LOCALES.put(languageCode, loadedLocale);
         return loadedLocale;
     }
+
 }

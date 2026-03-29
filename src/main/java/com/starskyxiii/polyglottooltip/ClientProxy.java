@@ -5,8 +5,10 @@ import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.Loader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.IReloadableResourceManager;
+import net.minecraftforge.client.ClientCommandHandler;
 import net.minecraftforge.common.MinecraftForge;
 
+import com.starskyxiii.polyglottooltip.client.command.DumpSecondaryNamesCommand;
 import com.starskyxiii.polyglottooltip.integration.nei.NeiSearchProvider;
 
 public class ClientProxy extends CommonProxy {
@@ -14,17 +16,22 @@ public class ClientProxy extends CommonProxy {
     private static boolean tooltipHandlerRegistered;
     private static boolean neiSearchProviderRegistered;
     private static boolean resourceReloadListenerRegistered;
+    private static boolean dumpCommandRegistered;
 
     @Override
     public void init(FMLInitializationEvent event) {
         super.init(event);
 
-        LanguageCache.preloadConfiguredLanguages();
         registerResourceReloadListener();
 
         if (!tooltipHandlerRegistered) {
             MinecraftForge.EVENT_BUS.register(new TooltipHandler());
             tooltipHandlerRegistered = true;
+        }
+
+        if (!dumpCommandRegistered) {
+            ClientCommandHandler.instance.registerCommand(new DumpSecondaryNamesCommand());
+            dumpCommandRegistered = true;
         }
 
         if (Loader.isModLoaded("NotEnoughItems") && !neiSearchProviderRegistered) {

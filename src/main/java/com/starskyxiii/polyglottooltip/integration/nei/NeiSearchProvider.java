@@ -18,6 +18,10 @@ public class NeiSearchProvider implements ISearchParserProvider {
 
     @Override
     public ItemFilter getFilter(String searchText) {
+        if (searchText == null || searchText.trim().isEmpty()) {
+            return new NothingItemFilter();
+        }
+
         Pattern pattern = SearchField.getPattern(searchText);
         if (pattern == null) {
             return new NothingItemFilter();

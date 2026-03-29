@@ -20,6 +20,7 @@ public final class Config {
     private static final String LANG_CATEGORY_SEARCH = CATEGORY_SEARCH;
     private static final String LANG_DISPLAY_LANGUAGES = "displayLanguages";
     private static final String LANG_ALWAYS_SHOW = "alwaysShow";
+    private static final String LANG_SECONDARY_NAME_COLOR = "secondaryNameColor";
     private static final String LANG_ENABLE_CHINESE_SCRIPT_MATCHING = "enableChineseScriptMatching";
 
     private static File configFile;
@@ -27,6 +28,7 @@ public final class Config {
 
     public static List<String> displayLanguages = Arrays.asList("en_US");
     public static boolean alwaysShow = false;
+    public static String secondaryNameColor = "";
     public static boolean enableChineseScriptMatching = true;
 
     private Config() {}
@@ -71,6 +73,15 @@ public final class Config {
         alwaysShow = alwaysShowProperty.getBoolean(alwaysShow);
         tooltipPropertyOrder.add(alwaysShowProperty.getName());
 
+        Property secondaryNameColorProperty = activeConfiguration.get(
+            CATEGORY_TOOLTIP,
+            "secondaryNameColor",
+            secondaryNameColor,
+            "Formatting used for inserted secondary tooltip name lines. Leave empty to inherit the primary name style. Supports color/style names like gray, gold, bold, italic, and codes like 7, l, &7, &l, \u00A77, or \u00A7l. Combine values with spaces or commas, like 'gold italic'.");
+        secondaryNameColorProperty.setLanguageKey(LANG_SECONDARY_NAME_COLOR);
+        secondaryNameColor = secondaryNameColorProperty.getString();
+        tooltipPropertyOrder.add(secondaryNameColorProperty.getName());
+
         Property chineseScriptMatchingProperty = activeConfiguration.get(
             CATEGORY_SEARCH,
             "enableChineseScriptMatching",
@@ -85,6 +96,7 @@ public final class Config {
 
         LanguageCache.clear();
         ChineseScriptSearchMatcher.clearCaches();
+        SearchTextCollector.clearCache();
         ControllingSearchUtil.clearCaches();
 
         if (activeConfiguration.hasChanged()) {

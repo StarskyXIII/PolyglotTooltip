@@ -41,6 +41,11 @@ public final class DisplayNameResolver {
         return new ArrayList<String>(resolvedNames);
     }
 
+    public static String resolveSecondaryDisplayNameForLanguage(ItemStack stack, String languageCode) {
+        String resolvedName = resolveDisplayName(stack, languageCode);
+        return resolvedName == null ? null : resolvedName.trim();
+    }
+
     private static String resolveDisplayName(ItemStack stack, String languageCode) {
         return resolveDisplayName(stack, languageCode, 0);
     }
@@ -66,6 +71,11 @@ public final class DisplayNameResolver {
 
         if (stack.getItem() instanceof ItemSkull) {
             return resolveSkullDisplayName(stack, languageCode);
+        }
+
+        String dynamicDisplayName = resolveDynamicDisplayName(stack, languageCode, depth);
+        if (dynamicDisplayName != null && !dynamicDisplayName.isEmpty()) {
+            return dynamicDisplayName;
         }
 
         return resolveGenericDisplayName(stack, languageCode);
@@ -146,8 +156,16 @@ public final class DisplayNameResolver {
         return resolveGenericDisplayName(stack, languageCode);
     }
 
+    private static String resolveDynamicDisplayName(ItemStack stack, String languageCode, int depth) {
+        return ManaMetalDisplayNameResolver.tryResolveDisplayName(stack, languageCode, depth);
+    }
+
     private static String getTranslationKey(ItemStack stack) {
-        String unlocalizedName = stack.getItem().getUnlocalizedNameInefficiently(stack);
+        if (stack == null || stack.getItem() == null) {
+            return null;
+        }
+
+        String unlocalizedName = stack.getUnlocalizedName();
         if (unlocalizedName == null || unlocalizedName.isEmpty()) {
             return null;
         }
@@ -158,6 +176,14 @@ public final class DisplayNameResolver {
         return stack != null
             && stack.getItem() != null
             && AE2_FACADE_CLASS_NAME.equals(stack.getItem().getClass().getName());
+    }
+
+    static String resolveDisplayNameForLanguage(ItemStack stack, String languageCode, int depth) {
+        return resolveDisplayName(stack, languageCode, depth);
+    }
+
+    static String resolveGenericDisplayNameForLanguage(ItemStack stack, String languageCode) {
+        return resolveGenericDisplayName(stack, languageCode);
     }
 
     private static ItemStack getFacadeTextureItem(ItemStack stack) {
@@ -186,4 +212,5 @@ public final class DisplayNameResolver {
 
         builder.append(translated.trim());
     }
+
 }
