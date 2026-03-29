@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import net.minecraft.enchantment.Enchantment;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.IResourceManager;
 import net.minecraft.item.ItemStack;
@@ -102,6 +103,42 @@ public final class LanguageCache {
 
             displayName = displayName.trim();
             return displayName.isEmpty() ? null : displayName;
+        } catch (Exception ignored) {
+            return null;
+        } finally {
+            TranslationOverrideContext.pop();
+        }
+    }
+
+    public static synchronized String resolveEnchantmentTranslatedName(String languageCode, Enchantment enchantment, int level) {
+        if (enchantment == null) {
+            return null;
+        }
+
+        net.minecraft.client.resources.Locale locale = getLocale(languageCode);
+        if (locale == null) {
+            return null;
+        }
+
+        Map<String, String> localeProperties = getLocaleProperties(locale);
+        if (localeProperties == null || localeProperties.isEmpty()) {
+            return null;
+        }
+
+        try {
+            TranslationOverrideContext.push(localeProperties);
+            String translatedName = enchantment.getTranslatedName(level);
+            if (translatedName == null) {
+                return null;
+            }
+
+            translatedName = EnumChatFormatting.getTextWithoutFormattingCodes(translatedName);
+            if (translatedName == null) {
+                return null;
+            }
+
+            translatedName = translatedName.trim();
+            return translatedName.isEmpty() ? null : translatedName;
         } catch (Exception ignored) {
             return null;
         } finally {

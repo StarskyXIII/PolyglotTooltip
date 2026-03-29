@@ -2,10 +2,10 @@ package com.starskyxiii.polyglottooltip;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
@@ -13,13 +13,23 @@ import net.minecraft.util.EnumChatFormatting;
 
 public final class SearchTextCollector {
 
+    private static final int MAX_CACHE_ENTRIES = 4096;
     private static final Map<SearchCacheKey, List<String>> SEARCH_TEXT_CACHE =
-        new ConcurrentHashMap<SearchCacheKey, List<String>>();
+        new LinkedHashMap<SearchCacheKey, List<String>>(256, 0.75F, true) {
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            protected boolean removeEldestEntry(Map.Entry<SearchCacheKey, List<String>> eldest) {
+                return size() > MAX_CACHE_ENTRIES;
+            }
+        };
 
     private SearchTextCollector() {}
 
     public static void clearCache() {
-        SEARCH_TEXT_CACHE.clear();
+        synchronized (SEARCH_TEXT_CACHE) {
+            SEARCH_TEXT_CACHE.clear();
+        }
     }
 
     public static List<String> collectSearchableNames(ItemStack stack) {
@@ -28,9 +38,11 @@ public final class SearchTextCollector {
             return new ArrayList<String>();
         }
 
-        List<String> cached = SEARCH_TEXT_CACHE.get(cacheKey);
-        if (cached != null) {
-            return cached;
+        synchronized (SEARCH_TEXT_CACHE) {
+            List<String> cached = SEARCH_TEXT_CACHE.get(cacheKey);
+            if (cached != null) {
+                return cached;
+            }
         }
 
         LinkedHashSet<String> searchableNames = new LinkedHashSet<String>();
@@ -46,8 +58,15 @@ public final class SearchTextCollector {
         }
 
         List<String> resolved = Collections.unmodifiableList(new ArrayList<String>(searchableNames));
-        List<String> previous = SEARCH_TEXT_CACHE.putIfAbsent(cacheKey, resolved);
-        return previous != null ? previous : resolved;
+        synchronized (SEARCH_TEXT_CACHE) {
+            List<String> cached = SEARCH_TEXT_CACHE.get(cacheKey);
+            if (cached != null) {
+                return cached;
+            }
+
+            SEARCH_TEXT_CACHE.put(cacheKey, resolved);
+            return resolved;
+        }
     }
 
     private static void addName(LinkedHashSet<String> searchableNames, String text) {

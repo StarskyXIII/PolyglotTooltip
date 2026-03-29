@@ -11,3 +11,6 @@ secondaryNameColor=次要名稱顏色
 secondaryNameColor.tooltip=插入的次要名稱行顏色。留空時沿用主名稱顏色。可使用 gray、gold 這類名稱，或 7、&7、§7 這類代碼。
 enableChineseScriptMatching=啟用簡繁中文互搜
 enableChineseScriptMatching.tooltip=搜尋時將簡體中文與繁體中文視為可互相匹配。
+command.polyglottooltip.dump.started=正在匯出物品名稱，遊戲可能會暫時卡住...
+command.polyglottooltip.dump.failed=匯出失敗：%s
+command.polyglottooltip.dump.complete=匯出完成：%s

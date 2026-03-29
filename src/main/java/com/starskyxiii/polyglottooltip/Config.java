@@ -97,6 +97,7 @@ public final class Config {
         LanguageCache.clear();
         ChineseScriptSearchMatcher.clearCaches();
         SearchTextCollector.clearCache();
+        SecondaryTooltipUtil.clearInsertedLineCache();
         ControllingSearchUtil.clearCaches();
 
         if (activeConfiguration.hasChanged()) {

@@ -12,6 +12,7 @@ public class LanguageCacheReloadListener implements IResourceManagerReloadListen
         LanguageCache.clear();
         ChineseScriptSearchMatcher.clearCaches();
         SearchTextCollector.clearCache();
+        SecondaryTooltipUtil.clearInsertedLineCache();
         ControllingSearchUtil.clearCaches();
     }
 }

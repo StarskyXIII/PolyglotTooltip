@@ -2,20 +2,40 @@ package com.starskyxiii.polyglottooltip;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.Map;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumChatFormatting;
 
 public final class SecondaryTooltipUtil {
 
     private static final char SECTION_SIGN = '\u00A7';
+    private static final int MAX_INSERTED_LINE_CACHE_ENTRIES = 512;
+    private static final Map<InsertedLineCacheKey, List<String>> INSERTED_SECONDARY_LINE_CACHE =
+        new LinkedHashMap<InsertedLineCacheKey, List<String>>(64, 0.75F, true) {
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            protected boolean removeEldestEntry(Map.Entry<InsertedLineCacheKey, List<String>> eldest) {
+                return size() > MAX_INSERTED_LINE_CACHE_ENTRIES;
+            }
+        };
 
     private SecondaryTooltipUtil() {}
+
+    public static void clearInsertedLineCache() {
+        synchronized (INSERTED_SECONDARY_LINE_CACHE) {
+            INSERTED_SECONDARY_LINE_CACHE.clear();
+        }
+    }
 
     public static void insertSecondaryNames(List<String> tooltip, ItemStack stack) {
         if (tooltip == null || stack == null || stack.getItem() == null || !shouldShowSecondaryLanguage()) {
@@ -23,12 +43,14 @@ public final class SecondaryTooltipUtil {
         }
 
         String primaryName = EnumChatFormatting.getTextWithoutFormattingCodes(stack.getDisplayName());
+        int originalSize = tooltip.size();
         insertSecondaryNames(
             tooltip,
             1,
             DisplayNameResolver.resolveSecondaryDisplayNames(stack),
             primaryName,
             resolveItemPrimaryFormatting(stack));
+        cacheInsertedSecondaryLines(stack, tooltip, originalSize);
     }
 
     public static void prioritizeSecondaryNamesAfterPrimary(List<String> tooltip, ItemStack stack) {
@@ -36,9 +58,7 @@ public final class SecondaryTooltipUtil {
             return;
         }
 
-        String primaryLine = tooltip.get(0);
-        String primaryName = normalizeName(stack.getDisplayName());
-        List<String> desiredSecondaryLines = createInsertedSecondaryLines(stack, primaryLine, primaryName);
+        List<String> desiredSecondaryLines = getCachedInsertedSecondaryLines(stack);
         if (desiredSecondaryLines.isEmpty()) {
             return;
         }
@@ -180,27 +200,6 @@ public final class SecondaryTooltipUtil {
         }
 
         return "";
-    }
-
-    private static List<String> createInsertedSecondaryLines(ItemStack stack, String primaryLine, String primaryName) {
-        if (stack == null || stack.getItem() == null) {
-            return new ArrayList<String>();
-        }
-
-        ArrayList<String> resolvedLines = new ArrayList<String>();
-        resolvedLines.add(primaryLine == null ? "" : primaryLine);
-        insertSecondaryNames(
-            resolvedLines,
-            1,
-            DisplayNameResolver.resolveSecondaryDisplayNames(stack),
-            primaryName,
-            resolveItemPrimaryFormatting(stack));
-
-        if (resolvedLines.size() <= 1) {
-            return new ArrayList<String>();
-        }
-
-        return new ArrayList<String>(resolvedLines.subList(1, resolvedLines.size()));
     }
 
     private static String resolveSecondaryFormatting(String primaryLine, String primaryFormattingFallback) {
@@ -446,6 +445,91 @@ public final class SecondaryTooltipUtil {
 
         builder.append(extractLeadingFormattingCodes(stack.getDisplayName()));
         return builder.toString();
+    }
+
+    private static void cacheInsertedSecondaryLines(ItemStack stack, List<String> tooltip, int originalSize) {
+        InsertedLineCacheKey cacheKey = InsertedLineCacheKey.of(stack);
+        if (cacheKey == null) {
+            return;
+        }
+
+        List<String> insertedLines = new ArrayList<String>();
+        int insertedCount = tooltip == null ? 0 : tooltip.size() - originalSize;
+        for (int i = 0; i < insertedCount && i + 1 < tooltip.size(); i++) {
+            insertedLines.add(tooltip.get(i + 1));
+        }
+
+        List<String> cachedLines = Collections.unmodifiableList(insertedLines);
+        synchronized (INSERTED_SECONDARY_LINE_CACHE) {
+            INSERTED_SECONDARY_LINE_CACHE.put(cacheKey, cachedLines);
+        }
+    }
+
+    private static List<String> getCachedInsertedSecondaryLines(ItemStack stack) {
+        InsertedLineCacheKey cacheKey = InsertedLineCacheKey.of(stack);
+        if (cacheKey == null) {
+            return new ArrayList<String>();
+        }
+
+        synchronized (INSERTED_SECONDARY_LINE_CACHE) {
+            List<String> cachedLines = INSERTED_SECONDARY_LINE_CACHE.get(cacheKey);
+            return cachedLines == null ? new ArrayList<String>() : new ArrayList<String>(cachedLines);
+        }
+    }
+
+    private static final class InsertedLineCacheKey {
+
+        private final Object item;
+        private final int itemDamage;
+        private final String tagSignature;
+        private final int hashCode;
+
+        private InsertedLineCacheKey(Object item, int itemDamage, String tagSignature) {
+            this.item = item;
+            this.itemDamage = itemDamage;
+            this.tagSignature = tagSignature;
+
+            int result = System.identityHashCode(item);
+            result = 31 * result + itemDamage;
+            result = 31 * result + (tagSignature != null ? tagSignature.hashCode() : 0);
+            this.hashCode = result;
+        }
+
+        private static InsertedLineCacheKey of(ItemStack stack) {
+            if (stack == null || stack.getItem() == null) {
+                return null;
+            }
+
+            NBTTagCompound tagCompound = stack.getTagCompound();
+            String tagSignature = tagCompound == null ? null : tagCompound.toString();
+            return new InsertedLineCacheKey(stack.getItem(), stack.getItemDamage(), tagSignature);
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (!(obj instanceof InsertedLineCacheKey)) {
+                return false;
+            }
+
+            InsertedLineCacheKey other = (InsertedLineCacheKey) obj;
+            if (item != other.item || itemDamage != other.itemDamage) {
+                return false;
+            }
+
+            if (tagSignature == null) {
+                return other.tagSignature == null;
+            }
+
+            return tagSignature.equals(other.tagSignature);
+        }
+
+        @Override
+        public int hashCode() {
+            return hashCode;
+        }
     }
 
     private static final class FormattingSpec {

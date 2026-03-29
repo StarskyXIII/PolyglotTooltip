@@ -23,13 +23,13 @@ import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.ChatComponentText;
+import net.minecraft.util.ChatComponentTranslation;
 import net.minecraft.util.EnumChatFormatting;
 
 import com.starskyxiii.polyglottooltip.Config;
 import com.starskyxiii.polyglottooltip.DisplayNameResolver;
-import com.starskyxiii.polyglottooltip.SecondaryTooltipUtil;
 import com.starskyxiii.polyglottooltip.SearchTextCollector;
+import com.starskyxiii.polyglottooltip.SecondaryTooltipUtil;
 
 public class DumpSecondaryNamesCommand extends CommandBase {
 
@@ -39,6 +39,9 @@ public class DumpSecondaryNamesCommand extends CommandBase {
     private static final String DUMP_FILE_EXTENSION = ".tsv";
     private static final SimpleDateFormat TIMESTAMP_FORMAT =
         new SimpleDateFormat("yyyyMMdd-HHmmss", Locale.ROOT);
+    private static final String MESSAGE_DUMP_STARTED = "command.polyglottooltip.dump.started";
+    private static final String MESSAGE_DUMP_FAILED = "command.polyglottooltip.dump.failed";
+    private static final String MESSAGE_DUMP_COMPLETE = "command.polyglottooltip.dump.complete";
 
     @Override
     public String getCommandName() {
@@ -67,17 +70,17 @@ public class DumpSecondaryNamesCommand extends CommandBase {
 
     @Override
     public void processCommand(ICommandSender sender, String[] args) {
+        PolyglotDumpChat.send(sender, EnumChatFormatting.YELLOW, MESSAGE_DUMP_STARTED);
+
         File outputFile;
         try {
             outputFile = dumpItems();
         } catch (Exception exception) {
-            PolyglotDumpChat.send(sender, EnumChatFormatting.RED + "Dump failed: " + exception.getMessage());
+            PolyglotDumpChat.send(sender, EnumChatFormatting.RED, MESSAGE_DUMP_FAILED, exception.getMessage());
             return;
         }
 
-        PolyglotDumpChat.send(
-            sender,
-            EnumChatFormatting.GREEN + "Dump complete: " + outputFile.getAbsolutePath());
+        PolyglotDumpChat.send(sender, EnumChatFormatting.GREEN, MESSAGE_DUMP_COMPLETE, outputFile.getAbsolutePath());
     }
 
     private File dumpItems() throws Exception {
@@ -392,9 +395,13 @@ public class DumpSecondaryNamesCommand extends CommandBase {
 
         private PolyglotDumpChat() {}
 
-        private static void send(ICommandSender sender, String message) {
+        private static void send(ICommandSender sender, EnumChatFormatting color, String translationKey, Object... args) {
             if (sender != null) {
-                sender.addChatMessage(new ChatComponentText(message));
+                ChatComponentTranslation message = new ChatComponentTranslation(translationKey, args);
+                if (color != null) {
+                    message.getChatStyle().setColor(color);
+                }
+                sender.addChatMessage(message);
             }
         }
     }

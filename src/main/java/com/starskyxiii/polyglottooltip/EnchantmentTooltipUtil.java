@@ -2,10 +2,8 @@ package com.starskyxiii.polyglottooltip;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import net.minecraft.enchantment.Enchantment;
@@ -17,8 +15,7 @@ import net.minecraft.util.EnumChatFormatting;
 
 public final class EnchantmentTooltipUtil {
 
-    private static final String ENCHANTMENT_SEPARATOR = "｜";
-
+    private static final String ENCHANTMENT_SEPARATOR = "|";
     private static final char SECTION_SIGN = '\u00A7';
 
     private EnchantmentTooltipUtil() {}
@@ -28,41 +25,51 @@ public final class EnchantmentTooltipUtil {
             return;
         }
 
-        Map<String, List<String>> secondaryNameMap = resolveSecondaryEnchantmentNames(stack);
-        if (secondaryNameMap.isEmpty()) {
+        List<EnchantmentEntry> enchantmentEntries = getEnchantmentEntries(stack);
+        if (enchantmentEntries.isEmpty()) {
+            return;
+        }
+
+        List<ResolvedEnchantmentLine> resolvedLines = resolveSecondaryEnchantmentLines(enchantmentEntries);
+        if (resolvedLines.isEmpty()) {
             return;
         }
 
         Set<String> existingNames = SecondaryTooltipUtil.collectExistingNames(tooltip);
-        for (int i = 0; i < tooltip.size(); i++) {
-            String line = tooltip.get(i);
-            String normalizedLine = normalizeTooltipEnchantmentLine(line);
-            List<String> secondaryNames = secondaryNameMap.get(normalizedLine);
-            if (secondaryNames == null || secondaryNames.isEmpty()) {
+        int searchStartIndex = 1;
+        boolean appendedAny = false;
+
+        for (ResolvedEnchantmentLine resolvedLine : resolvedLines) {
+            int primaryIndex = findTooltipLine(tooltip, resolvedLine.primaryText, searchStartIndex);
+            if (primaryIndex < 0) {
                 continue;
             }
 
-            List<String> filteredSecondaryNames = filterSecondaryNames(secondaryNames, existingNames, normalizedLine);
+            List<String> filteredSecondaryNames = filterSecondaryNames(
+                resolvedLine.secondaryTexts,
+                existingNames,
+                resolvedLine.primaryText);
             if (filteredSecondaryNames.isEmpty()) {
+                searchStartIndex = primaryIndex + 1;
                 continue;
             }
 
-            tooltip.set(i, appendSecondaryNames(line, filteredSecondaryNames));
+            tooltip.set(primaryIndex, appendSecondaryNames(tooltip.get(primaryIndex), filteredSecondaryNames));
+            searchStartIndex = primaryIndex + 1;
+            appendedAny = true;
         }
+
     }
 
-    private static Map<String, List<String>> resolveSecondaryEnchantmentNames(ItemStack stack) {
-        Map<String, List<String>> secondaryNameMap = new LinkedHashMap<String, List<String>>();
-        for (EnchantmentEntry entry : getEnchantmentEntries(stack)) {
+    private static List<ResolvedEnchantmentLine> resolveSecondaryEnchantmentLines(List<EnchantmentEntry> enchantmentEntries) {
+        List<ResolvedEnchantmentLine> resolvedLines = new ArrayList<ResolvedEnchantmentLine>();
+        for (EnchantmentEntry entry : enchantmentEntries) {
             ResolvedEnchantmentLine resolvedLine = resolveEnchantmentLine(entry);
             if (resolvedLine != null) {
-                String normalizedPrimaryText = normalizeTooltipEnchantmentLine(resolvedLine.primaryText);
-                if (!normalizedPrimaryText.isEmpty() && !secondaryNameMap.containsKey(normalizedPrimaryText)) {
-                    secondaryNameMap.put(normalizedPrimaryText, resolvedLine.secondaryTexts);
-                }
+                resolvedLines.add(resolvedLine);
             }
         }
-        return secondaryNameMap;
+        return resolvedLines;
     }
 
     private static List<String> filterSecondaryNames(Collection<String> secondaryNames, Set<String> existingNames,
@@ -84,7 +91,38 @@ public final class EnchantmentTooltipUtil {
         return filteredSecondaryNames;
     }
 
+    private static int findTooltipLine(List<String> tooltip, String primaryText, int startIndex) {
+        String normalizedPrimaryText = normalizeTooltipEnchantmentLine(primaryText);
+        if (normalizedPrimaryText.isEmpty()) {
+            return -1;
+        }
+
+        String compactPrimaryText = collapseWhitespace(normalizedPrimaryText);
+        for (int i = Math.max(0, startIndex); i < tooltip.size(); i++) {
+            String normalizedTooltipLine = normalizeTooltipEnchantmentLine(tooltip.get(i));
+            if (normalizedTooltipLine.isEmpty()) {
+                continue;
+            }
+
+            if (normalizedPrimaryText.equals(normalizedTooltipLine)) {
+                return i;
+            }
+
+            String compactTooltipLine = collapseWhitespace(normalizedTooltipLine);
+            if (compactPrimaryText.equals(compactTooltipLine) || compactTooltipLine.endsWith(compactPrimaryText)) {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
     private static String translateEnchantment(String languageCode, Enchantment enchantment, int level) {
+        String translatedName = LanguageCache.resolveEnchantmentTranslatedName(languageCode, enchantment, level);
+        if (translatedName != null && !translatedName.isEmpty()) {
+            return translatedName;
+        }
+
         String enchantmentName = LanguageCache.translate(languageCode, enchantment.getName());
         if (enchantmentName == null || enchantmentName.isEmpty()) {
             return null;
@@ -178,6 +216,14 @@ public final class EnchantmentTooltipUtil {
         }
 
         return stripLeadingTooltipDecorations(normalized).trim();
+    }
+
+    private static String collapseWhitespace(String text) {
+        if (text == null) {
+            return "";
+        }
+
+        return text.replace('\u3000', ' ').replaceAll("\\s+", " ").trim();
     }
 
     private static String stripLeadingTooltipDecorations(String text) {

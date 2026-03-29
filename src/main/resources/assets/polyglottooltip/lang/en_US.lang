@@ -11,3 +11,6 @@ secondaryNameColor=Secondary Name Color
 secondaryNameColor.tooltip=Color for inserted secondary name lines. Leave empty to inherit the primary name color. Supports names like gray or gold, and codes like 7, &7, or §7.
 enableChineseScriptMatching=Enable Chinese Script Matching
 enableChineseScriptMatching.tooltip=Treat Simplified and Traditional Chinese as interchangeable during search.
+command.polyglottooltip.dump.started=Dumping item names, this may freeze the game for a while...
+command.polyglottooltip.dump.failed=Dump failed: %s
+command.polyglottooltip.dump.complete=Dump complete: %s

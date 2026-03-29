@@ -11,3 +11,6 @@ secondaryNameColor=次要名称颜色
 secondaryNameColor.tooltip=插入的次要名称行颜色。留空时沿用主名称颜色。可使用 gray、gold 这类名称，或 7、&7、§7 这类代码。
 enableChineseScriptMatching=启用简繁中文互搜
 enableChineseScriptMatching.tooltip=搜索时将简体中文和繁体中文视为可互相匹配。
+command.polyglottooltip.dump.started=正在导出物品名称，游戏可能会暂时卡住...
+command.polyglottooltip.dump.failed=导出失败：%s
+command.polyglottooltip.dump.complete=导出完成：%s
