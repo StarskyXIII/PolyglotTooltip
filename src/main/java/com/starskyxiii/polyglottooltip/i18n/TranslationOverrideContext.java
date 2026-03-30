@@ -57,6 +57,8 @@ public final class TranslationOverrideContext {
             return translated;
         }
 
+        translated = applyNamedPlaceholders(translated, args);
+
         try {
             return String.format(translated, args);
         } catch (Exception ignored) {
@@ -72,5 +74,20 @@ public final class TranslationOverrideContext {
     private static Map<String, String> peek() {
         Deque<Map<String, String>> stack = TRANSLATIONS.get();
         return stack == null || stack.isEmpty() ? null : stack.peekLast();
+    }
+
+    private static String applyNamedPlaceholders(String translated, Object... args) {
+        if (translated == null || translated.isEmpty() || args == null || args.length == 0) {
+            return translated;
+        }
+
+        String resolved = translated;
+        Object firstArgument = args[0];
+        if (firstArgument != null) {
+            String replacement = String.valueOf(firstArgument);
+            resolved = resolved.replace("%material", replacement);
+        }
+
+        return resolved;
     }
 }

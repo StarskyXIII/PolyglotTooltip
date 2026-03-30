@@ -8,16 +8,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import net.minecraft.enchantment.Enchantment;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.IResourceManager;
+import net.minecraft.enchantment.Enchantment;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumChatFormatting;
 
 public final class LanguageCache {
 
     private static final Pattern FORMAT_PLACEHOLDER_PATTERN =
-        Pattern.compile("%(?:(\\d+)\\$)?[-#+ 0,(<]*\\d*(?:\\.\\d+)?[tT]?[a-zA-Z]");
+        Pattern.compile("%(?:(\\d+)\\$)?[-#+ 0,(<]*\\d*(?:\\.\\d+)?[tT]?[a-zA-Z](?![a-zA-Z])");
     private static final String ESCAPED_PERCENT_TOKEN = "\u0000";
 
     private static final Map<String, net.minecraft.client.resources.Locale> LOCALES =
@@ -28,6 +28,7 @@ public final class LanguageCache {
 
     public static synchronized void clear() {
         LOCALES.clear();
+        GregTechSupplementalTranslations.clear();
     }
 
     public static String translate(String languageCode, String key) {
@@ -251,6 +252,25 @@ public final class LanguageCache {
         return null;
     }
 
+    private static void supplementGregTechTranslations(
+        net.minecraft.client.resources.Locale locale, String languageCode) {
+        Map<String, String> source = GregTechSupplementalTranslations.getTranslations(languageCode);
+        if (source == null || source.isEmpty()) {
+            return;
+        }
+
+        Map<String, String> localeProperties = getLocaleProperties(locale);
+        if (localeProperties == null) {
+            return;
+        }
+
+        for (Map.Entry<String, String> entry : source.entrySet()) {
+            if (!localeProperties.containsKey(entry.getKey())) {
+                localeProperties.put(entry.getKey(), entry.getValue());
+            }
+        }
+    }
+
     private static synchronized net.minecraft.client.resources.Locale getLocale(String languageCode) {
         if (languageCode == null || languageCode.trim().isEmpty()) {
             return null;
@@ -281,9 +301,9 @@ public final class LanguageCache {
         }
 
         loadedLocale.loadLocaleDataFiles(resourceManager, languagesToLoad);
+        supplementGregTechTranslations(loadedLocale, languageCode);
 
         LOCALES.put(languageCode, loadedLocale);
         return loadedLocale;
     }
-
 }

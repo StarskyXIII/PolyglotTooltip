@@ -82,12 +82,17 @@ public final class DisplayNameResolver {
             return dynamicDisplayName;
         }
 
+        String itemDisplayName = LanguageCache.resolveItemDisplayName(languageCode, stack);
+        if (itemDisplayName != null && !itemDisplayName.isEmpty()) {
+            return itemDisplayName;
+        }
+
         String genericDisplayName = resolveGenericDisplayName(stack, languageCode);
         if (genericDisplayName != null && !genericDisplayName.isEmpty()) {
             return genericDisplayName;
         }
 
-        return LanguageCache.resolveItemDisplayName(languageCode, stack);
+        return null;
     }
 
     private static String resolveFacadeDisplayName(ItemStack stack, String languageCode, int depth) {
