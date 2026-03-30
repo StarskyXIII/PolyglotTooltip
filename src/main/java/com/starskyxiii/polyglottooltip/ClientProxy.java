@@ -2,9 +2,13 @@ package com.starskyxiii.polyglottooltip;
 
 import codechicken.nei.api.API;
 import com.starskyxiii.polyglottooltip.client.command.DumpSecondaryNamesCommand;
+import com.starskyxiii.polyglottooltip.client.command.RebuildSecondaryNameCacheCommand;
+import com.starskyxiii.polyglottooltip.name.prebuilt.AutoPrebuiltSecondaryNameBootstrap;
+import com.starskyxiii.polyglottooltip.name.prebuilt.PrebuiltSecondaryNameLoader;
 import com.starskyxiii.polyglottooltip.config.LanguageCacheReloadListener;
 import com.starskyxiii.polyglottooltip.integration.nei.NeiSearchProvider;
 import com.starskyxiii.polyglottooltip.tooltip.TooltipHandler;
+import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.Loader;
 import net.minecraft.client.Minecraft;
@@ -18,6 +22,9 @@ public class ClientProxy extends CommonProxy {
     private static boolean neiSearchProviderRegistered;
     private static boolean resourceReloadListenerRegistered;
     private static boolean dumpCommandRegistered;
+    private static boolean rebuildCommandRegistered;
+    private static boolean prebuiltCacheLoaded;
+    private static boolean autoPrebuiltBootstrapRegistered;
 
     @Override
     public void init(FMLInitializationEvent event) {
@@ -34,6 +41,18 @@ public class ClientProxy extends CommonProxy {
             ClientCommandHandler.instance.registerCommand(new DumpSecondaryNamesCommand());
             dumpCommandRegistered = true;
         }
+
+        if (!rebuildCommandRegistered) {
+            ClientCommandHandler.instance.registerCommand(new RebuildSecondaryNameCacheCommand());
+            rebuildCommandRegistered = true;
+        }
+
+        if (!prebuiltCacheLoaded) {
+            PrebuiltSecondaryNameLoader.tryLoad();
+            prebuiltCacheLoaded = true;
+        }
+
+        registerAutoPrebuiltBootstrap();
 
         if (Loader.isModLoaded("NotEnoughItems") && !neiSearchProviderRegistered) {
             API.addSearchProvider(new NeiSearchProvider());
@@ -58,5 +77,14 @@ public class ClientProxy extends CommonProxy {
             (IReloadableResourceManager) minecraft.getResourceManager();
         resourceManager.registerReloadListener(new LanguageCacheReloadListener());
         resourceReloadListenerRegistered = true;
+    }
+
+    private static void registerAutoPrebuiltBootstrap() {
+        if (autoPrebuiltBootstrapRegistered) {
+            return;
+        }
+
+        FMLCommonHandler.instance().bus().register(new AutoPrebuiltSecondaryNameBootstrap());
+        autoPrebuiltBootstrapRegistered = true;
     }
 }

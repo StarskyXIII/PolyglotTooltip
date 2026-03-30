@@ -7,8 +7,10 @@ import java.util.List;
 
 import com.starskyxiii.polyglottooltip.config.Config;
 import com.starskyxiii.polyglottooltip.i18n.LanguageCache;
+import com.starskyxiii.polyglottooltip.name.prebuilt.PrebuiltSecondaryNameCache;
 
 import net.minecraft.init.Items;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemPotion;
 import net.minecraft.item.ItemSkull;
 import net.minecraft.item.ItemStack;
@@ -97,6 +99,13 @@ public final class DisplayNameResolver {
             return genericDisplayName;
         }
 
+        // Last-resort fallback: prebuilt offline cache for ManaMetal items.
+        // Only consulted when all other resolvers fail, so it never overrides them.
+        String prebuiltName = resolveFromPrebuiltCache(stack, languageCode);
+        if (prebuiltName != null && !prebuiltName.isEmpty()) {
+            return prebuiltName;
+        }
+
         return null;
     }
 
@@ -182,6 +191,21 @@ public final class DisplayNameResolver {
         }
 
         return ManaMetalDisplayNameResolver.tryResolveDisplayName(stack, languageCode, depth);
+    }
+
+    private static String resolveFromPrebuiltCache(ItemStack stack, String languageCode) {
+        if (stack == null || stack.getItem() == null) {
+            return null;
+        }
+        Object registryNameObj = Item.itemRegistry.getNameForObject(stack.getItem());
+        if (registryNameObj == null) {
+            return null;
+        }
+        String registryName = String.valueOf(registryNameObj);
+        if (!registryName.startsWith("manametalmod:")) {
+            return null;
+        }
+        return PrebuiltSecondaryNameCache.lookup(registryName, stack.getItemDamage(), languageCode);
     }
 
     private static String getTranslationKey(ItemStack stack) {
