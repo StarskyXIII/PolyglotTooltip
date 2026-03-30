@@ -1,7 +1,6 @@
 package com.starskyxiii.polyglottooltip.i18n;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -10,9 +9,6 @@ import java.util.regex.Pattern;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.IResourceManager;
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.EnumChatFormatting;
 
 public final class LanguageCache {
 
@@ -23,12 +19,16 @@ public final class LanguageCache {
     private static final Map<String, net.minecraft.client.resources.Locale> LOCALES =
         new LinkedHashMap<String, net.minecraft.client.resources.Locale>();
     private static Field localePropertiesField;
+    private static final Map<String, String> CURRENT_LANGUAGE_VALUE_KEY_CACHE =
+        new LinkedHashMap<String, String>();
 
     private LanguageCache() {}
 
     public static synchronized void clear() {
         LOCALES.clear();
         GregTechSupplementalTranslations.clear();
+        ProgrammaticTranslationLookup.clear();
+        CURRENT_LANGUAGE_VALUE_KEY_CACHE.clear();
     }
 
     public static String translate(String languageCode, String key) {
@@ -64,133 +64,44 @@ public final class LanguageCache {
         }
 
         String translated = locale.formatMessage(key, args);
-        if (key.equals(translated)) {
-            return null;
+        if (!key.equals(translated) && !translated.startsWith("Format error:")) {
+            return translated.trim();
         }
 
-        if (translated.startsWith("Format error:")) {
+        String programmaticTranslation = ProgrammaticTranslationLookup.getRawTranslation(languageCode, key);
+        if (programmaticTranslation == null || programmaticTranslation.trim().isEmpty()) {
             return translate(languageCode, key);
         }
 
-        return translated.trim();
-    }
-
-    public static synchronized String resolveItemDisplayName(String languageCode, ItemStack stack) {
-        if (stack == null || stack.getItem() == null) {
-            return null;
-        }
-
-        net.minecraft.client.resources.Locale locale = getLocale(languageCode);
-        if (locale == null) {
-            return null;
-        }
-
-        Map<String, String> localeProperties = getLocaleProperties(locale);
-        if (localeProperties == null || localeProperties.isEmpty()) {
-            return null;
-        }
-
         try {
-            TranslationOverrideContext.push(localeProperties);
-            String displayName = invokeDisplayNameMethod(stack);
-            if (displayName == null) {
-                return null;
-            }
-
-            displayName = EnumChatFormatting.getTextWithoutFormattingCodes(displayName);
-            if (displayName == null) {
-                return null;
-            }
-
-            displayName = displayName.trim();
-            return displayName.isEmpty() ? null : displayName;
+            return String.format(programmaticTranslation, args).trim();
         } catch (Exception ignored) {
-            return null;
-        } finally {
-            TranslationOverrideContext.pop();
+            return programmaticTranslation.trim();
         }
     }
 
-    public static synchronized String resolveEnchantmentTranslatedName(String languageCode, Enchantment enchantment, int level) {
-        if (enchantment == null) {
-            return null;
-        }
-
-        net.minecraft.client.resources.Locale locale = getLocale(languageCode);
-        if (locale == null) {
-            return null;
-        }
-
-        Map<String, String> localeProperties = getLocaleProperties(locale);
-        if (localeProperties == null || localeProperties.isEmpty()) {
-            return null;
-        }
-
-        try {
-            TranslationOverrideContext.push(localeProperties);
-            String translatedName = enchantment.getTranslatedName(level);
-            if (translatedName == null) {
-                return null;
-            }
-
-            translatedName = EnumChatFormatting.getTextWithoutFormattingCodes(translatedName);
-            if (translatedName == null) {
-                return null;
-            }
-
-            translatedName = translatedName.trim();
-            return translatedName.isEmpty() ? null : translatedName;
-        } catch (Exception ignored) {
-            return null;
-        } finally {
-            TranslationOverrideContext.pop();
-        }
-    }
-
-    private static String invokeDisplayNameMethod(ItemStack stack) {
-        String displayName = invokeDisplayNameMethod(stack, "func_77653_i");
-        if (displayName != null && !displayName.trim().isEmpty()) {
-            return displayName;
-        }
-
-        return invokeDisplayNameMethod(stack, "getItemStackDisplayName");
-    }
-
-    private static String invokeDisplayNameMethod(ItemStack stack, String methodName) {
-        if (stack == null || stack.getItem() == null || methodName == null || methodName.isEmpty()) {
-            return null;
-        }
-
-        try {
-            Method method = stack.getItem().getClass().getMethod(methodName, ItemStack.class);
-            Object value = method.invoke(stack.getItem(), stack);
-            return value instanceof String ? (String) value : null;
-        } catch (Exception ignored) {
-            return null;
-        }
+    public static synchronized String findCurrentLanguageTranslationKey(String localizedValue, String requiredKeyPrefix) {
+        return findCurrentLanguageTranslationKey(localizedValue, requiredKeyPrefix, true);
     }
 
     private static String getRawTranslation(String languageCode, String key) {
         net.minecraft.client.resources.Locale locale = getLocale(languageCode);
-        if (locale == null) {
-            return null;
-        }
-
-        Map<String, String> properties = getLocaleProperties(locale);
-        if (properties != null) {
-            String rawTranslation = properties.get(key);
-            if (rawTranslation != null && !rawTranslation.trim().isEmpty()) {
-                return rawTranslation.trim();
+        if (locale != null) {
+            Map<String, String> properties = getLocaleProperties(locale);
+            if (properties != null) {
+                String rawTranslation = properties.get(key);
+                if (rawTranslation != null && !rawTranslation.trim().isEmpty()) {
+                    return rawTranslation.trim();
+                }
+            } else {
+                String translated = locale.formatMessage(key, new Object[0]);
+                if (!key.equals(translated) && !translated.startsWith("Format error:")) {
+                    return translated.trim();
+                }
             }
-            return null;
         }
 
-        String translated = locale.formatMessage(key, new Object[0]);
-        if (key.equals(translated) || translated.startsWith("Format error:")) {
-            return null;
-        }
-
-        return translated.trim();
+        return ProgrammaticTranslationLookup.getRawTranslation(languageCode, key);
     }
 
     private static String normalizeTranslation(String rawTranslation) {
@@ -305,5 +216,63 @@ public final class LanguageCache {
 
         LOCALES.put(languageCode, loadedLocale);
         return loadedLocale;
+    }
+
+    private static synchronized String findCurrentLanguageTranslationKey(String localizedValue, String requiredKeyPrefix,
+        boolean unused) {
+        if (localizedValue == null) {
+            return null;
+        }
+
+        String normalizedValue = localizedValue.trim();
+        if (normalizedValue.isEmpty()) {
+            return null;
+        }
+
+        String cacheKey = (requiredKeyPrefix == null ? "" : requiredKeyPrefix) + "\u0000" + normalizedValue;
+        if (CURRENT_LANGUAGE_VALUE_KEY_CACHE.containsKey(cacheKey)) {
+            return CURRENT_LANGUAGE_VALUE_KEY_CACHE.get(cacheKey);
+        }
+
+        String currentLanguageCode = getCurrentLanguageCode();
+        net.minecraft.client.resources.Locale currentLocale = getLocale(currentLanguageCode);
+        Map<String, String> currentProperties = currentLocale == null ? null : getLocaleProperties(currentLocale);
+        if (currentProperties == null || currentProperties.isEmpty()) {
+            CURRENT_LANGUAGE_VALUE_KEY_CACHE.put(cacheKey, null);
+            return null;
+        }
+
+        for (Map.Entry<String, String> entry : currentProperties.entrySet()) {
+            String key = entry.getKey();
+            String value = entry.getValue();
+            if (key == null || value == null) {
+                continue;
+            }
+            if (requiredKeyPrefix != null && !requiredKeyPrefix.isEmpty() && !key.startsWith(requiredKeyPrefix)) {
+                continue;
+            }
+            if (normalizedValue.equals(value.trim())) {
+                CURRENT_LANGUAGE_VALUE_KEY_CACHE.put(cacheKey, key);
+                return key;
+            }
+        }
+
+        CURRENT_LANGUAGE_VALUE_KEY_CACHE.put(cacheKey, null);
+        return null;
+    }
+
+    private static String getCurrentLanguageCode() {
+        try {
+            Minecraft minecraft = Minecraft.getMinecraft();
+            if (minecraft != null && minecraft.gameSettings != null && minecraft.gameSettings.language != null) {
+                String languageCode = minecraft.gameSettings.language.trim();
+                if (!languageCode.isEmpty()) {
+                    return languageCode;
+                }
+            }
+        } catch (Exception ignored) {
+        }
+
+        return "en_US";
     }
 }

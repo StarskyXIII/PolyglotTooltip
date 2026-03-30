@@ -52,7 +52,7 @@ final class ManaMetalDisplayNameResolver {
             return alchemyGemDisplayName;
         }
 
-        return LanguageCache.resolveItemDisplayName(languageCode, stack);
+        return DisplayNameResolver.resolveGenericDisplayNameForLanguage(stack, languageCode);
     }
 
     private static boolean isManaMetalItem(ItemStack stack) {

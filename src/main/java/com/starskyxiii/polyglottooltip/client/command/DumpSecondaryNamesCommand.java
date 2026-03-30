@@ -15,6 +15,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.command.CommandBase;
@@ -28,6 +30,7 @@ import net.minecraft.util.EnumChatFormatting;
 
 import com.starskyxiii.polyglottooltip.config.Config;
 import com.starskyxiii.polyglottooltip.name.DisplayNameResolver;
+import com.starskyxiii.polyglottooltip.name.GregTechDisplayNameDebugBridge;
 import com.starskyxiii.polyglottooltip.search.SearchTextCollector;
 import com.starskyxiii.polyglottooltip.tooltip.SecondaryTooltipUtil;
 
@@ -55,7 +58,7 @@ public class DumpSecondaryNamesCommand extends CommandBase {
 
     @Override
     public String getCommandUsage(ICommandSender sender) {
-        return "/polyglotdump";
+        return "/polyglotdump [modid]";
     }
 
     @Override
@@ -72,9 +75,11 @@ public class DumpSecondaryNamesCommand extends CommandBase {
     public void processCommand(ICommandSender sender, String[] args) {
         PolyglotDumpChat.send(sender, EnumChatFormatting.YELLOW, MESSAGE_DUMP_STARTED);
 
+        String modIdFilter;
         File outputFile;
         try {
-            outputFile = dumpItems();
+            modIdFilter = parseModIdFilter(args);
+            outputFile = dumpItems(modIdFilter);
         } catch (Exception exception) {
             PolyglotDumpChat.send(sender, EnumChatFormatting.RED, MESSAGE_DUMP_FAILED, exception.getMessage());
             return;
@@ -83,7 +88,17 @@ public class DumpSecondaryNamesCommand extends CommandBase {
         PolyglotDumpChat.send(sender, EnumChatFormatting.GREEN, MESSAGE_DUMP_COMPLETE, outputFile.getAbsolutePath());
     }
 
-    private File dumpItems() throws Exception {
+    @Override
+    public List addTabCompletionOptions(ICommandSender sender, String[] args) {
+        if (args == null || args.length != 1) {
+            return null;
+        }
+
+        List<String> knownModIds = collectKnownModIds();
+        return getListOfStringsMatchingLastWord(args, knownModIds.toArray(new String[knownModIds.size()]));
+    }
+
+    private File dumpItems(String modIdFilter) throws Exception {
         Minecraft minecraft = Minecraft.getMinecraft();
         File rootDirectory = minecraft != null ? minecraft.mcDataDir : new File(".");
         File dumpDirectory = new File(rootDirectory, DUMP_DIRECTORY_NAME);
@@ -93,9 +108,9 @@ public class DumpSecondaryNamesCommand extends CommandBase {
 
         File outputFile = new File(
             dumpDirectory,
-            DUMP_FILE_PREFIX + TIMESTAMP_FORMAT.format(new Date()) + DUMP_FILE_EXTENSION);
+            buildDumpFileName(modIdFilter));
 
-        List<ItemStack> stacks = collectItemStacks();
+        List<ItemStack> stacks = collectItemStacks(modIdFilter);
         Writer writer = null;
         try {
             writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outputFile), UTF8));
@@ -112,7 +127,16 @@ public class DumpSecondaryNamesCommand extends CommandBase {
         return outputFile;
     }
 
-    private List<ItemStack> collectItemStacks() {
+    private String buildDumpFileName(String modIdFilter) {
+        StringBuilder builder = new StringBuilder(DUMP_FILE_PREFIX);
+        if (modIdFilter != null && !modIdFilter.isEmpty()) {
+            builder.append(modIdFilter).append('-');
+        }
+        builder.append(TIMESTAMP_FORMAT.format(new Date())).append(DUMP_FILE_EXTENSION);
+        return builder.toString();
+    }
+
+    private List<ItemStack> collectItemStacks(String modIdFilter) {
         LinkedHashMap<DumpStackKey, ItemStack> collected = new LinkedHashMap<DumpStackKey, ItemStack>();
 
         for (Object registryEntry : Item.itemRegistry) {
@@ -121,10 +145,64 @@ public class DumpSecondaryNamesCommand extends CommandBase {
             }
 
             Item item = (Item) registryEntry;
+            if (!matchesModIdFilter(item, modIdFilter)) {
+                continue;
+            }
             collectItemStacks(item, collected);
         }
 
         return new ArrayList<ItemStack>(collected.values());
+    }
+
+    private String parseModIdFilter(String[] args) {
+        if (args == null || args.length == 0) {
+            return null;
+        }
+        if (args.length > 1) {
+            throw new IllegalArgumentException("Usage: " + getCommandUsage(null));
+        }
+
+        String rawFilter = args[0] == null ? "" : args[0].trim();
+        if (rawFilter.isEmpty()) {
+            return null;
+        }
+
+        return rawFilter.toLowerCase(Locale.ROOT);
+    }
+
+    private boolean matchesModIdFilter(Item item, String modIdFilter) {
+        if (item == null || modIdFilter == null || modIdFilter.isEmpty()) {
+            return true;
+        }
+
+        String registryName = safeRegistryName(item);
+        if (registryName.isEmpty()) {
+            return false;
+        }
+
+        int separatorIndex = registryName.indexOf(':');
+        if (separatorIndex <= 0) {
+            return false;
+        }
+
+        String modId = registryName.substring(0, separatorIndex).toLowerCase(Locale.ROOT);
+        return modIdFilter.equals(modId);
+    }
+
+    private List<String> collectKnownModIds() {
+        Set<String> modIds = new TreeSet<String>();
+        for (Object registryEntry : Item.itemRegistry) {
+            if (!(registryEntry instanceof Item)) {
+                continue;
+            }
+
+            String registryName = safeRegistryName((Item) registryEntry);
+            int separatorIndex = registryName.indexOf(':');
+            if (separatorIndex > 0) {
+                modIds.add(registryName.substring(0, separatorIndex));
+            }
+        }
+        return new ArrayList<String>(modIds);
     }
 
     private void collectItemStacks(Item item, Map<DumpStackKey, ItemStack> collected) {
@@ -178,9 +256,12 @@ public class DumpSecondaryNamesCommand extends CommandBase {
         header.add("would_insert_secondary_name");
         header.add("inserted_secondary_lines");
         header.add("searchable_names");
+        header.add("oredict_names");
 
         for (String languageCode : Config.displayLanguages) {
             header.add("resolved_" + sanitizeColumnName(languageCode));
+            header.add("gregtech_debug_" + sanitizeColumnName(languageCode));
+            header.add("material_debug_" + sanitizeColumnName(languageCode));
         }
 
         writeLine(writer, header);
@@ -204,9 +285,12 @@ public class DumpSecondaryNamesCommand extends CommandBase {
         row.add(Boolean.toString(!insertedSecondaryLines.isEmpty()));
         row.add(join(insertedSecondaryLines));
         row.add(join(searchableNames));
+        row.add(join(safeResolveOreDictionaryNames(stack)));
 
         for (String languageCode : Config.displayLanguages) {
             row.add(safeResolveSecondaryName(stack, languageCode));
+            row.add(safeResolveGregTechDebug(stack, languageCode));
+            row.add(safeResolveGregTechMaterialDebug(stack, languageCode));
         }
 
         writeLine(writer, row);
@@ -231,6 +315,32 @@ public class DumpSecondaryNamesCommand extends CommandBase {
         return "";
     }
 
+    private String safeResolveGregTechDebug(ItemStack stack, String languageCode) {
+        try {
+            String debug = GregTechDisplayNameDebugBridge.describe(stack, languageCode);
+            return debug == null ? "" : debug;
+        } catch (Throwable ignored) {
+            return "";
+        }
+    }
+
+    private String safeResolveGregTechMaterialDebug(ItemStack stack, String languageCode) {
+        try {
+            String debug = GregTechDisplayNameDebugBridge.describeMaterial(stack, languageCode);
+            return debug == null ? "" : debug;
+        } catch (Throwable ignored) {
+            return "";
+        }
+    }
+
+    private List<String> safeResolveOreDictionaryNames(ItemStack stack) {
+        try {
+            return GregTechDisplayNameDebugBridge.collectOreDictionaryNames(stack);
+        } catch (Throwable ignored) {
+            return new ArrayList<String>();
+        }
+    }
+
     private List<String> resolveInsertedSecondaryLines(ItemStack stack, String primaryDisplayName) {
         ArrayList<String> tooltip = new ArrayList<String>();
         tooltip.add(primaryDisplayName);
@@ -253,8 +363,16 @@ public class DumpSecondaryNamesCommand extends CommandBase {
             return "";
         }
 
+        return safeRegistryName(stack.getItem());
+    }
+
+    private String safeRegistryName(Item item) {
+        if (item == null) {
+            return "";
+        }
+
         try {
-            Object name = Item.itemRegistry.getNameForObject(stack.getItem());
+            Object name = Item.itemRegistry.getNameForObject(item);
             return name == null ? "" : String.valueOf(name);
         } catch (Throwable ignored) {
             return "";

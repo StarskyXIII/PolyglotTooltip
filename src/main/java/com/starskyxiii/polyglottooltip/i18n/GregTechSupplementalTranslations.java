@@ -110,13 +110,11 @@ final class GregTechSupplementalTranslations {
             return new File("");
         }
 
-        if ("en_US".equalsIgnoreCase(languageCode)) {
-            File rootDefaultFile = new File(minecraftDir, "GregTech.lang");
-            if (rootDefaultFile.isFile()) {
-                return rootDefaultFile;
+        if (isEnglishLanguage(languageCode)) {
+            File englishFallbackFile = resolveEnglishFallbackFile(minecraftDir);
+            if ("en_US".equalsIgnoreCase(languageCode) || !hasLanguageSpecificFile(minecraftDir, languageCode)) {
+                return englishFallbackFile;
             }
-
-            return new File(new File(minecraftDir, "config"), "GregTech.lang");
         }
 
         File rootFile = new File(minecraftDir, "GregTech_" + languageCode + ".lang");
@@ -125,6 +123,39 @@ final class GregTechSupplementalTranslations {
         }
 
         return new File(new File(minecraftDir, "config"), "GregTech_" + languageCode + ".lang");
+    }
+
+    private static boolean isEnglishLanguage(String languageCode) {
+        if (languageCode == null) {
+            return false;
+        }
+
+        String normalized = normalizeLanguageCode(languageCode);
+        return normalized != null
+            && ("en".equalsIgnoreCase(normalized) || normalized.toLowerCase(Locale.ROOT).startsWith("en_"));
+    }
+
+    private static boolean hasLanguageSpecificFile(File minecraftDir, String languageCode) {
+        if (minecraftDir == null || languageCode == null || languageCode.isEmpty()) {
+            return false;
+        }
+
+        File rootFile = new File(minecraftDir, "GregTech_" + languageCode + ".lang");
+        if (rootFile.isFile()) {
+            return true;
+        }
+
+        File configFile = new File(new File(minecraftDir, "config"), "GregTech_" + languageCode + ".lang");
+        return configFile.isFile();
+    }
+
+    private static File resolveEnglishFallbackFile(File minecraftDir) {
+        File rootDefaultFile = new File(minecraftDir, "GregTech.lang");
+        if (rootDefaultFile.isFile()) {
+            return rootDefaultFile;
+        }
+
+        return new File(new File(minecraftDir, "config"), "GregTech.lang");
     }
 
     private static String normalizeLanguageCode(String languageCode) {

@@ -68,6 +68,16 @@ public final class DisplayNameResolver {
             return resolvePotionDisplayName(stack, languageCode);
         }
 
+        String gregTechDisplayName = GregTechDisplayNameResolver.tryResolveDisplayName(stack, languageCode);
+        if (gregTechDisplayName != null && !gregTechDisplayName.isEmpty()) {
+            return gregTechDisplayName;
+        }
+
+        String gtPlusPlusDisplayName = GtPlusPlusDisplayNameResolver.tryResolveDisplayName(stack, languageCode);
+        if (gtPlusPlusDisplayName != null && !gtPlusPlusDisplayName.isEmpty()) {
+            return gtPlusPlusDisplayName;
+        }
+
         String spawnEggDisplayName = SpawnEggResolver.tryResolveDisplayName(stack, languageCode);
         if (spawnEggDisplayName != null && !spawnEggDisplayName.isEmpty()) {
             return spawnEggDisplayName;
@@ -80,11 +90,6 @@ public final class DisplayNameResolver {
         String dynamicDisplayName = resolveDynamicDisplayName(stack, languageCode, depth);
         if (dynamicDisplayName != null && !dynamicDisplayName.isEmpty()) {
             return dynamicDisplayName;
-        }
-
-        String itemDisplayName = LanguageCache.resolveItemDisplayName(languageCode, stack);
-        if (itemDisplayName != null && !itemDisplayName.isEmpty()) {
-            return itemDisplayName;
         }
 
         String genericDisplayName = resolveGenericDisplayName(stack, languageCode);
@@ -202,7 +207,7 @@ public final class DisplayNameResolver {
             return null;
         }
 
-        return LanguageCache.resolveItemDisplayName(languageCode, stack);
+        return resolveGenericDisplayName(stack, languageCode);
     }
 
     private static boolean isAe2MultiPart(ItemStack stack) {

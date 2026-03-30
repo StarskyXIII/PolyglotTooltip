@@ -149,11 +149,6 @@ public final class EnchantmentTooltipUtil {
     }
 
     private static String translateEnchantment(String languageCode, Enchantment enchantment, int level) {
-        String translatedName = LanguageCache.resolveEnchantmentTranslatedName(languageCode, enchantment, level);
-        if (translatedName != null && !translatedName.isEmpty()) {
-            return translatedName;
-        }
-
         String enchantmentName = LanguageCache.translate(languageCode, enchantment.getName());
         if (enchantmentName == null || enchantmentName.isEmpty()) {
             return null;
