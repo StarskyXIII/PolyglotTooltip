@@ -7,6 +7,7 @@ import java.util.List;
 
 import com.starskyxiii.polyglottooltip.config.Config;
 import com.starskyxiii.polyglottooltip.i18n.LanguageCache;
+import com.starskyxiii.polyglottooltip.name.prebuilt.FullNameCache;
 import com.starskyxiii.polyglottooltip.name.prebuilt.PrebuiltSecondaryNameCache;
 
 import net.minecraft.init.Items;
@@ -59,6 +60,15 @@ public final class DisplayNameResolver {
     private static String resolveDisplayName(ItemStack stack, String languageCode, int depth) {
         if (stack == null || stack.getItem() == null || depth > MAX_RESOLVE_DEPTH) {
             return null;
+        }
+
+        // Fast path: check the full prebuilt cache first (populated by /polyglotbuild).
+        // Only at depth 0 to avoid incorrectly short-circuiting recursive calls (e.g. AE2 facades).
+        if (depth == 0) {
+            String cachedName = resolveFromFullCache(stack, languageCode);
+            if (cachedName != null && !cachedName.isEmpty()) {
+                return cachedName;
+            }
         }
 
         String facadeDisplayName = resolveFacadeDisplayName(stack, languageCode, depth);
@@ -191,6 +201,14 @@ public final class DisplayNameResolver {
         }
 
         return ManaMetalDisplayNameResolver.tryResolveDisplayName(stack, languageCode, depth);
+    }
+
+    private static String resolveFromFullCache(ItemStack stack, String languageCode) {
+        if (FullNameCache.isEmpty()) return null;
+        if (stack == null || stack.getItem() == null) return null;
+        Object registryNameObj = Item.itemRegistry.getNameForObject(stack.getItem());
+        if (registryNameObj == null) return null;
+        return FullNameCache.lookup(String.valueOf(registryNameObj), stack.getItemDamage(), languageCode);
     }
 
     private static String resolveFromPrebuiltCache(ItemStack stack, String languageCode) {
