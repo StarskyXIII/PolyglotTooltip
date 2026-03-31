@@ -3,11 +3,8 @@ package com.starskyxiii.polyglottooltip;
 import codechicken.nei.api.API;
 import com.starskyxiii.polyglottooltip.client.command.BuildNameCacheCommand;
 import com.starskyxiii.polyglottooltip.client.command.DumpSecondaryNamesCommand;
-import com.starskyxiii.polyglottooltip.client.command.RebuildSecondaryNameCacheCommand;
 import com.starskyxiii.polyglottooltip.name.prebuilt.AutoFullNameCacheBootstrap;
-import com.starskyxiii.polyglottooltip.name.prebuilt.AutoPrebuiltSecondaryNameBootstrap;
 import com.starskyxiii.polyglottooltip.name.prebuilt.FullNameCacheIO;
-import com.starskyxiii.polyglottooltip.name.prebuilt.PrebuiltSecondaryNameLoader;
 import com.starskyxiii.polyglottooltip.config.LanguageCacheReloadListener;
 import com.starskyxiii.polyglottooltip.integration.nei.NeiSearchProvider;
 import com.starskyxiii.polyglottooltip.tooltip.TooltipHandler;
@@ -26,11 +23,8 @@ public class ClientProxy extends CommonProxy {
     private static boolean neiSearchProviderRegistered;
     private static boolean resourceReloadListenerRegistered;
     private static boolean dumpCommandRegistered;
-    private static boolean rebuildCommandRegistered;
     private static boolean buildCacheCommandRegistered;
-    private static boolean prebuiltCacheLoaded;
     private static boolean fullCacheLoaded;
-    private static boolean autoPrebuiltBootstrapRegistered;
     private static boolean autoFullCacheBootstrapRegistered;
     private static AutoFullNameCacheBootstrap autoFullCacheBootstrap;
 
@@ -50,19 +44,9 @@ public class ClientProxy extends CommonProxy {
             dumpCommandRegistered = true;
         }
 
-        if (!rebuildCommandRegistered) {
-            ClientCommandHandler.instance.registerCommand(new RebuildSecondaryNameCacheCommand());
-            rebuildCommandRegistered = true;
-        }
-
         if (!buildCacheCommandRegistered) {
             ClientCommandHandler.instance.registerCommand(new BuildNameCacheCommand());
             buildCacheCommandRegistered = true;
-        }
-
-        if (!prebuiltCacheLoaded) {
-            PrebuiltSecondaryNameLoader.tryLoad();
-            prebuiltCacheLoaded = true;
         }
 
         if (!fullCacheLoaded) {
@@ -70,7 +54,6 @@ public class ClientProxy extends CommonProxy {
             fullCacheLoaded = true;
         }
 
-        registerAutoPrebuiltBootstrap();
         registerAutoFullCacheBootstrap();
 
         if (Loader.isModLoaded("NotEnoughItems") && !neiSearchProviderRegistered) {
@@ -96,15 +79,6 @@ public class ClientProxy extends CommonProxy {
             (IReloadableResourceManager) minecraft.getResourceManager();
         resourceManager.registerReloadListener(new LanguageCacheReloadListener());
         resourceReloadListenerRegistered = true;
-    }
-
-    private static void registerAutoPrebuiltBootstrap() {
-        if (autoPrebuiltBootstrapRegistered) {
-            return;
-        }
-
-        FMLCommonHandler.instance().bus().register(new AutoPrebuiltSecondaryNameBootstrap());
-        autoPrebuiltBootstrapRegistered = true;
     }
 
     @Override

@@ -36,10 +36,16 @@ public final class BuildReportWriter {
 
     private BuildReportWriter() {}
 
-    public static File getReportDir() {
+    public static File getReportDir(String scanFilter) {
         Minecraft mc = Minecraft.getMinecraft();
         File root = mc != null ? mc.mcDataDir : new File(".");
-        return new File(root, REPORT_DIR);
+        File base = new File(root, REPORT_DIR);
+        if (scanFilter == null || scanFilter.isEmpty() || "all".equals(scanFilter)) {
+            return base;
+        }
+        // normalizeFilter() appends ":" to use as a registry prefix — strip it for directory name.
+        String dirName = scanFilter.endsWith(":") ? scanFilter.substring(0, scanFilter.length() - 1) : scanFilter;
+        return new File(base, dirName);
     }
 
     // -------------------------------------------------------------------------
@@ -48,7 +54,7 @@ public final class BuildReportWriter {
 
     public static void write(BuildResult result,
             Map<PrebuiltSecondaryNameIndexKey, Map<String, String>> data) throws Exception {
-        File dir = getReportDir();
+        File dir = getReportDir(result.scanFilter);
         if (!dir.exists() && !dir.mkdirs()) {
             throw new IllegalStateException("Cannot create report dir: " + dir.getAbsolutePath());
         }

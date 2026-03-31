@@ -1,7 +1,6 @@
 package com.starskyxiii.polyglottooltip.name;
 
 import java.lang.reflect.Field;
-import java.util.List;
 
 import com.starskyxiii.polyglottooltip.i18n.LanguageCache;
 
@@ -19,6 +18,21 @@ final class ManaMetalDisplayNameResolver {
         "project.studio.manametalmod.magic.magicItem.MagicItemMedalFX";
     private static final String[] ARMOR_PART_TRANSLATION_KEYS = new String[]{
         "IASPT.0", "IASPT.1", "IASPT.2", "IASPT.3"
+    };
+
+    /**
+     * English key suffixes for AlchemyGem gem types, indexed by gemIndex (itemDamage / 9).
+     * Used to construct the lang key {@code "item.gem<Name>.name"} regardless of what language
+     * the {@code OKingot} field was initialised in. The field stores a runtime-translated name
+     * (e.g. "钻石" in a Chinese-language game), which cannot be used as a lang key suffix.
+     * Order matches the OKingot list order as observed from in-game item variants.
+     */
+    private static final String[] ALCHEMY_GEM_KEYS = {
+        "Diamond", "Emerald", "Nether Quartz", "Lapis Lazuli", "Amber",
+        "Amethyst", "Aquamarine", "Citrine", "Iolite", "Garnet",
+        "Jade", "Moonstone", "Opal", "Ruby", "Sapphire",
+        "Spinel", "Sunstone", "Tanzanite", "Tourmaline", "Zircon",
+        "Chrysoberyl", "Turquoise", "Agate", "Jet", "Tiger's Eye",
     };
 
     private ManaMetalDisplayNameResolver() {}
@@ -152,31 +166,16 @@ final class ManaMetalDisplayNameResolver {
         return null;
     }
 
-    private static String tryResolveAlchemyGemDisplayName(ItemStack stack, String languageCode) {
+    static String tryResolveAlchemyGemDisplayName(ItemStack stack, String languageCode) {
         if (stack == null
             || stack.getItem() == null
             || !ITEM_ALCHEMY_GEM_CLASS_NAME.equals(stack.getItem().getClass().getName())) {
             return null;
         }
 
-        List<?> gemNames = getListField(stack.getItem(), "OKingot");
-        if (gemNames == null || gemNames.isEmpty()) {
-            return null;
-        }
-
         int itemDamage = stack.getItemDamage();
         int gemIndex = itemDamage <= 0 ? 0 : itemDamage / 9;
-        if (gemIndex < 0 || gemIndex >= gemNames.size()) {
-            return null;
-        }
-
-        Object gemNameValue = gemNames.get(gemIndex);
-        if (!(gemNameValue instanceof String)) {
-            return null;
-        }
-
-        String gemName = ((String) gemNameValue).trim();
-        if (gemName.isEmpty()) {
+        if (gemIndex < 0 || gemIndex >= ALCHEMY_GEM_KEYS.length) {
             return null;
         }
 
@@ -186,12 +185,24 @@ final class ManaMetalDisplayNameResolver {
         }
 
         String qualityName = LanguageCache.translate(languageCode, "AlchemyGem.type." + qualityIndex);
-        String baseName = LanguageCache.translate(languageCode, "item.gem" + gemName + ".name");
-        if (qualityName == null || qualityName.isEmpty() || baseName == null || baseName.isEmpty()) {
+        if (qualityName == null || qualityName.isEmpty()) {
             return null;
         }
 
-        return qualityName + baseName;
+        // OKingot stores a runtime-translated gem name (e.g. "钻石" in Chinese), so it cannot
+        // be used directly as a lang-key suffix. Use the stable English name from ALCHEMY_GEM_KEYS
+        // to construct the key, then fall back to the English name itself for en_US if the key
+        // is absent from the lang file.
+        String gemKeyBase = ALCHEMY_GEM_KEYS[gemIndex];
+        String baseName = LanguageCache.translate(languageCode, "item.gem" + gemKeyBase + ".name");
+        if (baseName == null || baseName.isEmpty()) {
+            if (!"en_US".equalsIgnoreCase(languageCode)) {
+                return null;
+            }
+            baseName = gemKeyBase;
+        }
+
+        return qualityName + " " + baseName;
     }
 
     private static int getArmorPart(Object item) {
@@ -249,20 +260,6 @@ final class ManaMetalDisplayNameResolver {
         try {
             Object value = field.get(target);
             return value instanceof String ? (String) value : null;
-        } catch (IllegalAccessException ignored) {
-            return null;
-        }
-    }
-
-    private static List<?> getListField(Object target, String fieldName) {
-        Field field = findField(target, fieldName);
-        if (field == null) {
-            return null;
-        }
-
-        try {
-            Object value = field.get(target);
-            return value instanceof List ? (List<?>) value : null;
         } catch (IllegalAccessException ignored) {
             return null;
         }

@@ -8,7 +8,6 @@ import java.util.List;
 import com.starskyxiii.polyglottooltip.config.Config;
 import com.starskyxiii.polyglottooltip.i18n.LanguageCache;
 import com.starskyxiii.polyglottooltip.name.prebuilt.FullNameCache;
-import com.starskyxiii.polyglottooltip.name.prebuilt.PrebuiltSecondaryNameCache;
 
 import net.minecraft.init.Items;
 import net.minecraft.item.Item;
@@ -62,6 +61,43 @@ public final class DisplayNameResolver {
             return null;
         }
 
+        // Mods that bake translated strings at class-init time (before any language switch):
+        // their getDisplayName() always returns the startup language (e.g. zh_CN) regardless
+        // of what language is requested. Resolve these before the cache, which would contain
+        // stale startup-language names.
+        if (depth == 0) {
+            // TConstruct modular tools: full-name-cache keys on (registry, damage) but all
+            // TConstruct tools have damage=0 regardless of material — getSubItems() collapses
+            // all variants to the same cache key. Read material from InfiTool.Head NBT instead.
+            String tconstructDisplayName = TinkerConstructDisplayNameResolver.tryResolveDisplayName(stack, languageCode);
+            if (tconstructDisplayName != null && !tconstructDisplayName.isEmpty()) {
+                return tconstructDisplayName;
+            }
+
+            // ElectriCraft: ore names stored in ElectriOres.oreName at init time.
+            String electriDisplayName = ElectriCraftDisplayNameResolver.tryResolveDisplayName(stack, languageCode);
+            if (electriDisplayName != null && !electriDisplayName.isEmpty()) {
+                return electriDisplayName;
+            }
+
+            // ReactorCraft: ore/crafting names stored in ReactorOres.oreName and
+            // CraftingItems.itemName at init time.
+            String reactorDisplayName = ReactorCraftDisplayNameResolver.tryResolveDisplayName(stack, languageCode);
+            if (reactorDisplayName != null && !reactorDisplayName.isEmpty()) {
+                return reactorDisplayName;
+            }
+
+            // ManaMetal AlchemyGem: OKingot stores a runtime-translated gem name (e.g. "钻石")
+            // so the full cache contains mixed-language entries like "Shattered钻石". The
+            // dedicated resolver now uses hardcoded English key suffixes and is correct here.
+            // Other ManaMetal items (e.g. ItemPetEggs1) use the normal chain below so the
+            // full cache can still serve intentionally mixed names like "大黑塔Pet Egg".
+            String alchemyGemDisplayName = ManaMetalDisplayNameResolver.tryResolveAlchemyGemDisplayName(stack, languageCode);
+            if (alchemyGemDisplayName != null && !alchemyGemDisplayName.isEmpty()) {
+                return alchemyGemDisplayName;
+            }
+        }
+
         // Fast path: check the full prebuilt cache first (populated by /polyglotbuild).
         // Only at depth 0 to avoid incorrectly short-circuiting recursive calls (e.g. AE2 facades).
         if (depth == 0) {
@@ -107,13 +143,6 @@ public final class DisplayNameResolver {
         String genericDisplayName = resolveGenericDisplayName(stack, languageCode);
         if (genericDisplayName != null && !genericDisplayName.isEmpty()) {
             return genericDisplayName;
-        }
-
-        // Last-resort fallback: prebuilt offline cache for ManaMetal items.
-        // Only consulted when all other resolvers fail, so it never overrides them.
-        String prebuiltName = resolveFromPrebuiltCache(stack, languageCode);
-        if (prebuiltName != null && !prebuiltName.isEmpty()) {
-            return prebuiltName;
         }
 
         return null;
@@ -209,21 +238,6 @@ public final class DisplayNameResolver {
         Object registryNameObj = Item.itemRegistry.getNameForObject(stack.getItem());
         if (registryNameObj == null) return null;
         return FullNameCache.lookup(String.valueOf(registryNameObj), stack.getItemDamage(), languageCode);
-    }
-
-    private static String resolveFromPrebuiltCache(ItemStack stack, String languageCode) {
-        if (stack == null || stack.getItem() == null) {
-            return null;
-        }
-        Object registryNameObj = Item.itemRegistry.getNameForObject(stack.getItem());
-        if (registryNameObj == null) {
-            return null;
-        }
-        String registryName = String.valueOf(registryNameObj);
-        if (!registryName.startsWith("manametalmod:")) {
-            return null;
-        }
-        return PrebuiltSecondaryNameCache.lookup(registryName, stack.getItemDamage(), languageCode);
     }
 
     private static String getTranslationKey(ItemStack stack) {

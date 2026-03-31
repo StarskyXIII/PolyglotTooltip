@@ -28,8 +28,9 @@ import com.starskyxiii.polyglottooltip.report.NameQualityClassifier;
  * DisplayNameResolver chain, then writing results to FullNameCache + disk.
  *
  * Scan filter:
- *   null / "" / "all" → all mods
+ *   null / "" / "all" → all mods (replaces entire cache)
  *   "manametalmod"    → only items whose registry name starts with "manametalmod:"
+ *                       (new results merged into existing cache, other mods preserved)
  *
  * Two usage modes:
  *
@@ -198,12 +199,23 @@ public final class FullNameCacheBuilder {
     /**
      * Phase 3: write the accumulated results to disk and update the in-memory cache.
      *
+     * When a mod filter was applied (filter != "all"), the new results are merged into
+     * the previous cache so other mods' entries are preserved on disk.
+     *
      * @throws Exception on fatal I/O error (cache was not written)
      */
     public static BuildResult finishBuild(PendingBuild pending) throws Exception {
         long writeStart = System.currentTimeMillis();
-        FullNameCacheIO.write(pending.collected);
-        FullNameCache.replace(pending.collected);
+        Map<PrebuiltSecondaryNameIndexKey, Map<String, String>> dataToWrite;
+        if ("all".equals(pending.filter)) {
+            dataToWrite = pending.collected;
+        } else {
+            // Merge: preserve existing entries for other mods, override with new results.
+            dataToWrite = new LinkedHashMap<PrebuiltSecondaryNameIndexKey, Map<String, String>>(pending.previousCache);
+            dataToWrite.putAll(pending.collected);
+        }
+        FullNameCacheIO.write(dataToWrite);
+        FullNameCache.replace(dataToWrite);
         long writeMs = System.currentTimeMillis() - writeStart;
         PolyglotTooltip.LOG.info("[PolyglotTooltips] Cache written ({}ms).", writeMs);
 
