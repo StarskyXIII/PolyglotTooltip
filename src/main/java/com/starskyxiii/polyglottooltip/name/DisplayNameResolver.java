@@ -74,6 +74,13 @@ public final class DisplayNameResolver {
                 return tconstructDisplayName;
             }
 
+            // Thaumcraft wands: same NBT-keyed-variant problem — many cap+rod combinations share
+            // the same (registry, damage) cache key. Read cap/rod tags from NBT directly.
+            String thaumcraftDisplayName = ThaumcraftDisplayNameResolver.tryResolveDisplayName(stack, languageCode);
+            if (thaumcraftDisplayName != null && !thaumcraftDisplayName.isEmpty()) {
+                return thaumcraftDisplayName;
+            }
+
             // ElectriCraft: ore names stored in ElectriOres.oreName at init time.
             String electriDisplayName = ElectriCraftDisplayNameResolver.tryResolveDisplayName(stack, languageCode);
             if (electriDisplayName != null && !electriDisplayName.isEmpty()) {
