@@ -11,5 +11,7 @@
   "polyglottooltip.configuration.tooltipSecondaryNameFormat": "Tooltip Secondary Name Format",
   "polyglottooltip.configuration.tooltipSecondaryNameFormat.tooltip": "Legacy format codes for secondary-language names in normal tooltips, such as &7 or &7&l.",
   "polyglottooltip.configuration.jadeSecondaryNameFormat": "Jade Secondary Name Format",
-  "polyglottooltip.configuration.jadeSecondaryNameFormat.tooltip": "Legacy format codes for secondary-language names in Jade, such as &7 or &7&l."
+  "polyglottooltip.configuration.jadeSecondaryNameFormat.tooltip": "Legacy format codes for secondary-language names in Jade, such as &7 or &7&l.",
+  "config.jade.plugin_polyglottooltip.jade_block_name": "Block Secondary Names",
+  "config.jade.plugin_polyglottooltip.jade_entity_name": "Entity Secondary Names"
 }
