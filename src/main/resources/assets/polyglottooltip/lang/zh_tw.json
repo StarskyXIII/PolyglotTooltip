@@ -11,5 +11,7 @@
   "polyglottooltip.configuration.tooltipSecondaryNameFormat": "工具提示次要名稱格式",
   "polyglottooltip.configuration.tooltipSecondaryNameFormat.tooltip": "一般工具提示中，次要語言名稱使用的格式碼，例如 &7 或 &7&l。",
   "polyglottooltip.configuration.jadeSecondaryNameFormat": "Jade 次要名稱格式",
-  "polyglottooltip.configuration.jadeSecondaryNameFormat.tooltip": "Jade 中，次要語言名稱使用的格式碼，例如 &7 或 &7&l。"
+  "polyglottooltip.configuration.jadeSecondaryNameFormat.tooltip": "Jade 中，次要語言名稱使用的格式碼，例如 &7 或 &7&l。",
+  "config.jade.plugin_polyglottooltip.jade_block_name": "方塊次要語言名稱",
+  "config.jade.plugin_polyglottooltip.jade_entity_name": "實體次要語言名稱"
 }
