@@ -7,5 +7,9 @@
   "polyglottooltip.configuration.alwaysShow": "始終顯示",
   "polyglottooltip.configuration.alwaysShow.tooltip": "即使次要語言與目前的遊戲語言相同，仍然顯示。",
   "polyglottooltip.configuration.enableChineseScriptMatching": "簡繁互搜",
-  "polyglottooltip.configuration.enableChineseScriptMatching.tooltip": "讓搜尋可同時比對簡體字與繁體字。"
+  "polyglottooltip.configuration.enableChineseScriptMatching.tooltip": "讓搜尋可同時比對簡體字與繁體字。",
+  "polyglottooltip.configuration.tooltipSecondaryNameFormat": "工具提示次要名稱格式",
+  "polyglottooltip.configuration.tooltipSecondaryNameFormat.tooltip": "一般工具提示中，次要語言名稱使用的格式碼，例如 &7 或 &7&l。",
+  "polyglottooltip.configuration.jadeSecondaryNameFormat": "Jade 次要名稱格式",
+  "polyglottooltip.configuration.jadeSecondaryNameFormat.tooltip": "Jade 中，次要語言名稱使用的格式碼，例如 &7 或 &7&l。"
 }

@@ -1,6 +1,5 @@
 package com.starskyxiii.polyglottooltip;
 
-import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
@@ -23,7 +22,7 @@ public final class SecondaryTooltipUtil {
     }
 
     /**
-     * Inserts one gray secondary-name line per configured language that produces
+     * Inserts one secondary-name line per configured language that produces
      * a name different from the primary, directly below the item name.
      */
     public static void insertSecondaryName(List<Component> tooltip, ItemStack stack) {
@@ -36,7 +35,7 @@ public final class SecondaryTooltipUtil {
     }
 
     /**
-     * Inserts one gray secondary-name line per configured language for the given
+     * Inserts one secondary-name line per configured language for the given
      * component (used for non-ItemStack sources such as fluid tooltips).
      */
     public static void insertSecondaryName(List<Component> tooltip, Component sourceName) {
@@ -83,8 +82,7 @@ public final class SecondaryTooltipUtil {
     }
 
     private static Component createSecondaryLine(String secondary) {
-        return Component.literal(secondary)
-                .withStyle(s -> s.withColor(ChatFormatting.GRAY));
+        return Component.literal(secondary).withStyle(LegacyFormatStyleUtil.tooltipSecondaryNameStyle());
     }
 
     private static void removeLine(List<Component> tooltip, String text) {

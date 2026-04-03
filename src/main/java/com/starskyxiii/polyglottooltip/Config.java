@@ -29,5 +29,17 @@ public class Config {
             .translation(translationKey("enableChineseScriptMatching"))
             .define("enableChineseScriptMatching", false);
 
+    public static final ModConfigSpec.ConfigValue<String> TOOLTIP_SECONDARY_NAME_FORMAT = BUILDER
+            .comment("Legacy format codes applied to secondary-language names shown in normal tooltips.",
+                     "Examples: \"&7\", \"&7&l\", \"&e&o\". Use an empty string for no extra formatting.")
+            .translation(translationKey("tooltipSecondaryNameFormat"))
+            .define("tooltipSecondaryNameFormat", "&7", LegacyFormatStyleUtil::isValidLegacyFormatString);
+
+    public static final ModConfigSpec.ConfigValue<String> JADE_SECONDARY_NAME_FORMAT = BUILDER
+            .comment("Legacy format codes applied to secondary-language names shown in Jade tooltips.",
+                     "Examples: \"&7\", \"&7&l\", \"&e&o\". Use an empty string for no extra formatting.")
+            .translation(translationKey("jadeSecondaryNameFormat"))
+            .define("jadeSecondaryNameFormat", "&7", LegacyFormatStyleUtil::isValidLegacyFormatString);
+
     static final ModConfigSpec SPEC = BUILDER.build();
 }

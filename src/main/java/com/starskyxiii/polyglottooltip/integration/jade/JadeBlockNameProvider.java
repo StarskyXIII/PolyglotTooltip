@@ -1,9 +1,9 @@
 package com.starskyxiii.polyglottooltip.integration.jade;
 
 import com.starskyxiii.polyglottooltip.LanguageCache;
+import com.starskyxiii.polyglottooltip.LegacyFormatStyleUtil;
 import com.starskyxiii.polyglottooltip.SecondaryTooltipUtil;
 import com.starskyxiii.polyglottooltip.PolyglotTooltip;
-import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
@@ -39,7 +39,7 @@ public enum JadeBlockNameProvider implements IBlockComponentProvider {
             String primary = pairs.get(i).primary().getString();
             String secondary = pairs.get(i).secondary();
             if (secondary.equals(primary)) continue;
-            tooltip.add(insertAt, Component.literal(secondary).withStyle(ChatFormatting.GRAY), SECONDARY_NAME_TAG);
+            tooltip.add(insertAt, Component.literal(secondary).withStyle(LegacyFormatStyleUtil.jadeSecondaryNameStyle()), SECONDARY_NAME_TAG);
         }
     }
 

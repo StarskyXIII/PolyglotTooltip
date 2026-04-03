@@ -7,5 +7,9 @@
   "polyglottooltip.configuration.alwaysShow": "Always Show",
   "polyglottooltip.configuration.alwaysShow.tooltip": "Show them even when an additional language matches the current game language.",
   "polyglottooltip.configuration.enableChineseScriptMatching": "Simplified/Traditional Cross-Search",
-  "polyglottooltip.configuration.enableChineseScriptMatching.tooltip": "Allow searches to match both Simplified and Traditional Chinese."
+  "polyglottooltip.configuration.enableChineseScriptMatching.tooltip": "Allow searches to match both Simplified and Traditional Chinese.",
+  "polyglottooltip.configuration.tooltipSecondaryNameFormat": "Tooltip Secondary Name Format",
+  "polyglottooltip.configuration.tooltipSecondaryNameFormat.tooltip": "Legacy format codes for secondary-language names in normal tooltips, such as &7 or &7&l.",
+  "polyglottooltip.configuration.jadeSecondaryNameFormat": "Jade Secondary Name Format",
+  "polyglottooltip.configuration.jadeSecondaryNameFormat.tooltip": "Legacy format codes for secondary-language names in Jade, such as &7 or &7&l."
 }
