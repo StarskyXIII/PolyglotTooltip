@@ -83,21 +83,13 @@ public final class SecondaryTooltipUtil {
     }
 
     private static Component createSecondaryLine(String secondary) {
-        return Component.literal(getMarkedSecondaryText(secondary))
+        return Component.literal(secondary)
                 .withStyle(s -> s.withColor(ChatFormatting.GRAY));
-    }
-
-    public static String getMarkedSecondaryText(String secondary) {
-        return "\u00A0" + secondary;
-    }
-
-    private static String normalizeSecondaryLineText(String text) {
-        return text.replace("\u00A0", "").strip();
     }
 
     private static void removeLine(List<Component> tooltip, String text) {
         for (int i = 0; i < tooltip.size(); i++) {
-            String lineText = normalizeSecondaryLineText(tooltip.get(i).getString());
+            String lineText = tooltip.get(i).getString().strip();
             if (text.equals(lineText)) {
                 tooltip.remove(i);
                 return;
