@@ -1,9 +1,8 @@
 package com.starskyxiii.polyglottooltip.integration.jade;
 
 import com.starskyxiii.polyglottooltip.LanguageCache;
-import com.starskyxiii.polyglottooltip.LegacyFormatStyleUtil;
-import com.starskyxiii.polyglottooltip.SecondaryTooltipUtil;
 import com.starskyxiii.polyglottooltip.PolyglotTooltip;
+import com.starskyxiii.polyglottooltip.SecondaryTooltipUtil;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
@@ -30,16 +29,15 @@ public enum JadeBlockNameProvider implements IBlockComponentProvider {
             return;
         }
 
-        List<NamePair> pairs = resolvePrimaryAndSecondaryNames(accessor);
+        ResolvedNames resolvedNames = resolveNames(accessor);
+        List<String> secondaryNames = SecondaryTooltipUtil.getSecondaryNames(
+                resolvedNames.names(),
+                resolvedNames.primary().getString()
+        );
+
         int insertAt = tooltip.isEmpty() ? 0 : 1;
-        // Insert in reverse so config order ends up top-to-bottom (mirrors SecondaryTooltipUtil).
-        // Note: Jade's ITooltip API differs from List<Component>, so SecondaryTooltipUtil cannot
-        // be reused directly — but the same reverse-insertion strategy applies here.
-        for (int i = pairs.size() - 1; i >= 0; i--) {
-            String primary = pairs.get(i).primary().getString();
-            String secondary = pairs.get(i).secondary();
-            if (secondary.equals(primary)) continue;
-            tooltip.add(insertAt, Component.literal(secondary).withStyle(LegacyFormatStyleUtil.jadeSecondaryNameStyle()), SECONDARY_NAME_TAG);
+        for (int i = secondaryNames.size() - 1; i >= 0; i--) {
+            tooltip.add(insertAt, SecondaryTooltipUtil.createJadeSecondaryLine(secondaryNames.get(i)), SECONDARY_NAME_TAG);
         }
     }
 
@@ -53,32 +51,28 @@ public enum JadeBlockNameProvider implements IBlockComponentProvider {
         return TooltipPosition.HEAD - 50;
     }
 
-    private List<NamePair> resolvePrimaryAndSecondaryNames(BlockAccessor accessor) {
+    private ResolvedNames resolveNames(BlockAccessor accessor) {
         if (accessor.getBlock() instanceof LiquidBlock) {
             FluidState fluidState = accessor.getBlockState().getFluidState();
             if (!fluidState.isEmpty()) {
                 FluidStack fluidStack = new FluidStack(fluidState.getType(), 1);
                 Component primary = fluidState.getType().getFluidType().getDescription(fluidStack);
-                return LanguageCache.getInstance().resolveComponentsForAll(primary).stream()
-                        .map(secondary -> new NamePair(primary, secondary))
-                        .toList();
+                return new ResolvedNames(primary, LanguageCache.getInstance().resolveComponentsForAll(primary));
             }
         }
 
         ItemStack pickedResult = accessor.getPickedResult();
         if (!pickedResult.isEmpty()) {
-            Component primary = pickedResult.getHoverName();
-            return LanguageCache.getInstance().resolveDisplayNamesForAll(pickedResult).stream()
-                    .map(secondary -> new NamePair(primary, secondary))
-                    .toList();
+            return new ResolvedNames(
+                    Component.literal(LanguageCache.getInstance().resolveCurrentDisplayName(pickedResult)),
+                    LanguageCache.getInstance().resolveDisplayNamesForAll(pickedResult)
+            );
         }
 
         Component primary = accessor.getBlock().getName();
-        return LanguageCache.getInstance().resolveComponentsForAll(primary).stream()
-                .map(secondary -> new NamePair(primary, secondary))
-                .toList();
+        return new ResolvedNames(primary, LanguageCache.getInstance().resolveComponentsForAll(primary));
     }
 
-    private record NamePair(Component primary, String secondary) {
+    private record ResolvedNames(Component primary, List<String> names) {
     }
 }

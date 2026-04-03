@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 /**
  * Handles tooltip post-processing for item stacks by:
  * <ol>
- *   <li>Inserting one gray secondary-language item name line per configured
+ *   <li>Inserting one formatted secondary-language item name line per configured
  *       language directly below the primary item name.</li>
  *   <li>Appending secondary-language enchantment names to existing enchantment
  *       lines.</li>
@@ -59,15 +59,12 @@ public class TooltipHandler {
         ItemStack stack = event.getItemStack();
         if (stack.isEmpty() || !SecondaryTooltipUtil.shouldShowSecondaryLanguage()) return;
 
-        LanguageCache cache = LanguageCache.getInstance();
-        List<String> names = cache.resolveDisplayNamesForAll(stack);
-        String primaryText = cache.resolveCurrentDisplayName(stack);
+        List<String> names = SecondaryTooltipUtil.getSecondaryNames(stack);
         List<Either<FormattedText, TooltipComponent>> elements = event.getTooltipElements();
 
         // Keep generated secondary-name lines grouped directly under the title.
         List<Either<FormattedText, TooltipComponent>> secondaryLines = new ArrayList<>();
         for (String secondary : names) {
-            if (secondary.equals(primaryText)) continue;
             int idx = findTooltipTextIndex(elements, secondary);
             if (idx >= 0) {
                 secondaryLines.add(elements.remove(idx));

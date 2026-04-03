@@ -2,6 +2,7 @@ package com.starskyxiii.polyglottooltip;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.ArrayList;
@@ -27,11 +28,7 @@ public final class SecondaryTooltipUtil {
      */
     public static void insertSecondaryName(List<Component> tooltip, ItemStack stack) {
         if (!shouldShowSecondaryLanguage()) return;
-        String primaryText = LanguageCache.getInstance().resolveCurrentDisplayName(stack);
-        insertNames(tooltip, getSecondaryNames(
-                LanguageCache.getInstance().resolveDisplayNamesForAll(stack),
-                primaryText
-        ));
+        insertNames(tooltip, getSecondaryNames(stack));
     }
 
     /**
@@ -40,23 +37,43 @@ public final class SecondaryTooltipUtil {
      */
     public static void insertSecondaryName(List<Component> tooltip, Component sourceName) {
         if (!shouldShowSecondaryLanguage()) return;
-        insertNames(tooltip, getSecondaryNames(
+        insertNames(tooltip, getSecondaryNames(sourceName));
+    }
+
+    public static List<String> getSecondaryNames(ItemStack stack) {
+        return getSecondaryNames(
+                LanguageCache.getInstance().resolveDisplayNamesForAll(stack),
+                LanguageCache.getInstance().resolveCurrentDisplayName(stack)
+        );
+    }
+
+    public static List<String> getSecondaryNames(Component sourceName) {
+        return getSecondaryNames(
                 LanguageCache.getInstance().resolveComponentsForAll(sourceName),
                 sourceName.getString()
-        ));
+        );
+    }
+
+    public static List<String> getSecondaryNames(List<String> names, String primaryText) {
+        return filterPrimaryName(names, primaryText);
     }
 
     public static List<Component> getSecondaryNameLines(Component sourceName) {
         if (!shouldShowSecondaryLanguage()) return List.of();
-        List<String> names = getSecondaryNames(
-                LanguageCache.getInstance().resolveComponentsForAll(sourceName),
-                sourceName.getString()
-        );
+        List<String> names = getSecondaryNames(sourceName);
         List<Component> lines = new ArrayList<>(names.size());
         for (String secondary : names) {
-            lines.add(createSecondaryLine(secondary));
+            lines.add(createTooltipSecondaryLine(secondary));
         }
         return lines;
+    }
+
+    public static Component createTooltipSecondaryLine(String secondary) {
+        return createSecondaryLine(secondary, LegacyFormatStyleUtil.tooltipSecondaryNameStyle());
+    }
+
+    public static Component createJadeSecondaryLine(String secondary) {
+        return createSecondaryLine(secondary, LegacyFormatStyleUtil.jadeSecondaryNameStyle());
     }
 
     private static void insertNames(List<Component> tooltip, List<String> names) {
@@ -67,11 +84,11 @@ public final class SecondaryTooltipUtil {
         for (int i = names.size() - 1; i >= 0; i--) {
             String secondary = names.get(i);
             removeLine(tooltip, secondary);
-            tooltip.add(insertAt, createSecondaryLine(secondary));
+            tooltip.add(insertAt, createTooltipSecondaryLine(secondary));
         }
     }
 
-    private static List<String> getSecondaryNames(List<String> names, String primaryText) {
+    private static List<String> filterPrimaryName(List<String> names, String primaryText) {
         List<String> filtered = new ArrayList<>(names.size());
         for (String secondary : names) {
             if (!secondary.equals(primaryText)) {
@@ -81,13 +98,13 @@ public final class SecondaryTooltipUtil {
         return filtered;
     }
 
-    private static Component createSecondaryLine(String secondary) {
-        return Component.literal(secondary).withStyle(LegacyFormatStyleUtil.tooltipSecondaryNameStyle());
+    private static Component createSecondaryLine(String secondary, Style style) {
+        return Component.literal(secondary).withStyle(style);
     }
 
     private static void removeLine(List<Component> tooltip, String text) {
         for (int i = 0; i < tooltip.size(); i++) {
-            String lineText = tooltip.get(i).getString().strip();
+            String lineText = tooltip.get(i).getString();
             if (text.equals(lineText)) {
                 tooltip.remove(i);
                 return;
