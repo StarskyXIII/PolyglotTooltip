@@ -68,8 +68,7 @@ public class TooltipHandler {
         List<Either<FormattedText, TooltipComponent>> secondaryLines = new ArrayList<>();
         for (String secondary : names) {
             if (secondary.equals(primaryText)) continue;
-            String targetText = SecondaryTooltipUtil.getMarkedSecondaryText(secondary);
-            int idx = findTooltipTextIndex(elements, targetText);
+            int idx = findTooltipTextIndex(elements, secondary);
             if (idx >= 0) {
                 secondaryLines.add(elements.remove(idx));
             }
