@@ -1,7 +1,7 @@
 plugins {
     id 'java-library'
     id 'maven-publish'
-    id 'net.neoforged.moddev' version '2.0.140'
+    id 'net.neoforged.moddev' version '2.0.141'
     id 'idea'
 }
 
@@ -34,15 +34,10 @@ base {
     archivesName = mod_id
 }
 
-java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+java.toolchain.languageVersion = JavaLanguageVersion.of(25)
 
 neoForge {
     version = project.neo_version
-
-    parchment {
-        mappingsVersion = project.parchment_mappings_version
-        minecraftVersion = project.parchment_minecraft_version
-    }
 
     runs {
         client {
@@ -81,6 +76,14 @@ neoForge {
 
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
+// Exclude integration modules that depend on mods without MC 26.1 releases yet.
+// Re-enable each block once the corresponding mod ships a 26.1-compatible version.
+sourceSets.main.java.exclude '**/integration/ae2/**'
+sourceSets.main.java.exclude '**/integration/rs2/**'
+sourceSets.main.java.exclude '**/mixin/ae2/**'
+sourceSets.main.java.exclude '**/mixin/rs2/**'
+sourceSets.main.java.exclude '**/mixin/mekae2/**'
+
 // Keep optional dev-only mods on the local runtime classpath without publishing them as dependencies.
 configurations {
     runtimeClasspath.extendsFrom localRuntime
@@ -96,38 +99,37 @@ dependencies {
     compileOnly "mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}"
     localRuntime "mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}"
     // AE2 integration for terminal name search and tooltip-search matching.
-    compileOnly "org.appliedenergistics:appliedenergistics2:${ae2_version}"
+    // compileOnly "org.appliedenergistics:appliedenergistics2:${ae2_version}"
     // Refined Storage 2 integration for resource tooltips and grid search.
-    compileOnly "com.refinedmods.refinedstorage:refinedstorage-common:${rs2_version}"
-    // Jade integration for block-name secondary tooltip lines.
+    // compileOnly "com.refinedmods.refinedstorage:refinedstorage-common:${rs2_version}"
+    // Jade integration for block/entity secondary name tooltip lines.
     compileOnly "maven.modrinth:jade:${jade_version}"
-    // Controlling integration for multilingual category search.
-    compileOnly "com.blamejared.searchables:Searchables-common-${minecraft_version}:1.0.1"
+    // Controlling/Searchables integration for multilingual category search.
+    compileOnly "com.blamejared.searchables:Searchables-common-${minecraft_version}:${searchables_version}"
+    localRuntime "com.blamejared.controlling:Controlling-neoforge-${minecraft_version}:${controlling_version}"
 
-    // Chinese script matching support bundled into the published jar.
-    jarJar(implementation("com.github.houbb:opencc4j:${opencc4jVersion}")) {
+    // Chinese script matching support: compile against opencc4j, make it available
+    // in dev runs, and bundle the library set into the published jar.
+    compileOnly "com.github.houbb:opencc4j:${opencc4jVersion}"
+    localRuntime "com.github.houbb:opencc4j:${opencc4jVersion}"
+    jarJar("com.github.houbb:opencc4j:${opencc4jVersion}") {
         version {
             strictly "[${opencc4jVersion},2.0)"
             prefer opencc4jVersion
         }
     }
-    jarJar(implementation("com.github.houbb:heaven:${heavenVersion}")) {
+    jarJar("com.github.houbb:heaven:${heavenVersion}") {
         version {
             strictly "[${heavenVersion},1.0)"
             prefer heavenVersion
         }
     }
-    jarJar(implementation("com.github.houbb:nlp-common:${nlpCommonVersion}")) {
+    jarJar("com.github.houbb:nlp-common:${nlpCommonVersion}") {
         version {
             strictly "[${nlpCommonVersion},1.0)"
             prefer nlpCommonVersion
         }
     }
-
-    // Older NeoForge dev runtimes still need these libraries on the plain runtime classpath.
-    additionalRuntimeClasspath "com.github.houbb:opencc4j:${opencc4jVersion}"
-    additionalRuntimeClasspath "com.github.houbb:heaven:${heavenVersion}"
-    additionalRuntimeClasspath "com.github.houbb:nlp-common:${nlpCommonVersion}"
 }
 
 // Expand mod metadata templates such as neoforge.mods.toml during the build.

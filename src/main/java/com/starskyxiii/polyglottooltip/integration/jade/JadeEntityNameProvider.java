@@ -3,7 +3,7 @@ package com.starskyxiii.polyglottooltip.integration.jade;
 import com.starskyxiii.polyglottooltip.PolyglotTooltip;
 import com.starskyxiii.polyglottooltip.SecondaryTooltipUtil;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
 import snownee.jade.api.EntityAccessor;
 import snownee.jade.api.IEntityComponentProvider;
@@ -16,8 +16,8 @@ import java.util.List;
 public enum JadeEntityNameProvider implements IEntityComponentProvider {
     INSTANCE;
 
-    private static final ResourceLocation UID = ResourceLocation.parse(PolyglotTooltip.MODID + ":jade_entity_name");
-    private static final ResourceLocation SECONDARY_NAME_TAG = ResourceLocation.parse(PolyglotTooltip.MODID + ":jade_entity_secondary_name");
+    private static final Identifier UID = Identifier.fromNamespaceAndPath(PolyglotTooltip.MODID, "jade_entity_name");
+    private static final Identifier SECONDARY_NAME_TAG = Identifier.fromNamespaceAndPath(PolyglotTooltip.MODID, "jade_entity_secondary_name");
 
     @Override
     public void appendTooltip(ITooltip tooltip, EntityAccessor accessor, IPluginConfig config) {
@@ -34,7 +34,7 @@ public enum JadeEntityNameProvider implements IEntityComponentProvider {
     }
 
     @Override
-    public ResourceLocation getUid() {
+    public Identifier getUid() {
         return UID;
     }
 

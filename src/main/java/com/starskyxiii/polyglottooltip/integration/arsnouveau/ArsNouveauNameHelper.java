@@ -1,7 +1,7 @@
 package com.starskyxiii.polyglottooltip.integration.arsnouveau;
 
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
@@ -55,7 +55,7 @@ public final class ArsNouveauNameHelper {
     }
 
     private static Optional<Component> createRitualTabletName(Object ritual) {
-        return invokeResourceLocation(ritual, "getRegistryName")
+        return invokeIdentifier(ritual, "getRegistryName")
                 .map(id -> Component.translatable("ars_nouveau.tablet_of", itemNameComponent(id)));
     }
 
@@ -70,7 +70,7 @@ public final class ArsNouveauNameHelper {
                 .map(spellName -> Component.translatable("ars_nouveau.glyph_of", spellName));
     }
 
-    private static Component itemNameComponent(ResourceLocation id) {
+    private static Component itemNameComponent(Identifier id) {
         return Component.translatable("item." + id.getNamespace() + "." + id.getPath());
     }
 
@@ -115,10 +115,10 @@ public final class ArsNouveauNameHelper {
                 .map(String.class::cast);
     }
 
-    private static Optional<ResourceLocation> invokeResourceLocation(Object target, String methodName) {
+    private static Optional<Identifier> invokeIdentifier(Object target, String methodName) {
         return invokeMethod(target, methodName)
-                .filter(ResourceLocation.class::isInstance)
-                .map(ResourceLocation.class::cast);
+                .filter(Identifier.class::isInstance)
+                .map(Identifier.class::cast);
     }
 
     private static Optional<Object> invokeMethod(Object target, String methodName) {

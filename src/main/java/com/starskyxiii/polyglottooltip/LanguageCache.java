@@ -6,16 +6,16 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.language.ClientLanguage;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.contents.TranslatableContents;
+import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.minecraft.server.packs.resources.ResourceManager;
-import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
-import net.minecraft.util.profiling.InactiveProfiler;
-import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 
 import java.util.ArrayList;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -32,7 +32,7 @@ import java.util.function.Function;
  * code gets its own {@link ClientLanguage} instance so they can be queried
  * independently and inserted as separate tooltip lines.
  */
-public class LanguageCache extends SimplePreparableReloadListener<List<ClientLanguage>> {
+public class LanguageCache implements PreparableReloadListener {
 
     /**
      * Optional-mod integrations register a resolver here so that
@@ -60,8 +60,6 @@ public class LanguageCache extends SimplePreparableReloadListener<List<ClientLan
 
     // Per-stack secondary-name cache. Some mods reuse one Item for many visible names
     // and derive the final text from NBT, so Item-only caching is too coarse.
-    // We intentionally still ignore custom hover names and only key off the stack data
-    // that affects generated translations.
     private final Map<DisplayNameCacheKey, List<String>> displayNameCache = new HashMap<>();
     private final Map<DisplayNameCacheKey, List<String>> searchNameCache = new HashMap<>();
 
@@ -70,34 +68,19 @@ public class LanguageCache extends SimplePreparableReloadListener<List<ClientLan
     }
 
     // -------------------------------------------------------------------------
-    // SimplePreparableReloadListener — runs on the resource-reload executor
+    // PreparableReloadListener
     // -------------------------------------------------------------------------
 
-    /** Runs on the background thread during resource reload. */
     @Override
-    protected List<ClientLanguage> prepare(ResourceManager resourceManager, ProfilerFiller profiler) {
-        List<? extends String> langs = Config.DISPLAY_LANGUAGE.get();
-        List<ClientLanguage> result = new ArrayList<>();
-        for (String lang : langs) {
-            try {
-                ClientLanguage loaded = ClientLanguage.loadFrom(resourceManager, List.of(lang), false);
-                PolyglotTooltip.LOGGER.info("[PolyglotTooltip] Loaded secondary language: {}", lang);
-                result.add(loaded);
-            } catch (Exception e) {
-                PolyglotTooltip.LOGGER.error("[PolyglotTooltip] Failed to load language '{}': {}", lang, e.getMessage());
-            }
-        }
-        return result;
-    }
-
-    /** Runs on the main thread after prepare completes. */
-    @Override
-    protected void apply(List<ClientLanguage> languages, ResourceManager resourceManager, ProfilerFiller profiler) {
-        this.loadedLanguages = languages;
-        this.displayNameCache.clear();
-        this.searchNameCache.clear();
-        OccultismSearchUtil.clearTooltipCache();
-        ChineseScriptSearchMatcher.clearCaches();
+    public CompletableFuture<Void> reload(SharedState currentReload,
+                                          Executor taskExecutor,
+                                          PreparationBarrier preparationBarrier,
+                                          Executor reloadExecutor) {
+        ResourceManager resourceManager = currentReload.resourceManager();
+        return CompletableFuture
+                .supplyAsync(() -> loadLanguages(resourceManager), taskExecutor)
+                .thenCompose(preparationBarrier::wait)
+                .thenAcceptAsync(this::applyLanguages, reloadExecutor);
     }
 
     // -------------------------------------------------------------------------
@@ -184,28 +167,17 @@ public class LanguageCache extends SimplePreparableReloadListener<List<ClientLan
     }
 
     /**
-     * Recursively resolves a {@link Component} using the given language cache,
-     * including any sibling components (e.g., the roman-numeral level suffix on
-     * enchantment names: "Unbreaking" + " " + "V").
-     *
-     * <p>Non-translatable components (literal text) are returned as-is since they
-     * are the same in every language. Translatable components with format args have
-     * each arg resolved recursively.
-     *
-     * <p>Returns {@link Optional#empty()} if this component's translation key is
-     * absent from the given language.
+     * Recursively resolves a {@link Component} using the given language cache.
      */
     private Optional<String> resolveComponentWithLang(Component component, ClientLanguage lang) {
         if (lang == null) return Optional.empty();
         if (!(component.getContents() instanceof TranslatableContents tc)) {
-            // Literal or other non-translatable content — same text in every language
             return Optional.of(component.getString());
         }
 
         String template = lang.getOrDefault(tc.getKey(), null);
         if (template == null) return Optional.empty();
 
-        // Resolve main content (with %s format args if any)
         String mainPart;
         Object[] args = tc.getArgs();
         if (args.length == 0) {
@@ -220,11 +192,10 @@ public class LanguageCache extends SimplePreparableReloadListener<List<ClientLan
             try {
                 mainPart = String.format(template, resolvedArgs);
             } catch (Exception e) {
-                mainPart = template; // malformed format string — return raw template
+                mainPart = template;
             }
         }
 
-        // Append sibling components (e.g., " " + "V" for enchantment level suffixes)
         if (component.getSiblings().isEmpty()) {
             return Optional.of(mainPart);
         }
@@ -235,6 +206,33 @@ public class LanguageCache extends SimplePreparableReloadListener<List<ClientLan
         return Optional.of(sb.toString());
     }
 
+    // -------------------------------------------------------------------------
+    // Internal load / apply helpers (also used by reloadImmediate)
+    // -------------------------------------------------------------------------
+
+    private List<ClientLanguage> loadLanguages(ResourceManager resourceManager) {
+        List<? extends String> langs = Config.DISPLAY_LANGUAGE.get();
+        List<ClientLanguage> result = new ArrayList<>();
+        for (String lang : langs) {
+            try {
+                ClientLanguage loaded = ClientLanguage.loadFrom(resourceManager, List.of(lang), false);
+                PolyglotTooltip.LOGGER.info("[PolyglotTooltip] Loaded secondary language: {}", lang);
+                result.add(loaded);
+            } catch (Exception e) {
+                PolyglotTooltip.LOGGER.error("[PolyglotTooltip] Failed to load language '{}': {}", lang, e.getMessage());
+            }
+        }
+        return result;
+    }
+
+    private void applyLanguages(List<ClientLanguage> languages) {
+        this.loadedLanguages = languages;
+        this.displayNameCache.clear();
+        this.searchNameCache.clear();
+        OccultismSearchUtil.clearTooltipCache();
+        ChineseScriptSearchMatcher.clearCaches();
+    }
+
     /**
      * Synchronously reloads translations on the calling thread.
      * Called when the mod config changes so the new language takes effect
@@ -243,8 +241,8 @@ public class LanguageCache extends SimplePreparableReloadListener<List<ClientLan
     public void reloadImmediate() {
         Minecraft mc = Minecraft.getInstance();
         if (mc == null) return;
-        List<ClientLanguage> langs = prepare(mc.getResourceManager(), InactiveProfiler.INSTANCE);
-        apply(langs, mc.getResourceManager(), InactiveProfiler.INSTANCE);
+        List<ClientLanguage> langs = loadLanguages(mc.getResourceManager());
+        applyLanguages(langs);
     }
 
     private record DisplayNameCacheKey(ItemStack stackSnapshot, int hash) {

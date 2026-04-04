@@ -17,6 +17,7 @@ import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RenderTooltipEvent;
+import net.neoforged.neoforge.event.entity.player.FluidTooltipEvent;
 import net.neoforged.neoforge.event.entity.player.ItemTooltipEvent;
 
 import java.util.ArrayList;
@@ -52,6 +53,12 @@ public class TooltipHandler {
 
         // Append secondary-language names to matching enchantment lines.
         processEnchantments(event.getItemStack(), tooltip, cache);
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void onFluidTooltip(FluidTooltipEvent event) {
+        if (!SecondaryTooltipUtil.shouldShowSecondaryLanguage()) return;
+        SecondaryTooltipUtil.insertSecondaryName(event.getToolTip(), event.getFluidStack().getHoverName());
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)

@@ -4,7 +4,7 @@ import com.starskyxiii.polyglottooltip.LanguageCache;
 import com.starskyxiii.polyglottooltip.PolyglotTooltip;
 import com.starskyxiii.polyglottooltip.SecondaryTooltipUtil;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.material.FluidState;
@@ -20,8 +20,8 @@ import java.util.List;
 public enum JadeBlockNameProvider implements IBlockComponentProvider {
     INSTANCE;
 
-    private static final ResourceLocation UID = ResourceLocation.parse(PolyglotTooltip.MODID + ":jade_block_name");
-    private static final ResourceLocation SECONDARY_NAME_TAG = ResourceLocation.parse(PolyglotTooltip.MODID + ":jade_secondary_name");
+    private static final Identifier UID = Identifier.fromNamespaceAndPath(PolyglotTooltip.MODID, "jade_block_name");
+    private static final Identifier SECONDARY_NAME_TAG = Identifier.fromNamespaceAndPath(PolyglotTooltip.MODID, "jade_secondary_name");
 
     @Override
     public void appendTooltip(ITooltip tooltip, BlockAccessor accessor, IPluginConfig config) {
@@ -42,7 +42,7 @@ public enum JadeBlockNameProvider implements IBlockComponentProvider {
     }
 
     @Override
-    public ResourceLocation getUid() {
+    public Identifier getUid() {
         return UID;
     }
 

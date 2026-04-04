@@ -4,7 +4,7 @@ import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.ItemStack;
 
@@ -35,7 +35,7 @@ public final class ProductiveBeesNameHelper {
             ItemStack stack,
             Function<Component, Optional<String>> componentResolver
     ) {
-        ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(stack.getItem());
+        Identifier itemId = BuiltInRegistries.ITEM.getKey(stack.getItem());
         if (!MOD_ID.equals(itemId.getNamespace())) {
             return Optional.empty();
         }
@@ -61,7 +61,7 @@ public final class ProductiveBeesNameHelper {
             return Optional.empty();
         }
 
-        Optional<ResourceLocation> beeType = invokeResourceLocation(ingredient, "getBeeType");
+        Optional<Identifier> beeType = invokeIdentifier(ingredient, "getBeeType");
         if (beeType.isPresent()) {
             return Optional.of(createBeeNameComponent(beeType.get()));
         }
@@ -120,22 +120,25 @@ public final class ProductiveBeesNameHelper {
     private static Optional<String> findBeeType(ItemStack stack) {
         var entityData = stack.get(DataComponents.ENTITY_DATA);
         if (entityData != null) {
-            String type = entityData.getUnsafe().getString("type");
-            if (!type.isEmpty()) {
-                return Optional.of(type);
+            // In 26.1, CompoundTag.getString() returns Optional<String>.
+            Optional<String> type = entityData.getUnsafe().getString("type");
+            if (type.isPresent() && !type.get().isEmpty()) {
+                return type;
             }
         }
 
         // Look up the productivebees:bee_type DataComponent through the registry.
-        // Using raw DataComponentType to avoid wildcard-capture issues at the call site;
-        // the suppressed warning is intentional here.
-        ResourceLocation beeTypeKey = ResourceLocation.tryParse(BEE_TYPE_COMPONENT_ID);
+        // In 26.1, Registry.get(Identifier) returns Optional<Reference<T>>.
+        // Using raw DataComponentType to avoid wildcard-capture issues at the call site.
+        Identifier beeTypeKey = Identifier.tryParse(BEE_TYPE_COMPONENT_ID);
         if (beeTypeKey != null) {
             @SuppressWarnings("rawtypes")
-            DataComponentType beeTypeComp = BuiltInRegistries.DATA_COMPONENT_TYPE.get(beeTypeKey);
-            if (beeTypeComp != null) {
+            Optional<? extends DataComponentType> beeTypeComp =
+                    BuiltInRegistries.DATA_COMPONENT_TYPE.get(beeTypeKey)
+                            .map(ref -> ref.value());
+            if (beeTypeComp.isPresent()) {
                 @SuppressWarnings("unchecked")
-                Object value = stack.get(beeTypeComp);
+                Object value = stack.get(beeTypeComp.get());
                 if (value != null) {
                     return Optional.of(value.toString());
                 }
@@ -146,14 +149,14 @@ public final class ProductiveBeesNameHelper {
     }
 
     private static Component createBeeNameComponent(String beeType) {
-        ResourceLocation beeId = ResourceLocation.tryParse(beeType);
+        Identifier beeId = Identifier.tryParse(beeType);
         // Malformed bee type string (e.g. leftover NBT from an older mod version):
         // fall back to a literal so the tooltip still shows something.
         if (beeId == null) return Component.literal(beeType);
         return createBeeNameComponent(beeId);
     }
 
-    private static Component createBeeNameComponent(ResourceLocation beeId) {
+    private static Component createBeeNameComponent(Identifier beeId) {
         String beePath = beeId.getPath();
         if (!MOD_ID.equals(beeId.getNamespace())) {
             return Component.translatable("entity." + beeId.getNamespace() + "." + beePath);
@@ -188,10 +191,10 @@ public final class ProductiveBeesNameHelper {
         return beeClass.isPresent() && beeClass.get().isAssignableFrom(ingredient.getClass());
     }
 
-    private static Optional<ResourceLocation> invokeResourceLocation(Object target, String methodName) {
+    private static Optional<Identifier> invokeIdentifier(Object target, String methodName) {
         return invokeMethod(target, methodName)
-                .filter(ResourceLocation.class::isInstance)
-                .map(ResourceLocation.class::cast);
+                .filter(Identifier.class::isInstance)
+                .map(Identifier.class::cast);
     }
 
     private static Optional<Object> invokeMethod(Object target, String methodName) {
