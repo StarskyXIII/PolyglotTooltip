@@ -6,6 +6,7 @@
   "client": [
     "ae2.Ae2RepoSearchMixin",
     "ae2.Ae2ExtendedPatternTerminalMixin",
+    "ae2.Ae2AssemblerMatrixMixin",
     "ae2.Ae2PatternAccessTermScreenMixin",
     "ae2.Ae2PatternContainerRecordMixin",
     "ae2.Ae2FluidKeyRenderHandlerMixin",
