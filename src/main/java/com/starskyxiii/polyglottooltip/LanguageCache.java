@@ -16,11 +16,11 @@ import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 /**
@@ -56,14 +56,14 @@ public class LanguageCache extends SimplePreparableReloadListener<List<ClientLan
 
     private static final LanguageCache INSTANCE = new LanguageCache();
 
-    private List<ClientLanguage> loadedLanguages = new ArrayList<>();
+    private volatile List<ClientLanguage> loadedLanguages = List.of();
 
     // Per-stack secondary-name cache. Some mods reuse one Item for many visible names
     // and derive the final text from NBT, so Item-only caching is too coarse.
     // We intentionally still ignore custom hover names and only key off the stack data
     // that affects generated translations.
-    private final Map<DisplayNameCacheKey, List<String>> displayNameCache = new HashMap<>();
-    private final Map<DisplayNameCacheKey, List<String>> searchNameCache = new HashMap<>();
+    private final Map<DisplayNameCacheKey, List<String>> displayNameCache = new ConcurrentHashMap<>();
+    private final Map<DisplayNameCacheKey, List<String>> searchNameCache = new ConcurrentHashMap<>();
 
     public static LanguageCache getInstance() {
         return INSTANCE;
@@ -93,7 +93,7 @@ public class LanguageCache extends SimplePreparableReloadListener<List<ClientLan
     /** Runs on the main thread after prepare completes. */
     @Override
     protected void apply(List<ClientLanguage> languages, ResourceManager resourceManager, ProfilerFiller profiler) {
-        this.loadedLanguages = languages;
+        this.loadedLanguages = List.copyOf(languages);
         this.displayNameCache.clear();
         this.searchNameCache.clear();
         OccultismSearchUtil.clearTooltipCache();

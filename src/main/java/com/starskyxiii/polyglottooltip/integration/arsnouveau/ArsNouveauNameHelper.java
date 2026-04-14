@@ -7,9 +7,9 @@ import net.minecraft.world.item.ItemStack;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 public final class ArsNouveauNameHelper {
@@ -21,8 +21,8 @@ public final class ArsNouveauNameHelper {
 
     // Caches resolved Field/Method objects keyed by "className#memberName".
     // Item classes are registered singletons — their fields/methods never change.
-    private static final Map<String, Optional<Field>> fieldCache = new HashMap<>();
-    private static final Map<String, Optional<Method>> methodCache = new HashMap<>();
+    private static final Map<String, Optional<Field>> fieldCache = new ConcurrentHashMap<>();
+    private static final Map<String, Optional<Method>> methodCache = new ConcurrentHashMap<>();
 
     private ArsNouveauNameHelper() {
     }

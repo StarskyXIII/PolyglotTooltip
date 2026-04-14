@@ -6,9 +6,9 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 import java.lang.reflect.Field;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 public final class IndustrialForegoingNameHelper {
@@ -21,7 +21,7 @@ public final class IndustrialForegoingNameHelper {
 
     // Cache resolved Field objects keyed by "className#fieldName".
     // Item instances are registered singletons — their fields never change.
-    private static final Map<String, Optional<Field>> fieldCache = new HashMap<>();
+    private static final Map<String, Optional<Field>> fieldCache = new ConcurrentHashMap<>();
 
     private IndustrialForegoingNameHelper() {
     }
