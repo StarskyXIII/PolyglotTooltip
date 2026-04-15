@@ -1,17 +1,23 @@
 package com.starskyxiii.polyglottooltip;
 
+import com.mojang.datafixers.util.Either;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.Style;
+import net.minecraft.util.StringDecomposer;
+import net.minecraft.world.inventory.tooltip.TooltipComponent;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.RenderTooltipEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.fml.common.Mod;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +30,8 @@ import java.util.stream.Collectors;
  *       language directly below the primary item name.</li>
  *   <li>Appending secondary-language enchantment names to existing enchantment
  *       lines.</li>
+ *   <li>Reordering generated tooltip components so secondary-name lines stay
+ *       directly below the primary item name.</li>
  * </ol>
  */
 @Mod.EventBusSubscriber(modid = PolyglotTooltip.MODID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
@@ -42,6 +50,29 @@ public class TooltipHandler {
 
         // Append secondary-language names to matching enchantment lines.
         processEnchantments(event.getItemStack(), tooltip, cache);
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void onGatherTooltipComponents(RenderTooltipEvent.GatherComponents event) {
+        ItemStack stack = event.getItemStack();
+        if (stack.isEmpty() || !SecondaryTooltipUtil.shouldShowSecondaryLanguage()) return;
+
+        List<String> names = SecondaryTooltipUtil.getSecondaryNames(stack);
+        List<Either<FormattedText, TooltipComponent>> elements = event.getTooltipElements();
+
+        // Keep generated secondary-name lines grouped directly under the title.
+        List<Either<FormattedText, TooltipComponent>> secondaryLines = new ArrayList<>();
+        for (String secondary : names) {
+            int idx = findTooltipTextIndex(elements, secondary);
+            if (idx >= 0) {
+                secondaryLines.add(elements.remove(idx));
+            }
+        }
+
+        int targetIndex = findIndexAfterFirstTextLine(elements);
+        for (int i = secondaryLines.size() - 1; i >= 0; i--) {
+            elements.add(targetIndex, secondaryLines.get(i));
+        }
     }
 
     /**
@@ -95,5 +126,27 @@ public class TooltipHandler {
                 nameMap.put(current, joined);
             }
         }
+    }
+
+    private static int findTooltipTextIndex(List<Either<FormattedText, TooltipComponent>> elements, String targetText) {
+        for (int i = 0; i < elements.size(); i++) {
+            Either<FormattedText, TooltipComponent> element = elements.get(i);
+            if (element.left().isPresent()) {
+                String text = StringDecomposer.getPlainText(element.left().get());
+                if (targetText.equals(text)) {
+                    return i;
+                }
+            }
+        }
+        return -1;
+    }
+
+    private static int findIndexAfterFirstTextLine(List<Either<FormattedText, TooltipComponent>> elements) {
+        for (int i = 0; i < elements.size(); i++) {
+            if (elements.get(i).left().isPresent()) {
+                return Math.min(i + 1, elements.size());
+            }
+        }
+        return 0;
     }
 }
