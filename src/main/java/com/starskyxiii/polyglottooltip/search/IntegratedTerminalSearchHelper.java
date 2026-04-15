@@ -45,7 +45,12 @@ public final class IntegratedTerminalSearchHelper {
     }
 
     private static boolean matchesMod(ItemStack stack, String query) {
-        return matchesText(Optional.ofNullable(stack.getItem().getCreatorModId(stack))
+        var minecraft = Minecraft.getInstance();
+        if (minecraft.getConnection() == null) {
+            return false;
+        }
+
+        return matchesText(Optional.ofNullable(stack.getItem().getCreatorModId(minecraft.getConnection().registryAccess(), stack))
                 .orElse("minecraft")
                 .toLowerCase(Locale.ENGLISH), query);
     }
@@ -68,7 +73,7 @@ public final class IntegratedTerminalSearchHelper {
     private static boolean matchesTags(ItemStack stack, String query) {
         return stack.getItem().builtInRegistryHolder().tags()
                 .filter(tag -> matchesText(tag.location().toString().toLowerCase(Locale.ENGLISH), query))
-                .anyMatch(tag -> !BuiltInRegistries.ITEM.getTag(tag).isEmpty());
+                .anyMatch(tag -> BuiltInRegistries.ITEM.get(tag).isPresent());
     }
 
     private static boolean matchesSearchText(ItemStack stack, String query) {
