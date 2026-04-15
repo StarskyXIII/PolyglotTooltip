@@ -38,7 +38,9 @@
     "rs.RsFluidGridStackMixin",
     "rs.RsItemGridStackMixin",
     "rs.RsNameGridFilterMixin",
-    "rs.RsTooltipGridFilterMixin"
+    "rs.RsTooltipGridFilterMixin",
+    "integratedterminals.IntegratedTerminalsItemSearchMixin",
+    "integratedterminals.IntegratedTerminalsClientFilterMixin"
   ],
   "injectors": {
     "defaultRequire": 0
