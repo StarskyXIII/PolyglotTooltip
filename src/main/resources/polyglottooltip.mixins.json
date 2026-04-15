@@ -35,7 +35,9 @@
     "rs2.Rs2FluidResourceRenderingMixin",
     "rs2.Rs2ItemResourceRenderingMixin",
     "rs2.Rs2MekanismChemicalGridResourceMixin",
-    "rs2.Rs2MekanismChemicalResourceRenderingMixin"
+    "rs2.Rs2MekanismChemicalResourceRenderingMixin",
+    "integratedterminals.IntegratedTerminalsItemSearchMixin",
+    "integratedterminals.IntegratedTerminalsClientFilterMixin"
   ],
   "injectors": {
     "defaultRequire": 0
