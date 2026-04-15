@@ -78,7 +78,7 @@ public class TooltipHandler {
             }
         }
 
-        int targetIndex = Math.min(elements.isEmpty() ? 0 : 1, elements.size());
+        int targetIndex = findIndexAfterFirstTextLine(elements);
         for (int i = secondaryLines.size() - 1; i >= 0; i--) {
             elements.add(targetIndex, secondaryLines.get(i));
         }
@@ -150,5 +150,14 @@ public class TooltipHandler {
             }
         }
         return -1;
+    }
+
+    private static int findIndexAfterFirstTextLine(List<Either<FormattedText, TooltipComponent>> elements) {
+        for (int i = 0; i < elements.size(); i++) {
+            if (elements.get(i).left().isPresent()) {
+                return Math.min(i + 1, elements.size());
+            }
+        }
+        return 0;
     }
 }
