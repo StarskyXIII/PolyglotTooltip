@@ -5,6 +5,7 @@ import com.starskyxiii.polyglottooltip.SecondaryTooltipUtil;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.item.ItemEntity;
 import snownee.jade.api.EntityAccessor;
 import snownee.jade.api.IEntityComponentProvider;
 import snownee.jade.api.ITooltip;
@@ -21,7 +22,9 @@ public enum JadeEntityNameProvider implements IEntityComponentProvider {
 
     @Override
     public void appendTooltip(ITooltip tooltip, EntityAccessor accessor, IPluginConfig config) {
-        if (!SecondaryTooltipUtil.shouldShowSecondaryLanguage() || !tooltip.get(SECONDARY_NAME_TAG).isEmpty()) {
+        if (!SecondaryTooltipUtil.shouldShowSecondaryLanguage()
+                || accessor.getEntity() instanceof ItemEntity
+                || !tooltip.get(SECONDARY_NAME_TAG).isEmpty()) {
             return;
         }
 
