@@ -33,7 +33,7 @@ public class Ae2AssemblerMatrixMixin {
         }
 
         var item = itemStack.getItem();
-        if (!(item instanceof EncodedPatternItem<?>)) {
+        if (!(item instanceof EncodedPatternItem)) {
             cir.setReturnValue(false);
             return;
         }

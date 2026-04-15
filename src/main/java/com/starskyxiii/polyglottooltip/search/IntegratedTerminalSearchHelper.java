@@ -1,10 +1,9 @@
 package com.starskyxiii.polyglottooltip.search;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.Locale;
 import java.util.Optional;
@@ -56,19 +55,17 @@ public final class IntegratedTerminalSearchHelper {
             return false;
         }
 
-        return stack.getTooltipLines(
-                        Item.TooltipContext.of(minecraft.player.registryAccess()),
-                        minecraft.player,
-                        TooltipFlag.Default.NORMAL
-                ).stream()
+        return stack.getTooltipLines(minecraft.player, TooltipFlag.Default.NORMAL).stream()
                 .map(component -> component.getString().toLowerCase(Locale.ENGLISH))
                 .anyMatch(line -> matchesText(line, query));
     }
 
     private static boolean matchesTags(ItemStack stack, String query) {
-        return stack.getItem().builtInRegistryHolder().tags()
-                .filter(tag -> matchesText(tag.location().toString().toLowerCase(Locale.ENGLISH), query))
-                .anyMatch(tag -> !BuiltInRegistries.ITEM.getTag(tag).isEmpty());
+        return ForgeRegistries.ITEMS.tags().getReverseTag(stack.getItem())
+                .map(reverseTag -> reverseTag.getTagKeys()
+                        .filter(tag -> matchesText(tag.location().toString().toLowerCase(Locale.ENGLISH), query))
+                        .anyMatch(tag -> !ForgeRegistries.ITEMS.tags().getTag(tag).isEmpty()))
+                .orElse(false);
     }
 
     private static boolean matchesSearchText(ItemStack stack, String query) {
