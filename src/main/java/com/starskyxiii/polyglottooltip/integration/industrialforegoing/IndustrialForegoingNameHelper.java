@@ -17,7 +17,7 @@ import java.util.function.Function;
  * because Industrial Foregoing is not on the compile classpath.
  *
  * <p>Note: {@code RangeAddonItem.tier} is stored zero-based but displayed one-based,
- * so its tier is incremented by one when building the translation key.  All other
+ * so its tier is incremented by one when building the translation key. All other
  * addon types store their tier directly as displayed.
  */
 public final class IndustrialForegoingNameHelper {
@@ -27,6 +27,10 @@ public final class IndustrialForegoingNameHelper {
     private static final String SPEED_ADDON_ITEM = "com.buuz135.industrial.item.addon.SpeedAddonItem";
     private static final String EFFICIENCY_ADDON_ITEM = "com.buuz135.industrial.item.addon.EfficiencyAddonItem";
     private static final String PROCESSING_ADDON_ITEM = "com.buuz135.industrial.item.addon.ProcessingAddonItem";
+    private static final String RANGE_ADDON_KEY = "item.industrialforegoing.range_addon";
+    private static final String SPEED_ADDON_KEY = "item.industrialforegoing.speed";
+    private static final String EFFICIENCY_ADDON_KEY = "item.industrialforegoing.efficiency";
+    private static final String PROCESSING_ADDON_KEY = "item.industrialforegoing.processing";
 
     private IndustrialForegoingNameHelper() {
     }
@@ -36,37 +40,34 @@ public final class IndustrialForegoingNameHelper {
     }
 
     public static Optional<String> tryResolveSpecialName(ItemStack stack, Function<Component, Optional<String>> componentResolver) {
-        return switch (stack.getItem().getClass().getName()) {
-            case LASER_LENS_ITEM -> ReflectionHelper.readField(stack.getItem(), "color", Integer.class)
+        Item item = stack.getItem();
+        if (isClassOrSuperclass(item, LASER_LENS_ITEM)) {
+            return ReflectionHelper.readField(item, "color", Integer.class)
                     .map(DyeColor::byId)
                     .flatMap(color -> componentResolver.apply(createLaserLensName(color)));
-            case RANGE_ADDON_ITEM -> ReflectionHelper.readField(stack.getItem(), "tier", Integer.class)
-                    .flatMap(tier -> componentResolver.apply(createAddonName("item.industrialforegoing.range_addon", tier + 1)));
-            case SPEED_ADDON_ITEM -> ReflectionHelper.readField(stack.getItem(), "tier", Integer.class)
-                    .flatMap(tier -> componentResolver.apply(createAddonName("item.industrialforegoing.speed", tier)));
-            case EFFICIENCY_ADDON_ITEM -> ReflectionHelper.readField(stack.getItem(), "tier", Integer.class)
-                    .flatMap(tier -> componentResolver.apply(createAddonName("item.industrialforegoing.efficiency", tier)));
-            case PROCESSING_ADDON_ITEM -> ReflectionHelper.readField(stack.getItem(), "tier", Integer.class)
-                    .flatMap(tier -> componentResolver.apply(createAddonName("item.industrialforegoing.processing", tier)));
-            default -> Optional.empty();
-        };
+        }
+
+        return resolveAddonDescriptor(item)
+                .flatMap(descriptor -> ReflectionHelper.readField(item, "tier", Integer.class)
+                        .flatMap(tier -> componentResolver.apply(createAddonName(
+                                descriptor.translationKey(),
+                                tier + descriptor.tierOffset()
+                        ))));
     }
 
     public static Optional<Component> tryCreateSpecialName(Item item) {
-        return switch (item.getClass().getName()) {
-            case LASER_LENS_ITEM -> ReflectionHelper.readField(item, "color", Integer.class)
+        if (isClassOrSuperclass(item, LASER_LENS_ITEM)) {
+            return ReflectionHelper.readField(item, "color", Integer.class)
                     .map(DyeColor::byId)
                     .map(IndustrialForegoingNameHelper::createLaserLensName);
-            case RANGE_ADDON_ITEM -> ReflectionHelper.readField(item, "tier", Integer.class)
-                    .map(tier -> createAddonName("item.industrialforegoing.range_addon", tier + 1));
-            case SPEED_ADDON_ITEM -> ReflectionHelper.readField(item, "tier", Integer.class)
-                    .map(tier -> createAddonName("item.industrialforegoing.speed", tier));
-            case EFFICIENCY_ADDON_ITEM -> ReflectionHelper.readField(item, "tier", Integer.class)
-                    .map(tier -> createAddonName("item.industrialforegoing.efficiency", tier));
-            case PROCESSING_ADDON_ITEM -> ReflectionHelper.readField(item, "tier", Integer.class)
-                    .map(tier -> createAddonName("item.industrialforegoing.processing", tier));
-            default -> Optional.empty();
-        };
+        }
+
+        return resolveAddonDescriptor(item)
+                .flatMap(descriptor -> ReflectionHelper.readField(item, "tier", Integer.class)
+                        .map(tier -> createAddonName(
+                                descriptor.translationKey(),
+                                tier + descriptor.tierOffset()
+                        )));
     }
 
     public static Component createLaserLensName(DyeColor color) {
@@ -79,5 +80,35 @@ public final class IndustrialForegoingNameHelper {
         return Component.translatable("item.industrialforegoing.addon")
                 .append(Component.translatable(addonTypeKey))
                 .append(Component.literal("Tier " + tier + " "));
+    }
+
+    private static Optional<AddonDescriptor> resolveAddonDescriptor(Item item) {
+        if (isClassOrSuperclass(item, RANGE_ADDON_ITEM)) {
+            return Optional.of(new AddonDescriptor(RANGE_ADDON_KEY, 1));
+        }
+        if (isClassOrSuperclass(item, SPEED_ADDON_ITEM)) {
+            return Optional.of(new AddonDescriptor(SPEED_ADDON_KEY, 0));
+        }
+        if (isClassOrSuperclass(item, EFFICIENCY_ADDON_ITEM)) {
+            return Optional.of(new AddonDescriptor(EFFICIENCY_ADDON_KEY, 0));
+        }
+        if (isClassOrSuperclass(item, PROCESSING_ADDON_ITEM)) {
+            return Optional.of(new AddonDescriptor(PROCESSING_ADDON_KEY, 0));
+        }
+        return Optional.empty();
+    }
+
+    private static boolean isClassOrSuperclass(Object target, String className) {
+        Class<?> current = target.getClass();
+        while (current != null) {
+            if (className.equals(current.getName())) {
+                return true;
+            }
+            current = current.getSuperclass();
+        }
+        return false;
+    }
+
+    private record AddonDescriptor(String translationKey, int tierOffset) {
     }
 }
