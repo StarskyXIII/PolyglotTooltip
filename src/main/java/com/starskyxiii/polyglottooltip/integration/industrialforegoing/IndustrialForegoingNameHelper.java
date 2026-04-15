@@ -18,6 +18,10 @@ public final class IndustrialForegoingNameHelper {
     private static final String SPEED_ADDON_ITEM = "com.buuz135.industrial.item.addon.SpeedAddonItem";
     private static final String EFFICIENCY_ADDON_ITEM = "com.buuz135.industrial.item.addon.EfficiencyAddonItem";
     private static final String PROCESSING_ADDON_ITEM = "com.buuz135.industrial.item.addon.ProcessingAddonItem";
+    private static final String RANGE_ADDON_KEY = "item.industrialforegoing.range_addon";
+    private static final String SPEED_ADDON_KEY = "item.industrialforegoing.speed";
+    private static final String EFFICIENCY_ADDON_KEY = "item.industrialforegoing.efficiency";
+    private static final String PROCESSING_ADDON_KEY = "item.industrialforegoing.processing";
 
     // Cache resolved Field objects keyed by "className#fieldName".
     // Item instances are registered singletons — their fields never change.
@@ -31,35 +35,26 @@ public final class IndustrialForegoingNameHelper {
     }
 
     public static Optional<String> tryResolveSpecialName(ItemStack stack, Function<Component, Optional<String>> componentResolver) {
-        return switch (stack.getItem().getClass().getName()) {
-            case LASER_LENS_ITEM -> readField(stack.getItem(), "color", DyeColor.class)
+        Item item = stack.getItem();
+        if (isClassOrSuperclass(item, LASER_LENS_ITEM)) {
+            return readField(item, "color", DyeColor.class)
                     .flatMap(color -> componentResolver.apply(createLaserLensName(color)));
-            case RANGE_ADDON_ITEM -> readIntField(stack.getItem(), "tier")
-                    .flatMap(tier -> resolveAddonName("item.industrialforegoing.range_addon", tier + 1, componentResolver));
-            case SPEED_ADDON_ITEM -> readIntField(stack.getItem(), "tier")
-                    .flatMap(tier -> resolveAddonName("item.industrialforegoing.speed", tier, componentResolver));
-            case EFFICIENCY_ADDON_ITEM -> readIntField(stack.getItem(), "tier")
-                    .flatMap(tier -> resolveAddonName("item.industrialforegoing.efficiency", tier, componentResolver));
-            case PROCESSING_ADDON_ITEM -> readIntField(stack.getItem(), "tier")
-                    .flatMap(tier -> resolveAddonName("item.industrialforegoing.processing", tier, componentResolver));
-            default -> Optional.empty();
-        };
+        }
+
+        return resolveAddonDescriptor(item)
+                .flatMap(descriptor -> readIntField(item, "tier")
+                        .flatMap(tier -> resolveAddonName(descriptor.translationKey(), tier + descriptor.tierOffset(), componentResolver)));
     }
 
     public static Optional<Component> tryCreateSpecialName(Item item) {
-        return switch (item.getClass().getName()) {
-            case LASER_LENS_ITEM -> readField(item, "color", DyeColor.class)
+        if (isClassOrSuperclass(item, LASER_LENS_ITEM)) {
+            return readField(item, "color", DyeColor.class)
                     .map(IndustrialForegoingNameHelper::createLaserLensName);
-            case RANGE_ADDON_ITEM -> readIntField(item, "tier")
-                    .map(tier -> createAddonName("item.industrialforegoing.range_addon", tier + 1));
-            case SPEED_ADDON_ITEM -> readIntField(item, "tier")
-                    .map(tier -> createAddonName("item.industrialforegoing.speed", tier));
-            case EFFICIENCY_ADDON_ITEM -> readIntField(item, "tier")
-                    .map(tier -> createAddonName("item.industrialforegoing.efficiency", tier));
-            case PROCESSING_ADDON_ITEM -> readIntField(item, "tier")
-                    .map(tier -> createAddonName("item.industrialforegoing.processing", tier));
-            default -> Optional.empty();
-        };
+        }
+
+        return resolveAddonDescriptor(item)
+                .flatMap(descriptor -> readIntField(item, "tier")
+                        .map(tier -> createAddonName(descriptor.translationKey(), tier + descriptor.tierOffset())));
     }
 
     public static Component createLaserLensName(DyeColor color) {
@@ -89,6 +84,33 @@ public final class IndustrialForegoingNameHelper {
             return Optional.empty();
         }
         return Optional.of(addon.get() + type.get() + tierLabel.get() + tier);
+    }
+
+    private static Optional<AddonDescriptor> resolveAddonDescriptor(Item item) {
+        if (isClassOrSuperclass(item, RANGE_ADDON_ITEM)) {
+            return Optional.of(new AddonDescriptor(RANGE_ADDON_KEY, 1));
+        }
+        if (isClassOrSuperclass(item, SPEED_ADDON_ITEM)) {
+            return Optional.of(new AddonDescriptor(SPEED_ADDON_KEY, 0));
+        }
+        if (isClassOrSuperclass(item, EFFICIENCY_ADDON_ITEM)) {
+            return Optional.of(new AddonDescriptor(EFFICIENCY_ADDON_KEY, 0));
+        }
+        if (isClassOrSuperclass(item, PROCESSING_ADDON_ITEM)) {
+            return Optional.of(new AddonDescriptor(PROCESSING_ADDON_KEY, 0));
+        }
+        return Optional.empty();
+    }
+
+    private static boolean isClassOrSuperclass(Object target, String className) {
+        Class<?> current = target.getClass();
+        while (current != null) {
+            if (className.equals(current.getName())) {
+                return true;
+            }
+            current = current.getSuperclass();
+        }
+        return false;
     }
 
     private static Optional<Integer> readIntField(Object target, String fieldName) {
@@ -123,5 +145,8 @@ public final class IndustrialForegoingNameHelper {
             }
         }
         return Optional.empty();
+    }
+
+    private record AddonDescriptor(String translationKey, int tierOffset) {
     }
 }
