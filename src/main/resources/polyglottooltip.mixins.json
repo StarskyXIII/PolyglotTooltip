@@ -30,6 +30,7 @@
     "jei.JeiSafeIngredientUtilMixin",
     "mekanism.MekanismChemicalStackMixin",
     "mekanism.MekanismJeiChemicalStackRendererMixin",
+    "mekanism.MekanismQioNameQueryMixin",
     "occultism.OccultismStorageControllerGuiMixin",
     "projecte.ProjectENameQueryMixin",
     "sophisticatedcore.SophisticatedCoreStorageScreenMixin",
