@@ -41,8 +41,6 @@
     "rs2.Rs2FluidGridResourceMixin",
     "rs2.Rs2FluidResourceRenderingMixin",
     "rs2.Rs2ItemResourceRenderingMixin",
-    "rs2.Rs2MekanismChemicalGridResourceMixin",
-    "rs2.Rs2MekanismChemicalResourceRenderingMixin",
     "integratedterminals.IntegratedTerminalsItemSearchMixin",
     "integratedterminals.IntegratedTerminalsClientFilterMixin",
     "naturescompass.NaturesCompassBiomeUtilsMixin",

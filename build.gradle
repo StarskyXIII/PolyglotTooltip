@@ -76,12 +76,9 @@ neoForge {
 
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
-// Exclude integration modules that depend on mods without MC 26.1 releases yet.
-// Re-enable each block once the corresponding mod ships a 26.1-compatible version.
+// Exclude integration modules that still need porting for MC 26.1.
 sourceSets.main.java.exclude '**/integration/ae2/**'
-sourceSets.main.java.exclude '**/integration/rs2/**'
 sourceSets.main.java.exclude '**/mixin/ae2/**'
-sourceSets.main.java.exclude '**/mixin/rs2/**'
 sourceSets.main.java.exclude '**/mixin/mekae2/**'
 
 // Keep optional dev-only mods on the local runtime classpath without publishing them as dependencies.
@@ -101,7 +98,8 @@ dependencies {
     // AE2 integration for terminal name search and tooltip-search matching.
     // compileOnly "org.appliedenergistics:appliedenergistics2:${ae2_version}"
     // Refined Storage 2 integration for resource tooltips and grid search.
-    // compileOnly "com.refinedmods.refinedstorage:refinedstorage-common:${rs2_version}"
+    compileOnly "com.refinedmods.refinedstorage:refinedstorage-common:${rs2_version}"
+    localRuntime "com.refinedmods.refinedstorage:refinedstorage-neoforge:${rs2_version}"
     // Jade integration for block/entity secondary name tooltip lines.
     compileOnly "maven.modrinth:jade:${jade_version}"
     // Controlling/Searchables integration for multilingual category search.
