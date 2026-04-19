@@ -37,7 +37,11 @@
     "rs2.Rs2MekanismChemicalGridResourceMixin",
     "rs2.Rs2MekanismChemicalResourceRenderingMixin",
     "integratedterminals.IntegratedTerminalsItemSearchMixin",
-    "integratedterminals.IntegratedTerminalsClientFilterMixin"
+    "integratedterminals.IntegratedTerminalsClientFilterMixin",
+    "naturescompass.NaturesCompassBiomeUtilsMixin",
+    "naturescompass.NaturesCompassScreenMixin",
+    "explorerscompass.ExplorersCompassStructureUtilsMixin",
+    "explorerscompass.ExplorersCompassScreenMixin"
   ],
   "injectors": {
     "defaultRequire": 0
