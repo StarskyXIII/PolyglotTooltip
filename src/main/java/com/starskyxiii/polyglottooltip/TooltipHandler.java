@@ -71,7 +71,7 @@ public class TooltipHandler {
             }
         }
 
-        int targetIndex = findIndexAfterFirstTextLine(elements);
+        int targetIndex = findInsertionIndexAfterTitleAttachments(elements);
         for (int i = secondaryLines.size() - 1; i >= 0; i--) {
             elements.add(targetIndex, secondaryLines.get(i));
         }
@@ -143,12 +143,22 @@ public class TooltipHandler {
         return -1;
     }
 
-    private static int findIndexAfterFirstTextLine(List<Either<FormattedText, TooltipComponent>> elements) {
+    private static int findInsertionIndexAfterTitleAttachments(List<Either<FormattedText, TooltipComponent>> elements) {
         for (int i = 0; i < elements.size(); i++) {
             if (elements.get(i).left().isPresent()) {
-                return Math.min(i + 1, elements.size());
+                int insertAt = Math.min(i + 1, elements.size());
+                while (insertAt < elements.size() && isTitleAttachedTooltip(elements.get(insertAt))) {
+                    insertAt++;
+                }
+                return insertAt;
             }
         }
         return 0;
+    }
+
+    private static boolean isTitleAttachedTooltip(Either<FormattedText, TooltipComponent> element) {
+        return element.right()
+                .map(component -> "com.hollingsworth.arsnouveau.client.gui.SchoolTooltip".equals(component.getClass().getName()))
+                .orElse(false);
     }
 }

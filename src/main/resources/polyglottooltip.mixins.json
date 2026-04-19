@@ -4,6 +4,10 @@
   "compatibilityLevel": "JAVA_17",
   "mixins": [],
   "client": [
+    "arsnouveau.ArsNouveauGlyphButtonMixin",
+    "arsnouveau.ArsNouveauGuiSpellBookMixin",
+    "arsnouveau.ArsNouveauGlyphUnlockMenuMixin",
+    "arsnouveau.ArsNouveauUnlockGlyphButtonMixin",
     "ae2.Ae2RepoSearchMixin",
     "ae2.Ae2ExtendedPatternTerminalMixin",
     "ae2.Ae2AssemblerMatrixMixin",
