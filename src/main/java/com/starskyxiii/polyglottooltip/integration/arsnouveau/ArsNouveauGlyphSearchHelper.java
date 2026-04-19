@@ -1,5 +1,6 @@
 package com.starskyxiii.polyglottooltip.integration.arsnouveau;
 
+import com.starskyxiii.polyglottooltip.LanguageCache;
 import com.starskyxiii.polyglottooltip.SecondaryTooltipUtil;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -35,7 +36,7 @@ public final class ArsNouveauGlyphSearchHelper {
         }
 
         List<String> secondaryNames = createGlyphNameComponent(spellPart)
-                .map(SecondaryTooltipUtil::getSecondaryNames)
+                .map(ArsNouveauGlyphSearchHelper::resolveSecondaryNames)
                 .orElse(List.of());
         if (secondaryNames.isEmpty()) {
             return;
@@ -46,6 +47,13 @@ public final class ArsNouveauGlyphSearchHelper {
 
     private static Optional<Component> createGlyphNameComponent(Object spellPart) {
         return invokeString(spellPart, "getLocalizationKey").map(Component::translatable);
+    }
+
+    private static List<String> resolveSecondaryNames(Component sourceName) {
+        List<String> secondaryNames = LanguageCache.getInstance().resolveComponentsForAll(sourceName);
+        String primaryName = sourceName.getString();
+        secondaryNames.removeIf(primaryName::equals);
+        return secondaryNames;
     }
 
     private static Optional<String> invokeString(Object target, String methodName) {
