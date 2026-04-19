@@ -2,9 +2,9 @@ package com.starskyxiii.polyglottooltip.integration.compass;
 
 import com.starskyxiii.polyglottooltip.LanguageCache;
 import com.starskyxiii.polyglottooltip.SecondaryTooltipUtil;
-import net.minecraft.Util;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.Util;
 
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -15,16 +15,16 @@ public final class CompassNameHelper {
     private CompassNameHelper() {
     }
 
-    public static String appendBiomeSecondaryNames(ResourceLocation biomeKey, String primaryText) {
+    public static String appendBiomeSecondaryNames(Identifier biomeKey, String primaryText) {
         return appendTranslatedSecondaryNames("biome", biomeKey, primaryText, CompassNameHelper::formatBiomeName);
     }
 
-    public static String appendStructureSecondaryNames(ResourceLocation structureKey, String primaryText) {
+    public static String appendStructureSecondaryNames(Identifier structureKey, String primaryText) {
         return appendTranslatedSecondaryNames("structure", structureKey, primaryText, name -> name);
     }
 
     private static String appendTranslatedSecondaryNames(String category,
-                                                         ResourceLocation key,
+                                                         Identifier key,
                                                          String primaryText,
                                                          java.util.function.UnaryOperator<String> formatter) {
         if (!SecondaryTooltipUtil.shouldShowSecondaryLanguage() || key == null || primaryText == null || primaryText.isBlank()) {

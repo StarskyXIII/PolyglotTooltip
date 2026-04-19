@@ -2,7 +2,7 @@ package com.starskyxiii.polyglottooltip.mixin.explorerscompass;
 
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.starskyxiii.polyglottooltip.integration.compass.CompassNameHelper;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.injection.At;
@@ -12,10 +12,10 @@ import org.spongepowered.asm.mixin.injection.At;
 public abstract class ExplorersCompassStructureUtilsMixin {
 
     @ModifyReturnValue(
-            method = "getPrettyStructureName(Lnet/minecraft/resources/ResourceLocation;)Ljava/lang/String;",
+            method = "getStructureName(Lnet/minecraft/resources/Identifier;)Ljava/lang/String;",
             at = @At("RETURN")
     )
-    private static String polyglottooltip$appendSecondaryStructureNames(String original, ResourceLocation key) {
+    private static String polyglottooltip$appendSecondaryStructureNames(String original, Identifier key) {
         return CompassNameHelper.appendStructureSecondaryNames(key, original);
     }
 }
