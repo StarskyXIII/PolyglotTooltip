@@ -25,6 +25,7 @@
     "jei.JeiElementSearchLowMemMixin",
     "jei.JeiFluidHelperMixin",
     "mekanism.MekanismChemicalStackMixin",
+    "mekanism.MekanismQioNameQueryMixin",
     "industrialforegoing.IndustrialForegoingLaserLensItemMixin",
     "industrialforegoing.IndustrialForegoingRangeAddonItemMixin",
     "industrialforegoing.IndustrialForegoingSpeedAddonItemMixin",
