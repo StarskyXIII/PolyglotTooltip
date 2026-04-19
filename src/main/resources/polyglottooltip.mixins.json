@@ -32,6 +32,7 @@
     "industrialforegoing.IndustrialForegoingProcessingAddonItemMixin",
     "occultism.OccultismStorageControllerGuiMixin",
     "projecte.ProjectENameQueryMixin",
+    "sophisticatedcore.SophisticatedCoreStorageScreenMixin",
     "rs2.Rs2GridQueryParserMixin",
     "rs2.Rs2AutocrafterManagerViewGroupMixin",
     "rs2.Rs2AutocrafterManagerSubViewGroupMixin",
