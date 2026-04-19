@@ -39,6 +39,7 @@
     "industrialforegoing.IndustrialForegoingEfficiencyAddonItemMixin",
     "industrialforegoing.IndustrialForegoingProcessingAddonItemMixin",
     "occultism.OccultismStorageControllerGuiMixin",
+    "projecte.ProjectENameQueryMixin",
     "rs.RsFluidGridStackMixin",
     "rs.RsItemGridStackMixin",
     "rs.RsNameGridFilterMixin",
