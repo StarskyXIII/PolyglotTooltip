@@ -4,6 +4,7 @@
   "compatibilityLevel": "JAVA_17",
   "mixins": [],
   "client": [
+    "apothicenchanting.ApothicEnchantmentLibraryScreenMixin",
     "arsnouveau.ArsNouveauGlyphButtonMixin",
     "arsnouveau.ArsNouveauGuiSpellBookMixin",
     "arsnouveau.ArsNouveauGlyphUnlockMenuMixin",
