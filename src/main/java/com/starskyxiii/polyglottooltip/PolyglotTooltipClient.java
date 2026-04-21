@@ -3,6 +3,7 @@ package com.starskyxiii.polyglottooltip;
 import com.starskyxiii.polyglottooltip.integration.arsnouveau.ArsNouveauNameHelper;
 import com.starskyxiii.polyglottooltip.integration.industrialforegoing.IndustrialForegoingNameHelper;
 import com.starskyxiii.polyglottooltip.integration.productivebees.ProductiveBeesNameHelper;
+import com.starskyxiii.polyglottooltip.integration.storagedrawers.StorageDrawersNameHelper;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
@@ -24,6 +25,7 @@ public class PolyglotTooltipClient {
         LanguageCache.registerSpecialNameResolver(ArsNouveauNameHelper::tryResolveSpecialName);
         LanguageCache.registerSpecialNameResolver(IndustrialForegoingNameHelper::tryResolveSpecialName);
         LanguageCache.registerSpecialNameResolver(ProductiveBeesNameHelper::tryResolveSpecialName);
+        LanguageCache.registerSpecialNameResolver(StorageDrawersNameHelper::tryResolveSpecialName);
     }
 
     @SubscribeEvent
