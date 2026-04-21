@@ -4,6 +4,7 @@ import com.mojang.logging.LogUtils;
 import com.starskyxiii.polyglottooltip.integration.arsnouveau.ArsNouveauNameHelper;
 import com.starskyxiii.polyglottooltip.integration.industrialforegoing.IndustrialForegoingNameHelper;
 import com.starskyxiii.polyglottooltip.integration.productivebees.ProductiveBeesNameHelper;
+import com.starskyxiii.polyglottooltip.integration.storagedrawers.StorageDrawersNameHelper;
 import net.minecraft.resources.Identifier;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
@@ -31,6 +32,7 @@ public class PolyglotTooltip {
             LanguageCache.registerSpecialNameResolver(ArsNouveauNameHelper::tryResolveSpecialName);
             LanguageCache.registerSpecialNameResolver(IndustrialForegoingNameHelper::tryResolveSpecialName);
             LanguageCache.registerSpecialNameResolver(ProductiveBeesNameHelper::tryResolveSpecialName);
+            LanguageCache.registerSpecialNameResolver(StorageDrawersNameHelper::tryResolveSpecialName);
 
             modEventBus.addListener(this::onRegisterReloadListeners);
             modEventBus.addListener(this::onConfigReloading);
