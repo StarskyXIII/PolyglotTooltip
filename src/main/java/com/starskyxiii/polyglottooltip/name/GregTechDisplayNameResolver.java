@@ -4,6 +4,7 @@ import com.starskyxiii.polyglottooltip.i18n.GregTechMaterialTranslationResolver;
 import com.starskyxiii.polyglottooltip.i18n.LanguageCache;
 
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.EnumChatFormatting;
 
 final class GregTechDisplayNameResolver {
 
@@ -26,7 +27,10 @@ final class GregTechDisplayNameResolver {
 
         String translated = translate(languageCode, translationKey);
         if (translated == null || translated.isEmpty()) {
-            return null;
+            translated = resolveFromCurrentDisplayNameKey(stack, languageCode);
+            if (translated == null || translated.isEmpty()) {
+                return null;
+            }
         }
 
         if (translated.contains("%material")) {
@@ -101,6 +105,32 @@ final class GregTechDisplayNameResolver {
             translated = LanguageCache.translate(languageCode, bareKey);
             if (translated != null && !translated.isEmpty()) {
                 return translated;
+            }
+        }
+
+        return null;
+    }
+
+    private static String resolveFromCurrentDisplayNameKey(ItemStack stack, String languageCode) {
+        if (stack == null || stack.getItem() == null) {
+            return null;
+        }
+
+        String currentDisplayName = EnumChatFormatting.getTextWithoutFormattingCodes(stack.getDisplayName());
+        if (currentDisplayName == null || currentDisplayName.trim().isEmpty()) {
+            return null;
+        }
+
+        String[] candidatePrefixes = new String[] { "gt.", "bw.", "gtplusplus.", "propolis.", "comb." };
+        for (String prefix : candidatePrefixes) {
+            String resolvedKey = LanguageCache.findCurrentLanguageTranslationKey(currentDisplayName.trim(), prefix);
+            if (resolvedKey == null || resolvedKey.trim().isEmpty()) {
+                continue;
+            }
+
+            String translated = translate(languageCode, resolvedKey.trim());
+            if (translated != null && !translated.trim().isEmpty()) {
+                return translated.trim();
             }
         }
 

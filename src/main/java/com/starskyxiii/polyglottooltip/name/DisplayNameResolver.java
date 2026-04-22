@@ -7,6 +7,8 @@ import java.util.List;
 
 import com.starskyxiii.polyglottooltip.config.Config;
 import com.starskyxiii.polyglottooltip.i18n.LanguageCache;
+import com.starskyxiii.polyglottooltip.report.NameQuality;
+import com.starskyxiii.polyglottooltip.report.NameQualityClassifier;
 import com.starskyxiii.polyglottooltip.name.prebuilt.FullNameCache;
 
 import net.minecraft.init.Items;
@@ -26,6 +28,9 @@ public final class DisplayNameResolver {
     private static final String EMPTY_POTION_NAME = "item.emptyPotion.name";
     private static final String PLAYER_SKULL_NAME = "item.skull.player.name";
     private static final int MAX_RESOLVE_DEPTH = 8;
+    private static final String BW_WERKSTOFF_BLOCK_CASING_REGISTRY_NAME = "bartworks:bw.werkstoffblockscasing.01";
+    private static final String BW_WERKSTOFF_BLOCK_CASING_ADVANCED_REGISTRY_NAME =
+        "bartworks:bw.werkstoffblockscasingadvanced.01";
 
     private DisplayNameResolver() {}
 
@@ -103,6 +108,21 @@ public final class DisplayNameResolver {
                 return reactorDisplayName;
             }
 
+            String binnieDisplayName = BinnieDisplayNameResolver.tryResolveDisplayName(stack, languageCode);
+            if (binnieDisplayName != null && !binnieDisplayName.isEmpty()) {
+                return binnieDisplayName;
+            }
+
+            String gtNeiOrePluginDisplayName = GtNeiOrePluginDisplayNameResolver.tryResolveDisplayName(stack, languageCode);
+            if (gtNeiOrePluginDisplayName != null && !gtNeiOrePluginDisplayName.isEmpty()) {
+                return gtNeiOrePluginDisplayName;
+            }
+
+            String bartWorksDisplayName = BartWorksDisplayNameResolver.tryResolveDisplayName(stack, languageCode);
+            if (bartWorksDisplayName != null && !bartWorksDisplayName.isEmpty()) {
+                return bartWorksDisplayName;
+            }
+
             String gregTechDisplayName = GregTechDisplayNameResolver.tryResolveDisplayName(stack, languageCode);
             if (gregTechDisplayName != null && !gregTechDisplayName.isEmpty()) {
                 return gregTechDisplayName;
@@ -133,8 +153,16 @@ public final class DisplayNameResolver {
         // Only at depth 0 to avoid incorrectly short-circuiting recursive calls (e.g. AE2 facades).
         if (depth == 0) {
             String cachedName = resolveFromFullCache(stack, languageCode);
-            if (cachedName != null && !cachedName.isEmpty()) {
+            if (cachedName != null
+                && !cachedName.isEmpty()
+                && !shouldIgnoreSuspiciousBartWorksCasingCache(stack, languageCode, cachedName)) {
                 return cachedName;
+            }
+
+            String bartWorksCasingDisplayName =
+                BartWorksDisplayNameResolver.tryResolveGeneratedCasingDisplayName(stack, languageCode);
+            if (bartWorksCasingDisplayName != null && !bartWorksCasingDisplayName.isEmpty()) {
+                return bartWorksCasingDisplayName;
             }
         }
 
@@ -254,6 +282,27 @@ public final class DisplayNameResolver {
         Object registryNameObj = Item.itemRegistry.getNameForObject(stack.getItem());
         if (registryNameObj == null) return null;
         return FullNameCache.lookup(String.valueOf(registryNameObj), stack.getItemDamage(), languageCode);
+    }
+
+    private static boolean shouldIgnoreSuspiciousBartWorksCasingCache(ItemStack stack, String languageCode,
+        String cachedName) {
+        if (stack == null || stack.getItem() == null || cachedName == null || cachedName.trim().isEmpty()) {
+            return false;
+        }
+
+        Object registryNameObj = Item.itemRegistry.getNameForObject(stack.getItem());
+        if (registryNameObj == null) {
+            return false;
+        }
+
+        String registryName = String.valueOf(registryNameObj);
+        if (!BW_WERKSTOFF_BLOCK_CASING_REGISTRY_NAME.equals(registryName)
+            && !BW_WERKSTOFF_BLOCK_CASING_ADVANCED_REGISTRY_NAME.equals(registryName)) {
+            return false;
+        }
+
+        NameQuality quality = NameQualityClassifier.classify(cachedName.trim(), languageCode);
+        return quality == NameQuality.CONTAINS_CJK || quality == NameQuality.MIXED_LANGUAGE;
     }
 
     private static String getTranslationKey(ItemStack stack) {
