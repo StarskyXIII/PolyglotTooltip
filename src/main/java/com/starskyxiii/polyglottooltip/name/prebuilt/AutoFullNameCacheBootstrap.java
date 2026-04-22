@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.starskyxiii.polyglottooltip.PolyglotTooltip;
 import com.starskyxiii.polyglottooltip.config.Config;
+import com.starskyxiii.polyglottooltip.name.prebuilt.FullNameCacheBuilder.BuildOwner;
 import com.starskyxiii.polyglottooltip.name.prebuilt.FullNameCacheBuilder.BuildResult;
 import com.starskyxiii.polyglottooltip.name.prebuilt.FullNameCacheBuilder.PendingBuild;
 
@@ -30,6 +31,7 @@ public final class AutoFullNameCacheBootstrap {
 
     private State state = State.IDLE;
     private PendingBuild pending;
+    private boolean finishQueued;
     private int stableTicks;
 
     public void onLoadComplete() {
@@ -39,6 +41,7 @@ public final class AutoFullNameCacheBootstrap {
                 pending = null;
             }
             state = State.DONE;
+            finishQueued = false;
             stableTicks = 0;
             return;
         }
@@ -50,7 +53,18 @@ public final class AutoFullNameCacheBootstrap {
         }
 
         try {
-            pending = FullNameCacheBuilder.startBuild("all", plan.languagesToBuild, plan.mergeWithExistingCache);
+            if (FullNameCacheBuilder.hasActiveBuild()) {
+                state = State.WAITING;
+                stableTicks = 0;
+                return;
+            }
+
+            pending = FullNameCacheBuilder.startBuild(
+                "all",
+                plan.languagesToBuild,
+                plan.mergeWithExistingCache,
+                BuildOwner.AUTO);
+            finishQueued = false;
             state = State.WAITING;
             PolyglotTooltip.LOG.info(
                 "[PolyglotTooltips] Auto-build queued during load: {} (languages={}, merge={}).",
@@ -102,7 +116,18 @@ public final class AutoFullNameCacheBootstrap {
             }
 
             try {
-                pending = FullNameCacheBuilder.startBuild("all", plan.languagesToBuild, plan.mergeWithExistingCache);
+                if (FullNameCacheBuilder.hasActiveBuild()) {
+                    state = State.WAITING;
+                    stableTicks = 0;
+                    return;
+                }
+
+                pending = FullNameCacheBuilder.startBuild(
+                    "all",
+                    plan.languagesToBuild,
+                    plan.mergeWithExistingCache,
+                    BuildOwner.AUTO);
+                finishQueued = false;
                 stableTicks = 0;
                 state = State.WAITING;
                 PolyglotTooltip.LOG.info(
@@ -134,11 +159,16 @@ public final class AutoFullNameCacheBootstrap {
         state = State.RUNNING;
         boolean finished = false;
         try {
-            boolean complete = FullNameCacheBuilder.resolveNextSlice(
-                pending,
-                MAX_ITEMS_PER_TICK,
-                MAX_BUDGET_NS_PER_TICK);
-            if (!complete) {
+            if (!finishQueued) {
+                boolean complete = FullNameCacheBuilder.resolveNextSlice(
+                    pending,
+                    MAX_ITEMS_PER_TICK,
+                    MAX_BUDGET_NS_PER_TICK);
+                if (!complete) {
+                    return;
+                }
+
+                finishQueued = true;
                 return;
             }
 
@@ -156,6 +186,7 @@ public final class AutoFullNameCacheBootstrap {
         } finally {
             if (finished) {
                 pending = null;
+                finishQueued = false;
                 stableTicks = 0;
                 state = State.DONE;
             }

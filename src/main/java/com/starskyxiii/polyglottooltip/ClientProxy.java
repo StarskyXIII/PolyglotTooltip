@@ -5,6 +5,7 @@ import com.starskyxiii.polyglottooltip.client.command.BuildNameCacheCommand;
 import com.starskyxiii.polyglottooltip.client.command.DumpSecondaryNamesCommand;
 import com.starskyxiii.polyglottooltip.name.prebuilt.AutoFullNameCacheBootstrap;
 import com.starskyxiii.polyglottooltip.name.prebuilt.FullNameCacheIO;
+import com.starskyxiii.polyglottooltip.name.prebuilt.ManualFullNameCacheBuildManager;
 import com.starskyxiii.polyglottooltip.config.LanguageCacheReloadListener;
 import com.starskyxiii.polyglottooltip.integration.nei.NeiSearchProvider;
 import com.starskyxiii.polyglottooltip.tooltip.TooltipHandler;
@@ -27,6 +28,8 @@ public class ClientProxy extends CommonProxy {
     private static boolean fullCacheLoaded;
     private static boolean autoFullCacheBootstrapRegistered;
     private static AutoFullNameCacheBootstrap autoFullCacheBootstrap;
+    private static boolean manualFullCacheBuildManagerRegistered;
+    private static ManualFullNameCacheBuildManager manualFullCacheBuildManager;
 
     @Override
     public void init(FMLInitializationEvent event) {
@@ -54,6 +57,7 @@ public class ClientProxy extends CommonProxy {
             fullCacheLoaded = true;
         }
 
+        registerManualFullCacheBuildManager();
         registerAutoFullCacheBootstrap();
 
         if (Loader.isModLoaded("NotEnoughItems") && !neiSearchProviderRegistered) {
@@ -96,5 +100,15 @@ public class ClientProxy extends CommonProxy {
         autoFullCacheBootstrap = new AutoFullNameCacheBootstrap();
         FMLCommonHandler.instance().bus().register(autoFullCacheBootstrap);
         autoFullCacheBootstrapRegistered = true;
+    }
+
+    private static void registerManualFullCacheBuildManager() {
+        if (manualFullCacheBuildManagerRegistered) {
+            return;
+        }
+
+        manualFullCacheBuildManager = ManualFullNameCacheBuildManager.getInstance();
+        FMLCommonHandler.instance().bus().register(manualFullCacheBuildManager);
+        manualFullCacheBuildManagerRegistered = true;
     }
 }

@@ -1,6 +1,8 @@
 package com.starskyxiii.polyglottooltip.name.prebuilt;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -30,13 +32,39 @@ import com.starskyxiii.polyglottooltip.report.NameQualityClassifier;
  *
  * <p>The builder now supports both blocking and budgeted execution:
  * <ul>
- *   <li>Blocking builds are still used by the manual command path.</li>
- *   <li>Budgeted builds are used by auto-bootstrap so the work can be sliced across ticks.</li>
+ *   <li>Blocking builds remain available for direct callers and verification.</li>
+ *   <li>Budgeted builds are used by auto-bootstrap and the manual command manager
+ *       so the work can be sliced across ticks.</li>
  * </ul>
  */
 public final class FullNameCacheBuilder {
 
+    private static final Object ACTIVE_BUILD_LOCK = new Object();
+    private static final Method ITEM_GET_CREATIVE_TABS_METHOD = resolveItemGetCreativeTabsMethod();
+    private static ActiveBuildState activeBuild;
+
     private FullNameCacheBuilder() {}
+
+    public enum BuildOwner {
+        AUTO("auto"),
+        MANUAL("manual");
+
+        private final String displayName;
+
+        BuildOwner(String displayName) {
+            this.displayName = displayName;
+        }
+
+        public String getDisplayName() {
+            return displayName;
+        }
+    }
+
+    public enum BuildPhase {
+        EXPANDING,
+        RESOLVING,
+        WRITING
+    }
 
     // =========================================================================
     // Blocking entry points
@@ -48,7 +76,11 @@ public final class FullNameCacheBuilder {
 
     public static BuildResult build(String scanFilter, List<String> targetLanguages,
             boolean mergeWithPreviousCache) throws Exception {
-        PendingBuild pending = startBuild(scanFilter, targetLanguages, mergeWithPreviousCache);
+        PendingBuild pending = startBuild(
+            scanFilter,
+            targetLanguages,
+            mergeWithPreviousCache,
+            BuildOwner.MANUAL);
         try {
             ensureExpanded(pending);
             for (String lang : pending.targetLanguages) {
@@ -66,16 +98,26 @@ public final class FullNameCacheBuilder {
     // =========================================================================
 
     public static PendingBuild startBuild(String scanFilter) {
-        return startBuild(scanFilter, Config.displayLanguages, shouldMergeWithPrevious(scanFilter));
+        return startBuild(
+            scanFilter,
+            Config.displayLanguages,
+            shouldMergeWithPrevious(scanFilter),
+            BuildOwner.MANUAL);
     }
 
     public static PendingBuild startBuild(String scanFilter, List<String> targetLanguages,
             boolean mergeWithPreviousCache) {
+        return startBuild(scanFilter, targetLanguages, mergeWithPreviousCache, BuildOwner.MANUAL);
+    }
+
+    public static PendingBuild startBuild(String scanFilter, List<String> targetLanguages,
+            boolean mergeWithPreviousCache, BuildOwner owner) {
         String filter = normalizeFilter(scanFilter);
         List<String> normalizedLanguages = normalizeLanguages(targetLanguages);
 
         PolyglotTooltip.LOG.info(
-            "[PolyglotTooltips] Full name cache build starting. filter='{}', languages={}, fastSwitch={}, merge={}",
+            "[PolyglotTooltips] {} full name cache build starting. filter='{}', languages={}, fastSwitch={}, merge={}",
+            owner == null ? BuildOwner.MANUAL.getDisplayName() : owner.getDisplayName(),
             filter.isEmpty() ? "all" : filter,
             normalizedLanguages,
             Config.useFastLanguageSwitch,
@@ -91,12 +133,8 @@ public final class FullNameCacheBuilder {
         Map<PrebuiltSecondaryNameIndexKey, Map<String, String>> previousCache = FullNameCache.snapshot();
         FullNameCacheMetadata previousMetadata = FullNameCache.snapshotMetadata();
 
-        // Bypass the prebuilt fast path while the builder is collecting fresh names.
-        FullNameCache.replace(
-            new LinkedHashMap<PrebuiltSecondaryNameIndexKey, Map<String, String>>(),
-            previousMetadata);
-
-        return new PendingBuild(
+        PendingBuild pending = new PendingBuild(
+            owner == null ? BuildOwner.MANUAL : owner,
             items,
             items.size(),
             enumMs,
@@ -106,6 +144,19 @@ public final class FullNameCacheBuilder {
             mergeWithPreviousCache,
             previousCache,
             previousMetadata);
+
+        claimActiveBuild(owner == null ? BuildOwner.MANUAL : owner, pending);
+
+        try {
+            // Bypass the prebuilt fast path while the builder is collecting fresh names.
+            FullNameCache.replace(
+                new LinkedHashMap<PrebuiltSecondaryNameIndexKey, Map<String, String>>(),
+                previousMetadata);
+            return pending;
+        } catch (RuntimeException e) {
+            releaseActiveBuild(pending);
+            throw e;
+        }
     }
 
     /**
@@ -117,6 +168,7 @@ public final class FullNameCacheBuilder {
         if (pending == null) {
             return true;
         }
+        ensureActiveBuild(pending);
 
         int safeMaxItems = maxItems <= 0 ? Integer.MAX_VALUE : maxItems;
         long safeMaxNanos = maxNanos <= 0L ? Long.MAX_VALUE : maxNanos;
@@ -137,6 +189,7 @@ public final class FullNameCacheBuilder {
         String lang = pending.targetLanguages.get(pending.currentLanguageIndex);
         if (pending.activeLanguage == null) {
             beginLanguage(pending, lang);
+            return false;
         }
 
         return resolveCurrentLanguageSlice(pending, safeMaxItems, safeMaxNanos);
@@ -150,6 +203,7 @@ public final class FullNameCacheBuilder {
         if (pending == null) {
             throw new IllegalArgumentException("pending build is null");
         }
+        ensureActiveBuild(pending);
 
         ensureExpanded(pending);
 
@@ -167,7 +221,8 @@ public final class FullNameCacheBuilder {
         }
 
         PolyglotTooltip.LOG.info(
-            "[PolyglotTooltips] Language switched to '{}' via {} path ({}ms).",
+            "[PolyglotTooltips] {} build switched language to '{}' via {} path ({}ms).",
+            pending.owner.getDisplayName(),
             lang,
             sr.name(),
             switchMs);
@@ -180,7 +235,10 @@ public final class FullNameCacheBuilder {
             }
         } finally {
             LanguageSwitcher.switchTo(mc, savedLanguage, Config.useFastLanguageSwitch);
-            PolyglotTooltip.LOG.info("[PolyglotTooltips] Language restored to '{}'.", savedLanguage);
+            PolyglotTooltip.LOG.info(
+                "[PolyglotTooltips] {} build restored language to '{}'.",
+                pending.owner.getDisplayName(),
+                savedLanguage);
         }
 
         stats.switchMs = switchMs;
@@ -197,6 +255,7 @@ public final class FullNameCacheBuilder {
         if (pending == null) {
             throw new IllegalArgumentException("pending build is null");
         }
+        ensureActiveBuild(pending);
 
         ensureExpanded(pending);
 
@@ -245,6 +304,7 @@ public final class FullNameCacheBuilder {
             pending.expandMs,
             writeMs);
 
+        releaseActiveBuild(pending);
         return result;
     }
 
@@ -252,10 +312,31 @@ public final class FullNameCacheBuilder {
         if (pending == null) {
             return;
         }
+        if (!isActiveBuild(pending)) {
+            return;
+        }
 
-        restoreActiveLanguage(pending, Minecraft.getMinecraft());
-        FullNameCache.replace(pending.previousCache, pending.previousMetadata);
-        PolyglotTooltip.LOG.warn("[PolyglotTooltips] Build cancelled; previous cache restored.");
+        try {
+            restoreActiveLanguage(pending, Minecraft.getMinecraft());
+            FullNameCache.replace(pending.previousCache, pending.previousMetadata);
+            PolyglotTooltip.LOG.warn(
+                "[PolyglotTooltips] {} build cancelled; previous cache restored.",
+                pending.owner.getDisplayName());
+        } finally {
+            releaseActiveBuild(pending);
+        }
+    }
+
+    public static boolean hasActiveBuild() {
+        synchronized (ACTIVE_BUILD_LOCK) {
+            return activeBuild != null;
+        }
+    }
+
+    public static ActiveBuildSnapshot getActiveBuildSnapshot() {
+        synchronized (ACTIVE_BUILD_LOCK) {
+            return activeBuild == null ? null : activeBuild.toSnapshot();
+        }
     }
 
     // =========================================================================
@@ -272,10 +353,17 @@ public final class FullNameCacheBuilder {
         long startNs = System.nanoTime();
         int processed = 0;
 
-        while (pending.nextItemIndex < pending.items.size()) {
-            Item item = pending.items.get(pending.nextItemIndex++);
-            expandItem(item, pending.expandedStacks);
-            processed++;
+        while (pending.nextItemIndex < pending.items.size() || pending.activeExpansion != null) {
+            if (pending.activeExpansion == null) {
+                Item item = pending.items.get(pending.nextItemIndex);
+                pending.activeExpansion = new ExpansionState(item);
+            }
+
+            if (advanceExpansion(pending, pending.activeExpansion, startNs, maxNanos)) {
+                pending.activeExpansion = null;
+                pending.nextItemIndex++;
+                processed++;
+            }
 
             if (processed >= maxItems || isBudgetExceeded(startNs, maxNanos)) {
                 break;
@@ -284,48 +372,11 @@ public final class FullNameCacheBuilder {
 
         pending.expandMs += nanosToMillis(System.nanoTime() - startNs);
 
-        if (pending.isExpansionComplete() && pending.expandedEntries == null) {
-            pending.expandedEntries = new ArrayList<ExpandedStack>(pending.expandedStacks.values());
+        if (pending.isExpansionComplete()) {
             PolyglotTooltip.LOG.info(
                 "[PolyglotTooltips] Unique item+damage pairs: {}  ({}ms)",
                 pending.expandedEntries.size(),
                 pending.expandMs);
-        }
-    }
-
-    private static void expandItem(Item item, Map<StackKey, ExpandedStack> out) {
-        if (item == null) {
-            return;
-        }
-
-        List<ItemStack> variants = new ArrayList<ItemStack>();
-        addSubItems(item, item.getCreativeTab(), variants);
-        for (CreativeTabs tab : CreativeTabs.creativeTabArray) {
-            addSubItems(item, tab, variants);
-        }
-
-        if (variants.isEmpty()) {
-            variants.add(new ItemStack(item, 1, 0));
-        }
-
-        for (ItemStack stack : variants) {
-            if (stack == null || stack.getItem() == null) {
-                continue;
-            }
-
-            String registryName = getRegistryName(stack.getItem());
-            if (registryName == null || registryName.isEmpty()) {
-                continue;
-            }
-
-            StackKey stackKey = StackKey.of(stack);
-            if (stackKey != null && !out.containsKey(stackKey)) {
-                out.put(
-                    stackKey,
-                    new ExpandedStack(
-                        new PrebuiltSecondaryNameIndexKey(registryName, stack.getItemDamage()),
-                        stack.copy()));
-            }
         }
     }
 
@@ -338,6 +389,157 @@ public final class FullNameCacheBuilder {
             item.getSubItems(item, tab, target);
         } catch (Throwable ignored) {
             // Some items expose buggy creative-tab expansion; skip those variants.
+        }
+    }
+
+    private static boolean advanceExpansion(PendingBuild pending,
+            ExpansionState state, long startNs, long maxNanos) {
+        if (state == null) {
+            return true;
+        }
+
+        if (state.item == null) {
+            return true;
+        }
+
+        while (true) {
+            if (!state.preferredTabsScanned) {
+                if (advancePreferredTabScan(state)) {
+                    return false;
+                }
+                continue;
+            }
+
+            if (state.variants.isEmpty() && !state.fallbackTabsScanned) {
+                if (advanceFallbackTabScan(state)) {
+                    return false;
+                }
+                continue;
+            }
+
+            if (!state.defaultVariantAdded && state.variants.isEmpty()) {
+                state.variants.add(new ItemStack(state.item, 1, 0));
+                state.defaultVariantAdded = true;
+            }
+
+            if (advanceVariantCollection(pending, state, startNs, maxNanos)) {
+                return false;
+            }
+
+            return true;
+        }
+    }
+
+    private static boolean advancePreferredTabScan(ExpansionState state) {
+        while (state.nextPreferredTabIndex < state.preferredTabs.size()) {
+            CreativeTabs tab = state.preferredTabs.get(state.nextPreferredTabIndex++);
+            if (tab == null || !state.attemptedTabs.add(tab)) {
+                continue;
+            }
+            addSubItems(state.item, tab, state.variants);
+            return true;
+        }
+
+        state.preferredTabsScanned = true;
+        return false;
+    }
+
+    private static boolean advanceFallbackTabScan(ExpansionState state) {
+        while (state.nextFallbackTabIndex < CreativeTabs.creativeTabArray.length) {
+            CreativeTabs tab = CreativeTabs.creativeTabArray[state.nextFallbackTabIndex++];
+            if (tab == null || state.attemptedTabs.contains(tab)) {
+                continue;
+            }
+            state.attemptedTabs.add(tab);
+            addSubItems(state.item, tab, state.variants);
+            return true;
+        }
+
+        state.fallbackTabsScanned = true;
+        return false;
+    }
+
+    private static boolean advanceVariantCollection(PendingBuild pending,
+            ExpansionState state, long startNs, long maxNanos) {
+        while (state.nextVariantIndex < state.variants.size()) {
+            ItemStack stack = state.variants.get(state.nextVariantIndex++);
+            if (stack == null || stack.getItem() == null) {
+                if (isBudgetExceeded(startNs, maxNanos)) {
+                    return true;
+                }
+                continue;
+            }
+
+            String registryName = getRegistryName(stack.getItem());
+            if (registryName == null || registryName.isEmpty()) {
+                if (isBudgetExceeded(startNs, maxNanos)) {
+                    return true;
+                }
+                continue;
+            }
+
+            StackKey stackKey = StackKey.of(stack);
+            if (stackKey != null && !pending.expandedStacks.containsKey(stackKey)) {
+                ExpandedStack expanded = new ExpandedStack(
+                    new PrebuiltSecondaryNameIndexKey(registryName, stack.getItemDamage()),
+                    stack.copy());
+                pending.expandedStacks.put(stackKey, expanded);
+                pending.expandedEntries.add(expanded);
+            }
+
+            if (isBudgetExceeded(startNs, maxNanos)) {
+                return true;
+            }
+        }
+
+        state.variants.clear();
+        state.nextVariantIndex = 0;
+        return false;
+    }
+
+    private static List<CreativeTabs> collectPreferredCreativeTabs(Item item) {
+        LinkedHashSet<CreativeTabs> tabs = new LinkedHashSet<CreativeTabs>();
+        if (item == null) {
+            return new ArrayList<CreativeTabs>();
+        }
+
+        addCreativeTab(tabs, item.getCreativeTab());
+
+        CreativeTabs[] extraTabs = getCreativeTabs(item);
+        if (extraTabs != null) {
+            for (int i = 0; i < extraTabs.length; i++) {
+                addCreativeTab(tabs, extraTabs[i]);
+            }
+        }
+
+        return new ArrayList<CreativeTabs>(tabs);
+    }
+
+    private static void addCreativeTab(Set<CreativeTabs> tabs, CreativeTabs tab) {
+        if (tabs == null || tab == null) {
+            return;
+        }
+        tabs.add(tab);
+    }
+
+    private static CreativeTabs[] getCreativeTabs(Item item) {
+        if (item == null || ITEM_GET_CREATIVE_TABS_METHOD == null) {
+            return null;
+        }
+
+        try {
+            Object result = ITEM_GET_CREATIVE_TABS_METHOD.invoke(item);
+            return result instanceof CreativeTabs[] ? (CreativeTabs[]) result : null;
+        } catch (Throwable ignored) {
+            return null;
+        }
+    }
+
+    private static Method resolveItemGetCreativeTabsMethod() {
+        try {
+            return Item.class.getMethod("getCreativeTabs");
+        } catch (Throwable ignored) {
+            return null;
         }
     }
 
@@ -358,7 +560,8 @@ public final class FullNameCacheBuilder {
         pending.activeLanguageSwitched = false;
 
         PolyglotTooltip.LOG.info(
-            "[PolyglotTooltips] Auto-build: resolving '{}' ({}/{})...",
+            "[PolyglotTooltips] {} build: resolving '{}' ({}/{})...",
+            pending.owner.getDisplayName(),
             lang,
             pending.currentLanguageIndex + 1,
             pending.targetLanguages.size());
@@ -366,7 +569,8 @@ public final class FullNameCacheBuilder {
         if (sameLanguage(pending.activeSavedLanguage, lang)) {
             pending.activeStats.switchMode = SwitchResult.FAST;
             PolyglotTooltip.LOG.info(
-                "[PolyglotTooltips] Language '{}' already active; reusing current locale for budgeted build.",
+                "[PolyglotTooltips] {} build reusing current language '{}'.",
+                pending.owner.getDisplayName(),
                 lang);
             return;
         }
@@ -382,7 +586,8 @@ public final class FullNameCacheBuilder {
         pending.activeStats.switchMode = combineSwitchModes(pending.activeStats.switchMode, sr);
         pending.activeLanguageSwitched = true;
         PolyglotTooltip.LOG.info(
-            "[PolyglotTooltips] Language switched to '{}' via {} path ({}ms).",
+            "[PolyglotTooltips] {} build switched language to '{}' via {} path ({}ms).",
+            pending.owner.getDisplayName(),
             lang,
             sr.name(),
             switchMs);
@@ -473,7 +678,8 @@ public final class FullNameCacheBuilder {
         pending.formatOnlyPerLang.put(lang, Integer.valueOf(stats.formatOnlyCount));
 
         PolyglotTooltip.LOG.info(
-            "[PolyglotTooltips] lang={}: collected={}, good={}, empty={}, rawKey={}, cjkSuspect={}, mixed={}, formatOnly={}  resolve={}ms",
+            "[PolyglotTooltips] {} build lang={}: collected={}, good={}, empty={}, rawKey={}, cjkSuspect={}, mixed={}, formatOnly={}  resolve={}ms",
+            pending.owner.getDisplayName(),
             lang,
             stats.okCount,
             stats.goodCount,
@@ -501,7 +707,8 @@ public final class FullNameCacheBuilder {
         if (restoreResult == SwitchResult.FAILED) {
             pending.activeStats.switchMode = combineSwitchModes(pending.activeStats.switchMode, SwitchResult.FAILED);
             PolyglotTooltip.LOG.warn(
-                "[PolyglotTooltips] Failed to restore language '{}'.",
+                "[PolyglotTooltips] {} build failed to restore language '{}'.",
+                pending.owner.getDisplayName(),
                 restoreLanguage);
             return;
         }
@@ -510,7 +717,8 @@ public final class FullNameCacheBuilder {
         pending.activeStats.switchMode = combineSwitchModes(pending.activeStats.switchMode, restoreResult);
         pending.activeLanguageSwitched = false;
         PolyglotTooltip.LOG.info(
-            "[PolyglotTooltips] Language restored to '{}' via {} path ({}ms).",
+            "[PolyglotTooltips] {} build restored language to '{}' via {} path ({}ms).",
+            pending.owner.getDisplayName(),
             restoreLanguage,
             restoreResult.name(),
             restoreMs);
@@ -756,16 +964,67 @@ public final class FullNameCacheBuilder {
         return left.trim().equalsIgnoreCase(right.trim());
     }
 
+    private static void claimActiveBuild(BuildOwner owner, PendingBuild pending) {
+        if (pending == null) {
+            throw new IllegalArgumentException("pending build is null");
+        }
+
+        synchronized (ACTIVE_BUILD_LOCK) {
+            if (activeBuild != null) {
+                throw new IllegalStateException(buildConflictMessage(activeBuild.toSnapshot()));
+            }
+            activeBuild = new ActiveBuildState(owner, pending);
+        }
+    }
+
+    private static void ensureActiveBuild(PendingBuild pending) {
+        if (!isActiveBuild(pending)) {
+            throw new IllegalStateException("Build is no longer active.");
+        }
+    }
+
+    private static boolean isActiveBuild(PendingBuild pending) {
+        synchronized (ACTIVE_BUILD_LOCK) {
+            return activeBuild != null && activeBuild.pending == pending;
+        }
+    }
+
+    private static void releaseActiveBuild(PendingBuild pending) {
+        synchronized (ACTIVE_BUILD_LOCK) {
+            if (activeBuild != null && activeBuild.pending == pending) {
+                activeBuild = null;
+            }
+        }
+    }
+
+    private static String buildConflictMessage(ActiveBuildSnapshot snapshot) {
+        if (snapshot == null) {
+            return "Another full name cache build is already running.";
+        }
+
+        StringBuilder builder = new StringBuilder();
+        builder.append("Another ")
+            .append(snapshot.owner.getDisplayName())
+            .append(" build is already running");
+        if (snapshot.filter != null && !snapshot.filter.isEmpty()) {
+            builder.append(" (filter='").append(snapshot.filter).append("')");
+        }
+        builder.append('.');
+        return builder.toString();
+    }
+
     // =========================================================================
     // Pending build state
     // =========================================================================
 
     public static final class PendingBuild {
 
+        final BuildOwner owner;
         private final List<Item> items;
         private final Map<StackKey, ExpandedStack> expandedStacks =
             new LinkedHashMap<StackKey, ExpandedStack>();
-        private List<ExpandedStack> expandedEntries;
+        private final List<ExpandedStack> expandedEntries = new ArrayList<ExpandedStack>();
+        private ExpansionState activeExpansion;
         private int nextItemIndex;
         private int currentLanguageIndex;
         private int currentExpandedIndex;
@@ -798,10 +1057,11 @@ public final class FullNameCacheBuilder {
         final Map<String, Long> switchMsPerLang = new LinkedHashMap<String, Long>();
         final Map<String, Long> resolveMsPerLang = new LinkedHashMap<String, Long>();
 
-        PendingBuild(List<Item> items, int itemsScanned, long enumMs, long startMs, String filter,
+        PendingBuild(BuildOwner owner, List<Item> items, int itemsScanned, long enumMs, long startMs, String filter,
                 List<String> targetLanguages, boolean mergeWithPreviousCache,
                 Map<PrebuiltSecondaryNameIndexKey, Map<String, String>> previousCache,
                 FullNameCacheMetadata previousMetadata) {
+            this.owner = owner == null ? BuildOwner.MANUAL : owner;
             this.items = items == null ? new ArrayList<Item>() : new ArrayList<Item>(items);
             this.itemsScanned = itemsScanned;
             this.enumMs = enumMs;
@@ -814,14 +1074,49 @@ public final class FullNameCacheBuilder {
         }
 
         public int expandedCount() {
-            if (expandedEntries != null) {
-                return expandedEntries.size();
-            }
             return expandedStacks.size();
         }
 
         public boolean isExpansionComplete() {
-            return nextItemIndex >= items.size();
+            return nextItemIndex >= items.size() && activeExpansion == null;
+        }
+
+        public ActiveBuildSnapshot snapshot(BuildOwner owner) {
+            int totalExpanded = expandedCount();
+            int languageCount = targetLanguages.size();
+            String currentLanguageName = activeLanguage;
+            if (currentLanguageName == null
+                && currentLanguageIndex >= 0
+                && currentLanguageIndex < targetLanguages.size()) {
+                currentLanguageName = targetLanguages.get(currentLanguageIndex);
+            }
+
+            return new ActiveBuildSnapshot(
+                owner == null ? this.owner : owner,
+                determinePhase(),
+                filter,
+                new ArrayList<String>(targetLanguages),
+                mergeWithPreviousCache,
+                itemsScanned,
+                activeExpansion == null ? nextItemIndex : Math.min(nextItemIndex + 1, itemsScanned),
+                totalExpanded,
+                currentLanguageName,
+                languageCount == 0 ? 0 : Math.min(currentLanguageIndex + 1, languageCount),
+                languageCount,
+                currentExpandedIndex,
+                totalExpanded,
+                collected.size(),
+                System.currentTimeMillis() - startMs);
+        }
+
+        private BuildPhase determinePhase() {
+            if (!isExpansionComplete()) {
+                return BuildPhase.EXPANDING;
+            }
+            if (currentLanguageIndex >= targetLanguages.size()) {
+                return BuildPhase.WRITING;
+            }
+            return BuildPhase.RESOLVING;
         }
     }
 
@@ -898,9 +1193,88 @@ public final class FullNameCacheBuilder {
         }
     }
 
+    public static final class ActiveBuildSnapshot {
+
+        public final BuildOwner owner;
+        public final BuildPhase phase;
+        public final String filter;
+        public final List<String> targetLanguages;
+        public final boolean mergeWithPreviousCache;
+        public final int itemsScanned;
+        public final int itemsExpanded;
+        public final int uniqueKeysExpanded;
+        public final String currentLanguage;
+        public final int currentLanguageOrdinal;
+        public final int totalLanguages;
+        public final int currentLanguageEntriesResolved;
+        public final int currentLanguageEntriesTotal;
+        public final int collectedKeyCount;
+        public final long elapsedMs;
+
+        ActiveBuildSnapshot(BuildOwner owner, BuildPhase phase, String filter,
+                List<String> targetLanguages, boolean mergeWithPreviousCache,
+                int itemsScanned, int itemsExpanded, int uniqueKeysExpanded,
+                String currentLanguage, int currentLanguageOrdinal, int totalLanguages,
+                int currentLanguageEntriesResolved, int currentLanguageEntriesTotal,
+                int collectedKeyCount, long elapsedMs) {
+            this.owner = owner == null ? BuildOwner.MANUAL : owner;
+            this.phase = phase == null ? BuildPhase.EXPANDING : phase;
+            this.filter = filter == null || filter.trim().isEmpty() ? "all" : filter;
+            this.targetLanguages = targetLanguages == null
+                ? Collections.<String>emptyList()
+                : Collections.unmodifiableList(new ArrayList<String>(targetLanguages));
+            this.mergeWithPreviousCache = mergeWithPreviousCache;
+            this.itemsScanned = itemsScanned;
+            this.itemsExpanded = itemsExpanded;
+            this.uniqueKeysExpanded = uniqueKeysExpanded;
+            this.currentLanguage = currentLanguage;
+            this.currentLanguageOrdinal = currentLanguageOrdinal;
+            this.totalLanguages = totalLanguages;
+            this.currentLanguageEntriesResolved = currentLanguageEntriesResolved;
+            this.currentLanguageEntriesTotal = currentLanguageEntriesTotal;
+            this.collectedKeyCount = collectedKeyCount;
+            this.elapsedMs = elapsedMs;
+        }
+    }
+
     // =========================================================================
     // Internal DTOs
     // =========================================================================
+
+    private static final class ActiveBuildState {
+
+        private final BuildOwner owner;
+        private final PendingBuild pending;
+
+        private ActiveBuildState(BuildOwner owner, PendingBuild pending) {
+            this.owner = owner == null ? BuildOwner.MANUAL : owner;
+            this.pending = pending;
+        }
+
+        private ActiveBuildSnapshot toSnapshot() {
+            return pending.snapshot(owner);
+        }
+    }
+
+    private static final class ExpansionState {
+
+        private final Item item;
+        private final List<CreativeTabs> preferredTabs;
+        private final LinkedHashSet<CreativeTabs> attemptedTabs =
+            new LinkedHashSet<CreativeTabs>();
+        private final List<ItemStack> variants = new ArrayList<ItemStack>();
+        private int nextPreferredTabIndex;
+        private int nextFallbackTabIndex;
+        private int nextVariantIndex;
+        private boolean preferredTabsScanned;
+        private boolean fallbackTabsScanned;
+        private boolean defaultVariantAdded;
+
+        private ExpansionState(Item item) {
+            this.item = item;
+            this.preferredTabs = collectPreferredCreativeTabs(item);
+        }
+    }
 
     private static final class ExpandedStack {
 
