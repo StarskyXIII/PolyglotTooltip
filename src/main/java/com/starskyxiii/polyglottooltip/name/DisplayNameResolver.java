@@ -95,6 +95,14 @@ public final class DisplayNameResolver {
                 return thaumcraftDisplayName;
             }
 
+            // Thaumcraft NEI Plugin aspects also share one (registry, damage) cache key and
+            // differ only by the NBT "Aspects" payload, so resolve them before cache lookup.
+            String thaumcraftNeiPluginDisplayName =
+                ThaumcraftNeiPluginDisplayNameResolver.tryResolveDisplayName(stack, languageCode);
+            if (thaumcraftNeiPluginDisplayName != null && !thaumcraftNeiPluginDisplayName.isEmpty()) {
+                return thaumcraftNeiPluginDisplayName;
+            }
+
             // ElectriCraft: ore names stored in ElectriOres.oreName at init time.
             String electriDisplayName = ElectriCraftDisplayNameResolver.tryResolveDisplayName(stack, languageCode);
             if (electriDisplayName != null && !electriDisplayName.isEmpty()) {
@@ -151,7 +159,7 @@ public final class DisplayNameResolver {
 
         // Fast path: check the full prebuilt cache first (populated by /polyglotbuild).
         // Only at depth 0 to avoid incorrectly short-circuiting recursive calls (e.g. AE2 facades).
-        if (depth == 0) {
+        if (depth == 0 && !ThaumcraftNeiPluginDisplayNameResolver.isAspectItem(stack)) {
             String cachedName = resolveFromFullCache(stack, languageCode);
             if (cachedName != null
                 && !cachedName.isEmpty()
