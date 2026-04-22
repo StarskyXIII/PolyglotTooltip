@@ -189,7 +189,13 @@ public final class SecondaryTooltipUtil {
         String resolvedFormatting = resolveSecondaryFormatting(primaryLine, primaryFormattingFallback, configuredFormatting);
         if (hasConfiguredSecondaryFormatting(configuredFormatting)) {
             translatedName = EnumChatFormatting.getTextWithoutFormattingCodes(translatedName);
+            return resolvedFormatting + (translatedName == null ? "" : translatedName);
         }
+
+        if (containsFormattingCodes(translatedName)) {
+            return translatedName == null ? "" : translatedName;
+        }
+
         return resolvedFormatting + (translatedName == null ? "" : translatedName);
     }
 
@@ -271,6 +277,14 @@ public final class SecondaryTooltipUtil {
 
     private static boolean hasConfiguredSecondaryFormatting(String configuredFormattingValue) {
         return parseConfiguredFormatting(resolveConfiguredFormattingValue(configuredFormattingValue)).hasFormatting();
+    }
+
+    private static boolean containsFormattingCodes(String translatedName) {
+        if (translatedName == null || translatedName.isEmpty()) {
+            return false;
+        }
+
+        return translatedName.indexOf(SECTION_SIGN) >= 0;
     }
 
     private static String resolveConfiguredFormattingValue(String configuredFormattingValue) {

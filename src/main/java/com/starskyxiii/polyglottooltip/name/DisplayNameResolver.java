@@ -22,7 +22,6 @@ import net.minecraft.util.EnumChatFormatting;
 public final class DisplayNameResolver {
 
     private static final String AE2_FACADE_CLASS_NAME = "appeng.items.parts.ItemFacade";
-    private static final String AE2_MULTIPART_CLASS_NAME = "appeng.items.parts.ItemMultiPart";
     private static final String POTION_GRENADE_PREFIX = "potion.prefix.grenade";
     private static final String EMPTY_POTION_NAME = "item.emptyPotion.name";
     private static final String PLAYER_SKULL_NAME = "item.skull.player.name";
@@ -66,6 +65,11 @@ public final class DisplayNameResolver {
         // of what language is requested. Resolve these before the cache, which would contain
         // stale startup-language names.
         if (depth == 0) {
+            String ae2DisplayName = Ae2DisplayNameResolver.tryResolveDisplayName(stack, languageCode);
+            if (ae2DisplayName != null && !ae2DisplayName.isEmpty()) {
+                return ae2DisplayName;
+            }
+
             // TConstruct modular tools: full-name-cache keys on (registry, damage) but all
             // TConstruct tools have damage=0 regardless of material — getSubItems() collapses
             // all variants to the same cache key. Read material from InfiTool.Head NBT instead.
@@ -236,9 +240,9 @@ public final class DisplayNameResolver {
     }
 
     private static String resolveDynamicDisplayName(ItemStack stack, String languageCode, int depth) {
-        String ae2MultiPartDisplayName = resolveAe2MultiPartDisplayName(stack, languageCode);
-        if (ae2MultiPartDisplayName != null && !ae2MultiPartDisplayName.isEmpty()) {
-            return ae2MultiPartDisplayName;
+        String ae2DisplayName = Ae2DisplayNameResolver.tryResolveDisplayName(stack, languageCode);
+        if (ae2DisplayName != null && !ae2DisplayName.isEmpty()) {
+            return ae2DisplayName;
         }
 
         return ManaMetalDisplayNameResolver.tryResolveDisplayName(stack, languageCode, depth);
@@ -268,20 +272,6 @@ public final class DisplayNameResolver {
         return stack != null
             && stack.getItem() != null
             && AE2_FACADE_CLASS_NAME.equals(stack.getItem().getClass().getName());
-    }
-
-    private static String resolveAe2MultiPartDisplayName(ItemStack stack, String languageCode) {
-        if (!isAe2MultiPart(stack)) {
-            return null;
-        }
-
-        return resolveGenericDisplayName(stack, languageCode);
-    }
-
-    private static boolean isAe2MultiPart(ItemStack stack) {
-        return stack != null
-            && stack.getItem() != null
-            && AE2_MULTIPART_CLASS_NAME.equals(stack.getItem().getClass().getName());
     }
 
     static String resolveDisplayNameForLanguage(ItemStack stack, String languageCode, int depth) {
