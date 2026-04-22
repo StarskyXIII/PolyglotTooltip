@@ -17,7 +17,6 @@ import com.starskyxiii.polyglottooltip.name.prebuilt.FullNameCache;
 import com.starskyxiii.polyglottooltip.name.prebuilt.FullNameCacheBuilder;
 import com.starskyxiii.polyglottooltip.name.prebuilt.FullNameCacheBuilder.BuildResult;
 import com.starskyxiii.polyglottooltip.name.prebuilt.FullNameCacheIO;
-import com.starskyxiii.polyglottooltip.name.prebuilt.PrebuiltSecondaryNameIndexKey;
 import com.starskyxiii.polyglottooltip.report.BuildReportWriter;
 
 /**
@@ -83,7 +82,7 @@ public class BuildNameCacheCommand extends CommandBase {
         String arg = args[0].trim();
 
         if ("clear".equalsIgnoreCase(arg)) {
-            FullNameCache.replace(Collections.<PrebuiltSecondaryNameIndexKey, Map<String, String>>emptyMap());
+            FullNameCache.clearDataPreservingMetadata();
             chat(sender, EnumChatFormatting.GREEN, "[PolyglotTooltips] Full name cache cleared from memory.");
             return;
         }

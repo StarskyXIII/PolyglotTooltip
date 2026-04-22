@@ -9,12 +9,18 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 
 import net.minecraft.client.Minecraft;
 
 import com.starskyxiii.polyglottooltip.PolyglotTooltip;
+import com.starskyxiii.polyglottooltip.Tags;
 
 /**
  * Reads and writes the full-registry name cache TSV file.
@@ -30,6 +36,7 @@ public final class FullNameCacheIO {
     private static final Charset UTF8 = Charset.forName("UTF-8");
     static final String CACHE_SUBDIR = "polyglottooltip/cache";
     static final String CACHE_FILENAME = "full-name-cache.tsv";
+    static final String CACHE_METADATA_FILENAME = "full-name-cache.meta";
 
     private FullNameCacheIO() {}
 
@@ -41,6 +48,12 @@ public final class FullNameCacheIO {
         Minecraft mc = Minecraft.getMinecraft();
         File root = mc != null ? mc.mcDataDir : new File(".");
         return new File(root, CACHE_SUBDIR + "/" + CACHE_FILENAME);
+    }
+
+    public static File getMetadataFile() {
+        Minecraft mc = Minecraft.getMinecraft();
+        File root = mc != null ? mc.mcDataDir : new File(".");
+        return new File(root, CACHE_SUBDIR + "/" + CACHE_METADATA_FILENAME);
     }
 
     // -------------------------------------------------------------------------
@@ -55,7 +68,21 @@ public final class FullNameCacheIO {
                 return; // no cache yet — silent degradation
             }
             Map<PrebuiltSecondaryNameIndexKey, Map<String, String>> loaded = read(cacheFile);
-            FullNameCache.replace(loaded);
+            FullNameCacheMetadata metadata = readMetadataIfPresent(getMetadataFile());
+            if (metadata == null) {
+                metadata = inferMetadataFromLegacyCache(loaded);
+                try {
+                    writeMetadata(metadata);
+                    PolyglotTooltip.LOG.info(
+                        "[PolyglotTooltips] Inferred cache metadata for legacy full name cache (languages={}).",
+                        metadata.getLanguages());
+                } catch (Exception metadataWriteFailure) {
+                    PolyglotTooltip.LOG.warn(
+                        "[PolyglotTooltips] Loaded legacy full name cache but could not persist inferred metadata: {}",
+                        metadataWriteFailure.getMessage());
+                }
+            }
+            FullNameCache.replace(loaded, metadata);
             PolyglotTooltip.LOG.info(
                 "[PolyglotTooltips] Loaded {} full name cache entries from {}.",
                 countEntries(loaded),
@@ -75,6 +102,11 @@ public final class FullNameCacheIO {
      * @throws Exception on I/O failure
      */
     public static void write(Map<PrebuiltSecondaryNameIndexKey, Map<String, String>> data) throws Exception {
+        write(data, null);
+    }
+
+    public static void write(Map<PrebuiltSecondaryNameIndexKey, Map<String, String>> data,
+            FullNameCacheMetadata metadata) throws Exception {
         File cacheFile = getCacheFile();
         File dir = cacheFile.getParentFile();
         if (!dir.exists() && !dir.mkdirs()) {
@@ -120,6 +152,10 @@ public final class FullNameCacheIO {
             throw new IllegalStateException(
                 "Cannot rename tmp to cache file: " + cacheFile.getAbsolutePath()
                 + " (data retained in: " + tmp.getAbsolutePath() + ")");
+        }
+
+        if (metadata != null) {
+            writeMetadata(metadata);
         }
     }
 
@@ -171,6 +207,167 @@ public final class FullNameCacheIO {
         int total = 0;
         for (Map<String, String> langs : data.values()) total += langs.size();
         return total;
+    }
+
+    private static FullNameCacheMetadata readMetadataIfPresent(File metadataFile) throws Exception {
+        if (metadataFile == null || !metadataFile.exists()) {
+            return null;
+        }
+
+        BufferedReader reader = null;
+        try {
+            Properties properties = new Properties();
+            reader = new BufferedReader(new InputStreamReader(new FileInputStream(metadataFile), UTF8));
+            properties.load(reader);
+
+            int schemaVersion =
+                parseInt(properties.getProperty("schemaVersion"), FullNameCacheMetadata.CURRENT_SCHEMA_VERSION);
+            String coverageFilter = properties.getProperty("coverageFilter", "all");
+            boolean complete = Boolean.parseBoolean(properties.getProperty("complete", "true"));
+            String modVersion = properties.getProperty("modVersion", "");
+            long builtAtMillis = parseLong(properties.getProperty("builtAtMillis"), 0L);
+            boolean inferredLegacy =
+                Boolean.parseBoolean(properties.getProperty("inferredFromLegacyCache", "false"));
+            List<String> languages = parseLanguages(properties.getProperty("languages", ""));
+
+            return new FullNameCacheMetadata(
+                schemaVersion,
+                languages,
+                coverageFilter,
+                complete,
+                modVersion,
+                builtAtMillis,
+                inferredLegacy);
+        } finally {
+            if (reader != null) reader.close();
+        }
+    }
+
+    private static void writeMetadata(FullNameCacheMetadata metadata) throws Exception {
+        if (metadata == null) {
+            return;
+        }
+
+        File metadataFile = getMetadataFile();
+        File dir = metadataFile.getParentFile();
+        if (!dir.exists() && !dir.mkdirs()) {
+            throw new IllegalStateException("Cannot create cache dir: " + dir.getAbsolutePath());
+        }
+
+        File tmp = new File(dir, CACHE_METADATA_FILENAME + ".tmp");
+        Writer writer = null;
+        try {
+            Properties properties = new Properties();
+            properties.setProperty("schemaVersion", String.valueOf(metadata.getSchemaVersion()));
+            properties.setProperty("languages", joinLanguages(metadata.getLanguages()));
+            properties.setProperty("coverageFilter", metadata.getCoverageFilter());
+            properties.setProperty("complete", String.valueOf(metadata.isComplete()));
+            properties.setProperty("modVersion", metadata.getModVersion());
+            properties.setProperty("builtAtMillis", String.valueOf(metadata.getBuiltAtMillis()));
+            properties.setProperty(
+                "inferredFromLegacyCache",
+                String.valueOf(metadata.isInferredFromLegacyCache()));
+
+            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(tmp), UTF8));
+            properties.store(writer, "PolyglotTooltips full-name cache metadata");
+        } catch (Exception e) {
+            tmp.delete();
+            throw e;
+        } finally {
+            if (writer != null) writer.close();
+        }
+
+        if (metadataFile.exists() && !metadataFile.delete()) {
+            tmp.delete();
+            throw new IllegalStateException("Cannot replace metadata file: " + metadataFile.getAbsolutePath());
+        }
+        if (!tmp.renameTo(metadataFile)) {
+            throw new IllegalStateException(
+                "Cannot rename tmp to metadata file: " + metadataFile.getAbsolutePath()
+                + " (data retained in: " + tmp.getAbsolutePath() + ")");
+        }
+    }
+
+    private static FullNameCacheMetadata inferMetadataFromLegacyCache(
+            Map<PrebuiltSecondaryNameIndexKey, Map<String, String>> data) {
+        return FullNameCacheMetadata.inferFromLegacyCache(
+            collectLanguages(data),
+            Tags.VERSION,
+            System.currentTimeMillis());
+    }
+
+    private static Set<String> collectLanguages(Map<PrebuiltSecondaryNameIndexKey, Map<String, String>> data) {
+        LinkedHashSet<String> languages = new LinkedHashSet<String>();
+        if (data == null || data.isEmpty()) {
+            return languages;
+        }
+
+        for (Map<String, String> langs : data.values()) {
+            if (langs == null || langs.isEmpty()) {
+                continue;
+            }
+
+            for (String languageCode : langs.keySet()) {
+                if (languageCode != null && !languageCode.trim().isEmpty()) {
+                    languages.add(languageCode.trim());
+                }
+            }
+        }
+
+        return languages;
+    }
+
+    private static List<String> parseLanguages(String value) {
+        List<String> parsed = new ArrayList<String>();
+        if (value == null || value.trim().isEmpty()) {
+            return parsed;
+        }
+
+        String[] split = value.split(",");
+        for (int i = 0; i < split.length; i++) {
+            String languageCode = split[i] == null ? "" : split[i].trim();
+            if (!languageCode.isEmpty()) {
+                parsed.add(languageCode);
+            }
+        }
+
+        return FullNameCacheMetadata.normalizeLanguages(parsed);
+    }
+
+    private static String joinLanguages(List<String> languages) {
+        StringBuilder builder = new StringBuilder();
+        List<String> normalized = FullNameCacheMetadata.normalizeLanguages(languages);
+        for (int i = 0; i < normalized.size(); i++) {
+            if (i > 0) {
+                builder.append(',');
+            }
+            builder.append(normalized.get(i));
+        }
+        return builder.toString();
+    }
+
+    private static int parseInt(String value, int fallback) {
+        if (value == null || value.trim().isEmpty()) {
+            return fallback;
+        }
+
+        try {
+            return Integer.parseInt(value.trim());
+        } catch (NumberFormatException ignored) {
+            return fallback;
+        }
+    }
+
+    private static long parseLong(String value, long fallback) {
+        if (value == null || value.trim().isEmpty()) {
+            return fallback;
+        }
+
+        try {
+            return Long.parseLong(value.trim());
+        } catch (NumberFormatException ignored) {
+            return fallback;
+        }
     }
 
     private static String esc(String v) {
