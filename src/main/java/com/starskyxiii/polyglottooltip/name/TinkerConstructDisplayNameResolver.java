@@ -3,8 +3,10 @@ package com.starskyxiii.polyglottooltip.name;
 import java.lang.reflect.Field;
 import java.util.Map;
 
+import com.starskyxiii.polyglottooltip.i18n.GregTechMaterialTranslationResolver;
 import com.starskyxiii.polyglottooltip.i18n.LanguageCache;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 
@@ -95,10 +97,7 @@ final class TinkerConstructDisplayNameResolver {
         }
 
         // Priority 2: nameformat — resolve material prefix and tool type name separately
-        String matDisplay = LanguageCache.translate(languageCode, locStr + ".display");
-        if (matDisplay == null || matDisplay.isEmpty()) {
-            matDisplay = LanguageCache.translate(languageCode, locStr);
-        }
+        String matDisplay = resolveMaterialDisplayName(languageCode, locStr, materialName);
         if (matDisplay == null || matDisplay.isEmpty()) {
             return null;
         }
@@ -130,6 +129,94 @@ final class TinkerConstructDisplayNameResolver {
             && stack.hasTagCompound()
             && stack.getTagCompound().hasKey("InfiTool")
             && stack.getTagCompound().getCompoundTag("InfiTool").hasKey("Head");
+    }
+
+    private static String resolveMaterialDisplayName(String languageCode, String localizationString, String materialName) {
+        String translated = translateMaterialLocalization(languageCode, localizationString);
+        if (translated != null && !translated.isEmpty()) {
+            return translated;
+        }
+
+        String normalizedMaterialName = normalizeMaterialName(materialName);
+        if (normalizedMaterialName != null && !normalizedMaterialName.isEmpty()) {
+            translated = LanguageCache.translate(languageCode, "material." + normalizedMaterialName + ".display");
+            if (translated != null && !translated.isEmpty()) {
+                return translated;
+            }
+
+            translated = LanguageCache.translate(languageCode, "material." + normalizedMaterialName);
+            if (translated != null && !translated.isEmpty()) {
+                return translated;
+            }
+        }
+
+        translated = GregTechMaterialTranslationResolver.resolveMaterialNameTranslation(languageCode, materialName);
+        if (translated != null && !translated.isEmpty()) {
+            return translated;
+        }
+
+        if (looksLikeLiteralLocalization(localizationString) && isCurrentLanguage(languageCode)) {
+            return localizationString.trim();
+        }
+
+        return null;
+    }
+
+    private static String translateMaterialLocalization(String languageCode, String localizationString) {
+        if (localizationString == null || localizationString.trim().isEmpty()) {
+            return null;
+        }
+
+        String translated = LanguageCache.translate(languageCode, localizationString + ".display");
+        if (translated != null && !translated.isEmpty()) {
+            return translated;
+        }
+
+        translated = LanguageCache.translate(languageCode, localizationString);
+        if (translated != null && !translated.isEmpty()) {
+            return translated;
+        }
+
+        return null;
+    }
+
+    private static String normalizeMaterialName(String materialName) {
+        if (materialName == null) {
+            return null;
+        }
+
+        String normalized = materialName.trim().toLowerCase().replaceAll("[ _]", "");
+        return normalized.isEmpty() ? null : normalized;
+    }
+
+    private static boolean looksLikeLiteralLocalization(String localizationString) {
+        if (localizationString == null) {
+            return false;
+        }
+
+        String normalized = localizationString.trim();
+        if (normalized.isEmpty()) {
+            return false;
+        }
+
+        return normalized.indexOf('.') < 0;
+    }
+
+    private static boolean isCurrentLanguage(String languageCode) {
+        if (languageCode == null || languageCode.trim().isEmpty()) {
+            return false;
+        }
+
+        try {
+            Minecraft minecraft = Minecraft.getMinecraft();
+            if (minecraft != null && minecraft.gameSettings != null && minecraft.gameSettings.language != null) {
+                return languageCode.trim().equalsIgnoreCase(minecraft.gameSettings.language.trim());
+            }
+        } catch (Exception ignored) {
+            // Fall through to false.
+        }
+
+        return false;
     }
 
     @SuppressWarnings("unchecked")

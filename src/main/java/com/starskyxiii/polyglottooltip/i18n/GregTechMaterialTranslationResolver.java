@@ -66,6 +66,22 @@ public final class GregTechMaterialTranslationResolver {
         return resolution.translationValue;
     }
 
+    public static String resolveMaterialNameTranslation(String languageCode, String materialName) {
+        if (languageCode == null || languageCode.trim().isEmpty()) {
+            return null;
+        }
+        if (materialName == null || materialName.trim().isEmpty()) {
+            return null;
+        }
+
+        TranslationMatch match = findTranslationMatch(languageCode.trim(), materialName.trim());
+        if (match == null || match.value == null || match.value.trim().isEmpty()) {
+            return null;
+        }
+
+        return match.value.trim();
+    }
+
     static String resolveMaterialTranslation(Map<String, String> targetTranslations, String translationKey, ItemStack stack) {
         if (targetTranslations == null || targetTranslations.isEmpty()) {
             return null;

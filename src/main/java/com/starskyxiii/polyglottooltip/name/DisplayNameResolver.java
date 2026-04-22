@@ -74,6 +74,11 @@ public final class DisplayNameResolver {
                 return tconstructDisplayName;
             }
 
+            String tgregworksPartDisplayName = TGregworksPartDisplayNameResolver.tryResolveDisplayName(stack, languageCode);
+            if (tgregworksPartDisplayName != null && !tgregworksPartDisplayName.isEmpty()) {
+                return tgregworksPartDisplayName;
+            }
+
             // Thaumcraft wands: same NBT-keyed-variant problem — many cap+rod combinations share
             // the same (registry, damage) cache key. Read cap/rod tags from NBT directly.
             String thaumcraftDisplayName = ThaumcraftDisplayNameResolver.tryResolveDisplayName(stack, languageCode);
@@ -92,6 +97,21 @@ public final class DisplayNameResolver {
             String reactorDisplayName = ReactorCraftDisplayNameResolver.tryResolveDisplayName(stack, languageCode);
             if (reactorDisplayName != null && !reactorDisplayName.isEmpty()) {
                 return reactorDisplayName;
+            }
+
+            String gregTechDisplayName = GregTechDisplayNameResolver.tryResolveDisplayName(stack, languageCode);
+            if (gregTechDisplayName != null && !gregTechDisplayName.isEmpty()) {
+                return gregTechDisplayName;
+            }
+
+            String gtPlusPlusDisplayName = GtPlusPlusDisplayNameResolver.tryResolveDisplayName(stack, languageCode);
+            if (gtPlusPlusDisplayName != null && !gtPlusPlusDisplayName.isEmpty()) {
+                return gtPlusPlusDisplayName;
+            }
+
+            String spawnEggDisplayName = SpawnEggResolver.tryResolveDisplayName(stack, languageCode);
+            if (spawnEggDisplayName != null && !spawnEggDisplayName.isEmpty()) {
+                return spawnEggDisplayName;
             }
 
             // ManaMetal AlchemyGem: OKingot stores a runtime-translated gem name (e.g. "钻石")
@@ -121,21 +141,6 @@ public final class DisplayNameResolver {
 
         if (stack.getItem() instanceof ItemPotion) {
             return resolvePotionDisplayName(stack, languageCode);
-        }
-
-        String gregTechDisplayName = GregTechDisplayNameResolver.tryResolveDisplayName(stack, languageCode);
-        if (gregTechDisplayName != null && !gregTechDisplayName.isEmpty()) {
-            return gregTechDisplayName;
-        }
-
-        String gtPlusPlusDisplayName = GtPlusPlusDisplayNameResolver.tryResolveDisplayName(stack, languageCode);
-        if (gtPlusPlusDisplayName != null && !gtPlusPlusDisplayName.isEmpty()) {
-            return gtPlusPlusDisplayName;
-        }
-
-        String spawnEggDisplayName = SpawnEggResolver.tryResolveDisplayName(stack, languageCode);
-        if (spawnEggDisplayName != null && !spawnEggDisplayName.isEmpty()) {
-            return spawnEggDisplayName;
         }
 
         if (stack.getItem() instanceof ItemSkull) {

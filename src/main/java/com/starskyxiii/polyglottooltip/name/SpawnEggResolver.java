@@ -22,6 +22,11 @@ public final class SpawnEggResolver {
             return mappedSpawnEggName;
         }
 
+        String fieldMappedSpawnEggName = resolveFieldMappedSpawnEggDisplayName(stack, languageCode);
+        if (fieldMappedSpawnEggName != null && !fieldMappedSpawnEggName.isEmpty()) {
+            return fieldMappedSpawnEggName;
+        }
+
         if (stack != null && stack.getItem() instanceof ItemMonsterPlacer) {
             return resolveVanillaSpawnEggDisplayName(stack, languageCode);
         }
@@ -47,6 +52,23 @@ public final class SpawnEggResolver {
             return null;
         }
 
+        return buildMappedSpawnEggDisplayName(stack, languageCode, entityTranslationKey);
+    }
+
+    private static String resolveFieldMappedSpawnEggDisplayName(ItemStack stack, String languageCode) {
+        String entityTranslationKey = getFieldMappedSpawnEggEntityTranslationKey(stack);
+        if (entityTranslationKey == null || entityTranslationKey.isEmpty()) {
+            return null;
+        }
+
+        return buildMappedSpawnEggDisplayName(stack, languageCode, entityTranslationKey);
+    }
+
+    private static String buildMappedSpawnEggDisplayName(ItemStack stack, String languageCode, String entityTranslationKey) {
+        if (stack == null || stack.getItem() == null) {
+            return null;
+        }
+
         StringBuilder builder = new StringBuilder();
 
         String eggName = LanguageCache.translate(languageCode, getTranslationKey(stack));
@@ -67,6 +89,34 @@ public final class SpawnEggResolver {
         }
 
         return builder.length() == 0 ? null : builder.toString();
+    }
+
+    private static String getFieldMappedSpawnEggEntityTranslationKey(ItemStack stack) {
+        if (stack == null || stack.getItem() == null) {
+            return null;
+        }
+
+        try {
+            Object mobNames = getAccessibleFieldValue(stack.getItem().getClass(), stack.getItem(), "mobNames");
+            if (!(mobNames instanceof String[])) {
+                return null;
+            }
+
+            String[] names = (String[]) mobNames;
+            int metadata = stack.getItemDamage();
+            if (metadata < 0 || metadata >= names.length) {
+                return null;
+            }
+
+            String entityName = names[metadata];
+            if (entityName == null || entityName.trim().isEmpty()) {
+                return null;
+            }
+
+            return "entity." + entityName.trim() + ".name";
+        } catch (Exception ignored) {
+            return null;
+        }
     }
 
     private static String getMappedSpawnEggEntityTranslationKey(ItemStack stack) {
