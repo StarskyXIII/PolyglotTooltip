@@ -8,7 +8,6 @@ build/
 eclipse/
 bin/
 out/
-config/
 crash-reports/
 logs/
 META-INF/
