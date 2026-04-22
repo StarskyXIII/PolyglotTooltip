@@ -12,8 +12,10 @@ import com.starskyxiii.polyglottooltip.PolyglotTooltip;
 import com.starskyxiii.polyglottooltip.name.prebuilt.FullNameCacheBuilder.ActiveBuildSnapshot;
 import com.starskyxiii.polyglottooltip.name.prebuilt.FullNameCacheBuilder.BuildOwner;
 import com.starskyxiii.polyglottooltip.name.prebuilt.FullNameCacheBuilder.BuildPhase;
+import com.starskyxiii.polyglottooltip.name.prebuilt.FullNameCacheBuilder.CompletedBuild;
 import com.starskyxiii.polyglottooltip.name.prebuilt.FullNameCacheBuilder.BuildResult;
 import com.starskyxiii.polyglottooltip.name.prebuilt.FullNameCacheBuilder.PendingBuild;
+import com.starskyxiii.polyglottooltip.name.prebuilt.FullNameCacheBuilder.SliceBudget;
 import com.starskyxiii.polyglottooltip.report.BuildReportWriter;
 
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
@@ -27,14 +29,19 @@ import cpw.mods.fml.common.gameevent.TickEvent.Phase;
 public final class ManualFullNameCacheBuildManager {
 
     private static final String PREFIX = "[PolyglotTooltips] ";
-    private static final int MAX_ITEMS_PER_TICK = 96;
-    private static final long MAX_BUDGET_NS_PER_TICK = 8L * 1000L * 1000L;
+    private static final SliceBudget SLICE_BUDGET =
+        SliceBudget.of(
+            96,
+            8L * 1000L * 1000L,
+            384,
+            8L * 1000L * 1000L);
     private static final long PROGRESS_CHAT_INTERVAL_MS = 2000L;
 
     private static final ManualFullNameCacheBuildManager INSTANCE =
         new ManualFullNameCacheBuildManager();
 
     private PendingBuild pending;
+    private CompletedBuild completedBuild;
     private Object startedWorld;
     private boolean finishQueued;
     private long lastProgressChatMs;
@@ -47,7 +54,7 @@ public final class ManualFullNameCacheBuildManager {
     }
 
     public void startBuild(ICommandSender sender, String scanFilter, boolean mergeWithPreviousCache) {
-        if (pending != null) {
+        if (pending != null || completedBuild != null) {
             chat(sender, EnumChatFormatting.YELLOW,
                 PREFIX + "A manual build is already running. Use /polyglotbuild status to check progress.");
             showStatus(sender);
@@ -93,6 +100,12 @@ public final class ManualFullNameCacheBuildManager {
     }
 
     public void showStatus(ICommandSender sender) {
+        if (completedBuild != null) {
+            chat(sender, EnumChatFormatting.YELLOW,
+                PREFIX + "Manual build is writing reports: " + formatReportPhaseLine(completedBuild));
+            return;
+        }
+
         ActiveBuildSnapshot snapshot = FullNameCacheBuilder.getActiveBuildSnapshot();
         if (snapshot == null) {
             chat(sender, EnumChatFormatting.GREEN, PREFIX + "No active full name cache build.");
@@ -109,6 +122,15 @@ public final class ManualFullNameCacheBuildManager {
     }
 
     public void cancelBuild(ICommandSender sender) {
+        if (completedBuild != null) {
+            PolyglotTooltip.LOG.warn(
+                "[PolyglotTooltips] Manual build report phase skipped by user request.");
+            chat(sender, EnumChatFormatting.YELLOW,
+                PREFIX + "Cache build already finished; skipped report generation.");
+            clearState();
+            return;
+        }
+
         if (pending == null) {
             ActiveBuildSnapshot activeBuild = FullNameCacheBuilder.getActiveBuildSnapshot();
             if (activeBuild != null) {
@@ -134,32 +156,38 @@ public final class ManualFullNameCacheBuildManager {
     }
 
     public boolean hasActiveManualBuild() {
-        return pending != null;
+        return pending != null || completedBuild != null;
     }
 
     @SubscribeEvent
     public void onClientTick(TickEvent.ClientTickEvent event) {
-        if (event.phase != Phase.END || pending == null) {
+        if (event.phase != Phase.END || (pending == null && completedBuild == null)) {
             return;
         }
 
         Minecraft minecraft = Minecraft.getMinecraft();
-        if (hasWorldChanged(minecraft)) {
+        if (pending != null && hasWorldChanged(minecraft)) {
             cancelForSessionChange();
             return;
         }
 
-        if (minecraft == null || minecraft.gameSettings == null) {
+        if (pending != null && (minecraft == null || minecraft.gameSettings == null)) {
             return;
         }
 
         boolean finished = false;
         try {
+            if (completedBuild != null) {
+                long reportMs = FullNameCacheBuilder.writeReports(completedBuild);
+                sendCompletion(completedBuild.getResult(), reportMs);
+                finished = true;
+                return;
+            }
+
             if (!finishQueued) {
                 boolean complete = FullNameCacheBuilder.resolveNextSlice(
                     pending,
-                    MAX_ITEMS_PER_TICK,
-                    MAX_BUDGET_NS_PER_TICK);
+                    SLICE_BUDGET);
                 emitProgress(null, false);
                 if (!complete) {
                     return;
@@ -169,12 +197,16 @@ public final class ManualFullNameCacheBuildManager {
                 return;
             }
 
-            BuildResult result = FullNameCacheBuilder.finishBuild(pending);
-            sendCompletion(result);
-            finished = true;
+            completedBuild = FullNameCacheBuilder.finishBuildWithoutReports(pending);
+            pending = null;
+            startedWorld = null;
+            finishQueued = false;
+            emitReportPhase(null);
         } catch (Throwable t) {
             PolyglotTooltip.LOG.warn("[PolyglotTooltips] Manual build failed.", t);
-            FullNameCacheBuilder.cancelBuild(pending);
+            if (pending != null) {
+                FullNameCacheBuilder.cancelBuild(pending);
+            }
             PolyglotTooltip.LOG.warn(
                 "[PolyglotTooltips] Manual build failure announced to chat: {}",
                 t.getMessage());
@@ -221,7 +253,17 @@ public final class ManualFullNameCacheBuildManager {
         chat(sender, EnumChatFormatting.AQUA, PREFIX + formatProgressLine(snapshot));
     }
 
-    private void sendCompletion(BuildResult result) {
+    private void emitReportPhase(ICommandSender sender) {
+        if (completedBuild == null) {
+            return;
+        }
+
+        String line = formatReportPhaseLine(completedBuild);
+        PolyglotTooltip.LOG.info("[PolyglotTooltips] Manual build progress: {}", line);
+        chat(sender, EnumChatFormatting.AQUA, PREFIX + line);
+    }
+
+    private void sendCompletion(BuildResult result, long reportMs) {
         PolyglotTooltip.LOG.info(
             "[PolyglotTooltips] Manual build completion sent to chat. {}",
             result.toSummaryLine());
@@ -248,10 +290,11 @@ public final class ManualFullNameCacheBuildManager {
         chat(null, EnumChatFormatting.GRAY,
             String.format(
                 Locale.ROOT,
-                "  timing: enum=%dms  expand=%dms  write=%dms",
+                "  timing: enum=%dms  expand=%dms  write=%dms  report=%dms",
                 result.enumMs,
                 result.expandMs,
-                result.writeMs));
+                result.writeMs,
+                reportMs));
         chat(null, EnumChatFormatting.GRAY,
             "  cache  -> " + FullNameCacheIO.getCacheFile().getAbsolutePath());
         chat(null, EnumChatFormatting.GRAY,
@@ -290,9 +333,22 @@ public final class ManualFullNameCacheBuildManager {
 
         return String.format(
             Locale.ROOT,
-            "writing cache/report output, keys=%d, elapsed=%s",
+            "writing cache output, keys=%d, elapsed=%s",
             snapshot.collectedKeyCount,
             formatElapsed(snapshot.elapsedMs));
+    }
+
+    private static String formatReportPhaseLine(CompletedBuild completedBuild) {
+        if (completedBuild == null) {
+            return "writing build reports";
+        }
+
+        BuildResult result = completedBuild.getResult();
+        return String.format(
+            Locale.ROOT,
+            "writing build reports, keys=%d, entries=%d",
+            result.uniqueKeys,
+            result.totalEntries());
     }
 
     private static String displayFilter(String filter) {
@@ -329,6 +385,7 @@ public final class ManualFullNameCacheBuildManager {
 
     private void clearState() {
         pending = null;
+        completedBuild = null;
         startedWorld = null;
         finishQueued = false;
         lastProgressChatMs = 0L;

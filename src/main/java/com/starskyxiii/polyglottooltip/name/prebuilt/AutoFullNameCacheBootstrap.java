@@ -6,8 +6,10 @@ import java.util.List;
 import com.starskyxiii.polyglottooltip.PolyglotTooltip;
 import com.starskyxiii.polyglottooltip.config.Config;
 import com.starskyxiii.polyglottooltip.name.prebuilt.FullNameCacheBuilder.BuildOwner;
+import com.starskyxiii.polyglottooltip.name.prebuilt.FullNameCacheBuilder.CompletedBuild;
 import com.starskyxiii.polyglottooltip.name.prebuilt.FullNameCacheBuilder.BuildResult;
 import com.starskyxiii.polyglottooltip.name.prebuilt.FullNameCacheBuilder.PendingBuild;
+import com.starskyxiii.polyglottooltip.name.prebuilt.FullNameCacheBuilder.SliceBudget;
 
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.TickEvent;
@@ -24,13 +26,14 @@ import net.minecraft.client.Minecraft;
 public final class AutoFullNameCacheBootstrap {
 
     private static final int REQUIRED_STABLE_TICKS = 5;
-    private static final int MAX_ITEMS_PER_TICK = 96;
-    private static final long MAX_BUDGET_NS_PER_TICK = 8L * 1000L * 1000L;
+    private static final SliceBudget SLICE_BUDGET =
+        SliceBudget.uniform(96, 8L * 1000L * 1000L);
 
     private enum State { IDLE, WAITING, RUNNING, DONE }
 
     private State state = State.IDLE;
     private PendingBuild pending;
+    private CompletedBuild completedBuild;
     private boolean finishQueued;
     private int stableTicks;
 
@@ -40,6 +43,7 @@ public final class AutoFullNameCacheBootstrap {
                 FullNameCacheBuilder.cancelBuild(pending);
                 pending = null;
             }
+            completedBuild = null;
             state = State.DONE;
             finishQueued = false;
             stableTicks = 0;
@@ -76,6 +80,7 @@ public final class AutoFullNameCacheBootstrap {
                 "[PolyglotTooltips] Auto-build setup failed during load: {}",
                 t.getMessage());
             pending = null;
+            completedBuild = null;
             state = State.DONE;
         }
     }
@@ -91,8 +96,33 @@ public final class AutoFullNameCacheBootstrap {
                 FullNameCacheBuilder.cancelBuild(pending);
                 pending = null;
             }
+            if (completedBuild != null) {
+                PolyglotTooltip.LOG.info(
+                    "[PolyglotTooltips] Auto-build report phase skipped because auto rebuild was disabled.");
+                completedBuild = null;
+            }
             state = State.DONE;
+            finishQueued = false;
             stableTicks = 0;
+            return;
+        }
+
+        if (completedBuild != null) {
+            state = State.RUNNING;
+            try {
+                long reportMs = FullNameCacheBuilder.writeReports(completedBuild);
+                BuildResult result = completedBuild.getResult();
+                PolyglotTooltip.LOG.info(
+                    "[PolyglotTooltips] Auto-build complete. {}  report={}ms",
+                    result.toSummaryLine(),
+                    reportMs);
+            } finally {
+                pending = null;
+                completedBuild = null;
+                finishQueued = false;
+                stableTicks = 0;
+                state = State.DONE;
+            }
             return;
         }
 
@@ -162,8 +192,7 @@ public final class AutoFullNameCacheBootstrap {
             if (!finishQueued) {
                 boolean complete = FullNameCacheBuilder.resolveNextSlice(
                     pending,
-                    MAX_ITEMS_PER_TICK,
-                    MAX_BUDGET_NS_PER_TICK);
+                    SLICE_BUDGET);
                 if (!complete) {
                     return;
                 }
@@ -172,20 +201,25 @@ public final class AutoFullNameCacheBootstrap {
                 return;
             }
 
-            BuildResult result = FullNameCacheBuilder.finishBuild(pending);
+            completedBuild = FullNameCacheBuilder.finishBuildWithoutReports(pending);
+            pending = null;
+            finishQueued = false;
+            BuildResult result = completedBuild.getResult();
             PolyglotTooltip.LOG.info(
-                "[PolyglotTooltips] Auto-build complete. {}",
+                "[PolyglotTooltips] Auto-build cache phase complete. {}",
                 result.toSummaryLine());
-            finished = true;
         } catch (Throwable t) {
             PolyglotTooltip.LOG.warn(
                 "[PolyglotTooltips] Auto-build failed: {}",
                 t.getMessage());
-            FullNameCacheBuilder.cancelBuild(pending);
+            if (pending != null) {
+                FullNameCacheBuilder.cancelBuild(pending);
+            }
             finished = true;
         } finally {
             if (finished) {
                 pending = null;
+                completedBuild = null;
                 finishQueued = false;
                 stableTicks = 0;
                 state = State.DONE;

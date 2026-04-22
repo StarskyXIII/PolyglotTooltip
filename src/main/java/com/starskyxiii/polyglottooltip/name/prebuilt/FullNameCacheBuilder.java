@@ -66,6 +66,35 @@ public final class FullNameCacheBuilder {
         WRITING
     }
 
+    public static final class SliceBudget {
+
+        public final int expansionMaxItems;
+        public final long expansionMaxNanos;
+        public final int resolveMaxItems;
+        public final long resolveMaxNanos;
+
+        private SliceBudget(int expansionMaxItems, long expansionMaxNanos,
+                int resolveMaxItems, long resolveMaxNanos) {
+            this.expansionMaxItems = expansionMaxItems <= 0 ? Integer.MAX_VALUE : expansionMaxItems;
+            this.expansionMaxNanos = expansionMaxNanos <= 0L ? Long.MAX_VALUE : expansionMaxNanos;
+            this.resolveMaxItems = resolveMaxItems <= 0 ? Integer.MAX_VALUE : resolveMaxItems;
+            this.resolveMaxNanos = resolveMaxNanos <= 0L ? Long.MAX_VALUE : resolveMaxNanos;
+        }
+
+        public static SliceBudget uniform(int maxItems, long maxNanos) {
+            return new SliceBudget(maxItems, maxNanos, maxItems, maxNanos);
+        }
+
+        public static SliceBudget of(int expansionMaxItems, long expansionMaxNanos,
+                int resolveMaxItems, long resolveMaxNanos) {
+            return new SliceBudget(
+                expansionMaxItems,
+                expansionMaxNanos,
+                resolveMaxItems,
+                resolveMaxNanos);
+        }
+    }
+
     // =========================================================================
     // Blocking entry points
     // =========================================================================
@@ -165,16 +194,24 @@ public final class FullNameCacheBuilder {
      * @return true when the entire build has finished resolving every target language
      */
     public static boolean resolveNextSlice(PendingBuild pending, int maxItems, long maxNanos) {
+        return resolveNextSlice(pending, SliceBudget.uniform(maxItems, maxNanos));
+    }
+
+    public static boolean resolveNextSlice(PendingBuild pending, SliceBudget budget) {
         if (pending == null) {
             return true;
         }
         ensureActiveBuild(pending);
 
-        int safeMaxItems = maxItems <= 0 ? Integer.MAX_VALUE : maxItems;
-        long safeMaxNanos = maxNanos <= 0L ? Long.MAX_VALUE : maxNanos;
+        SliceBudget effectiveBudget = budget == null
+            ? SliceBudget.uniform(Integer.MAX_VALUE, Long.MAX_VALUE)
+            : budget;
 
         if (!pending.isExpansionComplete()) {
-            expandNextSlice(pending, safeMaxItems, safeMaxNanos);
+            expandNextSlice(
+                pending,
+                effectiveBudget.expansionMaxItems,
+                effectiveBudget.expansionMaxNanos);
             return false;
         }
 
@@ -192,7 +229,10 @@ public final class FullNameCacheBuilder {
             return false;
         }
 
-        return resolveCurrentLanguageSlice(pending, safeMaxItems, safeMaxNanos);
+        return resolveCurrentLanguageSlice(
+            pending,
+            effectiveBudget.resolveMaxItems,
+            effectiveBudget.resolveMaxNanos);
     }
 
     // =========================================================================
@@ -251,7 +291,7 @@ public final class FullNameCacheBuilder {
     // Finish / cancel
     // =========================================================================
 
-    public static BuildResult finishBuild(PendingBuild pending) throws Exception {
+    public static CompletedBuild finishBuildWithoutReports(PendingBuild pending) throws Exception {
         if (pending == null) {
             throw new IllegalArgumentException("pending build is null");
         }
@@ -291,21 +331,45 @@ public final class FullNameCacheBuilder {
             pending.filter,
             elapsedMs);
 
-        try {
-            BuildReportWriter.write(result, dataToWrite);
-        } catch (Exception e) {
-            PolyglotTooltip.LOG.warn("[PolyglotTooltips] Report write failed (non-fatal): {}", e.getMessage());
-        }
-
         PolyglotTooltip.LOG.info(
-            "[PolyglotTooltips] Build complete in {}ms  (enum={}ms  expand={}ms  write={}ms).",
+            "[PolyglotTooltips] Cache phase complete in {}ms  (enum={}ms  expand={}ms  write={}ms).",
             elapsedMs,
             pending.enumMs,
             pending.expandMs,
             writeMs);
 
         releaseActiveBuild(pending);
-        return result;
+        return new CompletedBuild(result, dataToWrite, pending.startMs);
+    }
+
+    public static long writeReports(CompletedBuild completedBuild) {
+        if (completedBuild == null) {
+            return 0L;
+        }
+
+        long reportStart = System.currentTimeMillis();
+        try {
+            BuildReportWriter.write(completedBuild.result, completedBuild.reportData);
+        } catch (Exception e) {
+            PolyglotTooltip.LOG.warn("[PolyglotTooltips] Report write failed (non-fatal): {}", e.getMessage());
+        }
+
+        long reportMs = System.currentTimeMillis() - reportStart;
+        long totalElapsedMs = System.currentTimeMillis() - completedBuild.buildStartMs;
+        PolyglotTooltip.LOG.info(
+            "[PolyglotTooltips] Build complete in {}ms  (enum={}ms  expand={}ms  write={}ms  report={}ms).",
+            totalElapsedMs,
+            completedBuild.result.enumMs,
+            completedBuild.result.expandMs,
+            completedBuild.result.writeMs,
+            reportMs);
+        return reportMs;
+    }
+
+    public static BuildResult finishBuild(PendingBuild pending) throws Exception {
+        CompletedBuild completedBuild = finishBuildWithoutReports(pending);
+        writeReports(completedBuild);
+        return completedBuild.getResult();
     }
 
     public static void cancelBuild(PendingBuild pending) {
@@ -1190,6 +1254,25 @@ public final class FullNameCacheBuilder {
                 totalEntries(),
                 elapsedMs,
                 scanFilter);
+        }
+    }
+
+    public static final class CompletedBuild {
+
+        private final BuildResult result;
+        private final Map<PrebuiltSecondaryNameIndexKey, Map<String, String>> reportData;
+        private final long buildStartMs;
+
+        private CompletedBuild(BuildResult result,
+                Map<PrebuiltSecondaryNameIndexKey, Map<String, String>> reportData,
+                long buildStartMs) {
+            this.result = result;
+            this.reportData = reportData;
+            this.buildStartMs = buildStartMs;
+        }
+
+        public BuildResult getResult() {
+            return result;
         }
     }
 
