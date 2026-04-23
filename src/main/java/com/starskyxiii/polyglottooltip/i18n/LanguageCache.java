@@ -21,6 +21,8 @@ public final class LanguageCache {
     private static Field localePropertiesField;
     private static final Map<String, String> CURRENT_LANGUAGE_VALUE_KEY_CACHE =
         new LinkedHashMap<String, String>();
+    private static final Map<String, Map<String, String>> CURRENT_LANGUAGE_VALUE_KEY_INDEX_CACHE =
+        new LinkedHashMap<String, Map<String, String>>();
 
     private LanguageCache() {}
 
@@ -29,6 +31,7 @@ public final class LanguageCache {
         GregTechSupplementalTranslations.clear();
         ProgrammaticTranslationLookup.clear();
         CURRENT_LANGUAGE_VALUE_KEY_CACHE.clear();
+        CURRENT_LANGUAGE_VALUE_KEY_INDEX_CACHE.clear();
     }
 
     public static String translate(String languageCode, String key) {
@@ -218,6 +221,16 @@ public final class LanguageCache {
         return loadedLocale;
     }
 
+    static synchronized Map<String, String> snapshotTranslations(String languageCode) {
+        net.minecraft.client.resources.Locale locale = getLocale(languageCode);
+        Map<String, String> properties = locale == null ? null : getLocaleProperties(locale);
+        if (properties == null || properties.isEmpty()) {
+            return null;
+        }
+
+        return properties;
+    }
+
     private static synchronized String findCurrentLanguageTranslationKey(String localizedValue, String requiredKeyPrefix,
         boolean unused) {
         if (localizedValue == null) {
@@ -229,12 +242,13 @@ public final class LanguageCache {
             return null;
         }
 
-        String cacheKey = (requiredKeyPrefix == null ? "" : requiredKeyPrefix) + "\u0000" + normalizedValue;
+        String currentLanguageCode = getCurrentLanguageCode();
+        String normalizedPrefix = requiredKeyPrefix == null ? "" : requiredKeyPrefix;
+        String cacheKey = currentLanguageCode + "\u0000" + normalizedPrefix + "\u0000" + normalizedValue;
         if (CURRENT_LANGUAGE_VALUE_KEY_CACHE.containsKey(cacheKey)) {
             return CURRENT_LANGUAGE_VALUE_KEY_CACHE.get(cacheKey);
         }
 
-        String currentLanguageCode = getCurrentLanguageCode();
         net.minecraft.client.resources.Locale currentLocale = getLocale(currentLanguageCode);
         Map<String, String> currentProperties = currentLocale == null ? null : getLocaleProperties(currentLocale);
         if (currentProperties == null || currentProperties.isEmpty()) {
@@ -242,23 +256,45 @@ public final class LanguageCache {
             return null;
         }
 
+        Map<String, String> reverseLookup = getCurrentLanguageTranslationKeyIndex(
+            currentLanguageCode,
+            normalizedPrefix,
+            currentProperties);
+        String resolvedKey = reverseLookup.get(normalizedValue);
+        CURRENT_LANGUAGE_VALUE_KEY_CACHE.put(cacheKey, resolvedKey);
+        return resolvedKey;
+    }
+
+    private static synchronized Map<String, String> getCurrentLanguageTranslationKeyIndex(String currentLanguageCode,
+        String requiredKeyPrefix, Map<String, String> currentProperties) {
+        String normalizedPrefix = requiredKeyPrefix == null ? "" : requiredKeyPrefix;
+        String indexCacheKey = currentLanguageCode + "\u0000" + normalizedPrefix;
+        Map<String, String> cachedIndex = CURRENT_LANGUAGE_VALUE_KEY_INDEX_CACHE.get(indexCacheKey);
+        if (cachedIndex != null) {
+            return cachedIndex;
+        }
+
+        Map<String, String> reverseLookup = new LinkedHashMap<String, String>();
         for (Map.Entry<String, String> entry : currentProperties.entrySet()) {
             String key = entry.getKey();
             String value = entry.getValue();
             if (key == null || value == null) {
                 continue;
             }
-            if (requiredKeyPrefix != null && !requiredKeyPrefix.isEmpty() && !key.startsWith(requiredKeyPrefix)) {
+            if (!normalizedPrefix.isEmpty() && !key.startsWith(normalizedPrefix)) {
                 continue;
             }
-            if (normalizedValue.equals(value.trim())) {
-                CURRENT_LANGUAGE_VALUE_KEY_CACHE.put(cacheKey, key);
-                return key;
+
+            String normalizedEntryValue = value.trim();
+            if (normalizedEntryValue.isEmpty() || reverseLookup.containsKey(normalizedEntryValue)) {
+                continue;
             }
+
+            reverseLookup.put(normalizedEntryValue, key);
         }
 
-        CURRENT_LANGUAGE_VALUE_KEY_CACHE.put(cacheKey, null);
-        return null;
+        CURRENT_LANGUAGE_VALUE_KEY_INDEX_CACHE.put(indexCacheKey, reverseLookup);
+        return reverseLookup;
     }
 
     private static String getCurrentLanguageCode() {

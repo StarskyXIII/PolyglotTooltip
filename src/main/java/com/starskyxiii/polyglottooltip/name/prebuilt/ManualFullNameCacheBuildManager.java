@@ -29,13 +29,20 @@ import cpw.mods.fml.common.gameevent.TickEvent.Phase;
 public final class ManualFullNameCacheBuildManager {
 
     private static final String PREFIX = "[PolyglotTooltips] ";
-    private static final SliceBudget SLICE_BUDGET =
+    private static final SliceBudget INTERACTIVE_SLICE_BUDGET =
         SliceBudget.of(
             96,
-            8L * 1000L * 1000L,
+            6L * 1000L * 1000L,
+            256,
+            12L * 1000L * 1000L);
+    private static final SliceBudget ACCELERATED_SLICE_BUDGET =
+        SliceBudget.of(
             384,
-            8L * 1000L * 1000L);
-    private static final long PROGRESS_CHAT_INTERVAL_MS = 2000L;
+            24L * 1000L * 1000L,
+            4096,
+            96L * 1000L * 1000L);
+    private static final boolean FORCE_TURBO_DURING_GAMEPLAY = true;
+    private static final long PROGRESS_CHAT_INTERVAL_MS = 4000L;
 
     private static final ManualFullNameCacheBuildManager INSTANCE =
         new ManualFullNameCacheBuildManager();
@@ -90,6 +97,8 @@ public final class ManualFullNameCacheBuildManager {
                 PREFIX + "Started async full name cache build. filter='"
                     + displayFilter(snapshot.filter) + "', languages="
                     + snapshot.targetLanguages + ", merge=" + snapshot.mergeWithPreviousCache);
+            chat(sender, EnumChatFormatting.GRAY,
+                "  Turbo budget is enabled for manual builds, even during normal gameplay.");
             chat(sender, EnumChatFormatting.GRAY,
                 "  Progress will be reported in chat. Use /polyglotbuild status or /polyglotbuild cancel.");
             emitProgress(sender, true);
@@ -159,6 +168,20 @@ public final class ManualFullNameCacheBuildManager {
         return pending != null || completedBuild != null;
     }
 
+    private static SliceBudget selectSliceBudget(Minecraft minecraft) {
+        if (FORCE_TURBO_DURING_GAMEPLAY) {
+            return ACCELERATED_SLICE_BUDGET;
+        }
+
+        if (minecraft == null) {
+            return INTERACTIVE_SLICE_BUDGET;
+        }
+
+        return minecraft.theWorld == null || minecraft.currentScreen != null
+            ? ACCELERATED_SLICE_BUDGET
+            : INTERACTIVE_SLICE_BUDGET;
+    }
+
     @SubscribeEvent
     public void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase != Phase.END || (pending == null && completedBuild == null)) {
@@ -187,7 +210,7 @@ public final class ManualFullNameCacheBuildManager {
             if (!finishQueued) {
                 boolean complete = FullNameCacheBuilder.resolveNextSlice(
                     pending,
-                    SLICE_BUDGET);
+                    selectSliceBudget(minecraft));
                 emitProgress(null, false);
                 if (!complete) {
                     return;
@@ -276,25 +299,32 @@ public final class ManualFullNameCacheBuildManager {
             int rawKey = safeGet(result.rawKeyPerLang, lang);
             String mode = result.switchModePerLang.containsKey(lang)
                 ? result.switchModePerLang.get(lang) : "?";
+            long setupMs = result.setupMsPerLang.containsKey(lang)
+                ? result.setupMsPerLang.get(lang) : -1L;
             long swMs = result.switchMsPerLang.containsKey(lang)
                 ? result.switchMsPerLang.get(lang) : -1L;
             long rsMs = result.resolveMsPerLang.containsKey(lang)
                 ? result.resolveMsPerLang.get(lang) : -1L;
+            int slices = safeGet(result.resolveSliceCountPerLang, lang);
+            int stopItem = safeGet(result.resolveBudgetItemStopsPerLang, lang);
+            int stopTime = safeGet(result.resolveBudgetTimeStopsPerLang, lang);
             chat(null, EnumChatFormatting.AQUA,
                 String.format(
                     Locale.ROOT,
-                    "  %s: collected=%d  empty=%d  rawKey=%d  switch=%dms  resolve=%dms  [%s]",
-                    lang, collected, empty, rawKey, swMs, rsMs, mode));
+                    "  %s: collected=%d  empty=%d  rawKey=%d  setup=%dms  resolve=%dms  switch=%dms  slices=%d  stop[item=%d,time=%d]  [%s]",
+                    lang, collected, empty, rawKey, setupMs, rsMs, swMs, slices, stopItem, stopTime, mode));
         }
 
         chat(null, EnumChatFormatting.GRAY,
             String.format(
                 Locale.ROOT,
-                "  timing: enum=%dms  expand=%dms  write=%dms  report=%dms",
+                "  timing: enum=%dms  expand=%dms  write=%dms  report=%dms  expandSlices=%d  liveHints=%d",
                 result.enumMs,
                 result.expandMs,
                 result.writeMs,
-                reportMs));
+                reportMs,
+                result.expandSliceCount,
+                result.capturedLiveDisplayNames));
         chat(null, EnumChatFormatting.GRAY,
             "  cache  -> " + FullNameCacheIO.getCacheFile().getAbsolutePath());
         chat(null, EnumChatFormatting.GRAY,

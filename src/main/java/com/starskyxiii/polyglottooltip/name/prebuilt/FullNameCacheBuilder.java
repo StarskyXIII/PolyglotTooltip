@@ -4,6 +4,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -11,6 +12,7 @@ import java.util.Map;
 import java.util.Set;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.block.Block;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -19,6 +21,10 @@ import net.minecraft.util.EnumChatFormatting;
 import com.starskyxiii.polyglottooltip.PolyglotTooltip;
 import com.starskyxiii.polyglottooltip.Tags;
 import com.starskyxiii.polyglottooltip.config.Config;
+import com.starskyxiii.polyglottooltip.i18n.ProgrammaticDisplayNameLookup;
+import com.starskyxiii.polyglottooltip.i18n.ProgrammaticDisplayNameLookup.LiveDisplayNameHintScope;
+import com.starskyxiii.polyglottooltip.i18n.ProgrammaticDisplayNameLookup.RestoreSnapshot;
+import com.starskyxiii.polyglottooltip.i18n.ProgrammaticDisplayNameLookup.TranslationScope;
 import com.starskyxiii.polyglottooltip.i18n.LanguageSwitcher;
 import com.starskyxiii.polyglottooltip.i18n.LanguageSwitcher.SwitchResult;
 import com.starskyxiii.polyglottooltip.name.DisplayNameResolver;
@@ -28,7 +34,7 @@ import com.starskyxiii.polyglottooltip.report.NameQualityClassifier;
 
 /**
  * Builds the full-registry name cache by enumerating items, expanding sub-item variants,
- * switching language, resolving names, then writing the merged results to disk.
+ * resolving names for each target language, then writing the merged results to disk.
  *
  * <p>The builder now supports both blocking and budgeted execution:
  * <ul>
@@ -41,6 +47,12 @@ public final class FullNameCacheBuilder {
 
     private static final Object ACTIVE_BUILD_LOCK = new Object();
     private static final Method ITEM_GET_CREATIVE_TABS_METHOD = resolveItemGetCreativeTabsMethod();
+    private static final long EXPAND_SOFT_TARGET_NANOS = 24L * 1000L * 1000L;
+    private static final long RESOLVE_SOFT_TARGET_NANOS = 48L * 1000L * 1000L;
+    private static final int MIN_EXPAND_CHECKPOINT_ITEMS = 16;
+    private static final int MAX_EXPAND_CHECKPOINT_ITEMS = 64;
+    private static final int MIN_RESOLVE_CHECKPOINT_ITEMS = 64;
+    private static final int MAX_RESOLVE_CHECKPOINT_ITEMS = 256;
     private static ActiveBuildState activeBuild;
 
     private FullNameCacheBuilder() {}
@@ -145,7 +157,7 @@ public final class FullNameCacheBuilder {
         List<String> normalizedLanguages = normalizeLanguages(targetLanguages);
 
         PolyglotTooltip.LOG.info(
-            "[PolyglotTooltips] {} full name cache build starting. filter='{}', languages={}, fastSwitch={}, merge={}",
+            "[PolyglotTooltips] {} full name cache build starting. filter='{}', languages={}, displayNameFallback=BACKGROUND, liveSwitchConfig={}, merge={}",
             owner == null ? BuildOwner.MANUAL.getDisplayName() : owner.getDisplayName(),
             filter.isEmpty() ? "all" : filter,
             normalizedLanguages,
@@ -252,38 +264,66 @@ public final class FullNameCacheBuilder {
             throw new IllegalStateException("Minecraft client is not ready for language resolution.");
         }
 
-        String savedLanguage = mc.gameSettings.language;
-        long switchStart = System.currentTimeMillis();
-        SwitchResult sr = LanguageSwitcher.switchTo(mc, lang, Config.useFastLanguageSwitch);
-        long switchMs = System.currentTimeMillis() - switchStart;
-        if (sr == SwitchResult.FAILED) {
-            throw new IllegalStateException("Failed to switch to language '" + lang + "'.");
-        }
-
         PolyglotTooltip.LOG.info(
-            "[PolyglotTooltips] {} build switched language to '{}' via {} path ({}ms).",
+            "[PolyglotTooltips] {} build: resolving '{}' ({}/{}) via BACKGROUND mode; live language stays '{}'.",
             pending.owner.getDisplayName(),
             lang,
-            sr.name(),
-            switchMs);
+            blockingLanguageOrdinal(pending, lang),
+            pending.targetLanguages.size(),
+            mc.gameSettings.language == null ? "?" : mc.gameSettings.language);
 
         LanguageRunStats stats = new LanguageRunStats();
-        long resolveStart = System.currentTimeMillis();
+        stats.switchMode = SwitchResult.BACKGROUND;
+        stats.switchMs = 0L;
+        BuildProfiler.Scope profilerScope = pending.profiler.activate();
+        TranslationScope translationScope = null;
+        LiveDisplayNameHintScope liveDisplayNameHintScope = null;
         try {
+            liveDisplayNameHintScope = beginLiveDisplayNameHintScope(pending);
+            long setupProfileStartNs = BuildProfiler.startSection();
+            long setupStart = System.currentTimeMillis();
+            translationScope = beginTranslationScope(pending, lang);
+            stats.setupMs += System.currentTimeMillis() - setupStart;
+            BuildProfiler.record(
+                "scope.begin",
+                null,
+                lang,
+                setupProfileStartNs,
+                translationScope != null && translationScope.isActive() ? "active" : null);
+
+            long resolveStart = System.currentTimeMillis();
+            long resolveSliceProfileStartNs = BuildProfiler.startSection();
             for (int i = 0; i < pending.expandedEntries.size(); i++) {
                 processExpandedStack(pending, pending.expandedEntries.get(i), lang, stats);
             }
+            stats.sliceCount++;
+            stats.processedEntries += pending.expandedEntries.size();
+            BuildProfiler.record(
+                "slice.resolve",
+                null,
+                lang,
+                resolveSliceProfileStartNs,
+                pending.expandedEntries.isEmpty() ? null : String.valueOf(pending.expandedEntries.size()));
+            stats.resolveMs += System.currentTimeMillis() - resolveStart;
         } finally {
-            LanguageSwitcher.switchTo(mc, savedLanguage, Config.useFastLanguageSwitch);
-            PolyglotTooltip.LOG.info(
-                "[PolyglotTooltips] {} build restored language to '{}'.",
-                pending.owner.getDisplayName(),
-                savedLanguage);
+            if (translationScope != null) {
+                boolean activeTranslationScope = translationScope.isActive();
+                long closeProfileStartNs = BuildProfiler.startSection();
+                long closeStart = System.currentTimeMillis();
+                translationScope.close();
+                stats.setupMs += System.currentTimeMillis() - closeStart;
+                BuildProfiler.record(
+                    "scope.close",
+                    null,
+                    lang,
+                    closeProfileStartNs,
+                    activeTranslationScope ? "restored" : null);
+            }
+            if (liveDisplayNameHintScope != null) {
+                liveDisplayNameHintScope.close();
+            }
+            profilerScope.close();
         }
-
-        stats.switchMs = switchMs;
-        stats.switchMode = sr;
-        stats.resolveMs = System.currentTimeMillis() - resolveStart;
         finalizeLanguage(pending, lang, stats);
     }
 
@@ -315,6 +355,7 @@ public final class FullNameCacheBuilder {
             pending.itemsScanned,
             pending.expandedEntries.size(),
             dataToWrite.size(),
+            pending.liveDisplayNameHints.size(),
             pending.collectedPerLang,
             pending.emptyPerLang,
             pending.rawKeyPerLang,
@@ -323,13 +364,22 @@ public final class FullNameCacheBuilder {
             pending.mixedLangPerLang,
             pending.formatOnlyPerLang,
             pending.switchModePerLang,
+            pending.setupMsPerLang,
             pending.switchMsPerLang,
             pending.resolveMsPerLang,
+            pending.resolveSliceCountPerLang,
+            pending.resolveBudgetItemStopsPerLang,
+            pending.resolveBudgetTimeStopsPerLang,
+            pending.resolveProcessedEntriesPerLang,
             pending.enumMs,
             pending.expandMs,
+            pending.expandSliceCount,
+            pending.expandBudgetItemStops,
+            pending.expandBudgetTimeStops,
             writeMs,
             pending.filter,
-            elapsedMs);
+            elapsedMs,
+            pending.profiler.snapshot());
 
         PolyglotTooltip.LOG.info(
             "[PolyglotTooltips] Cache phase complete in {}ms  (enum={}ms  expand={}ms  write={}ms).",
@@ -415,26 +465,77 @@ public final class FullNameCacheBuilder {
 
     private static void expandNextSlice(PendingBuild pending, int maxItems, long maxNanos) {
         long startNs = System.nanoTime();
+        long sliceWallNanos = 0L;
         int processed = 0;
+        int adaptiveMaxItems = maxItems <= 0 ? Integer.MAX_VALUE : maxItems;
+        int checkpointSize = determineExpandCheckpointSize(adaptiveMaxItems);
+        long softTargetNanos = determineSoftTargetNanos(maxNanos, EXPAND_SOFT_TARGET_NANOS);
+        boolean itemBudgetHit = false;
+        boolean timeBudgetHit = false;
+        BuildProfiler.Scope profilerScope = pending.profiler.activate();
+        long expandSliceStartNs = BuildProfiler.startSection();
+        try {
+            while (pending.nextItemIndex < pending.items.size() || pending.activeExpansion != null) {
+                if (pending.activeExpansion == null) {
+                    Item item = pending.items.get(pending.nextItemIndex);
+                    pending.activeExpansion = new ExpansionState(item);
+                }
 
-        while (pending.nextItemIndex < pending.items.size() || pending.activeExpansion != null) {
-            if (pending.activeExpansion == null) {
-                Item item = pending.items.get(pending.nextItemIndex);
-                pending.activeExpansion = new ExpansionState(item);
-            }
+                if (advanceExpansion(pending, pending.activeExpansion, startNs, maxNanos)) {
+                    pending.activeExpansion = null;
+                    pending.nextItemIndex++;
+                    processed++;
+                    if (shouldRecalculateAdaptiveCap(processed, checkpointSize)) {
+                        adaptiveMaxItems = adaptItemCap(
+                            processed,
+                            System.nanoTime() - startNs,
+                            softTargetNanos,
+                            maxItems,
+                            checkpointSize);
+                    }
+                }
 
-            if (advanceExpansion(pending, pending.activeExpansion, startNs, maxNanos)) {
-                pending.activeExpansion = null;
-                pending.nextItemIndex++;
-                processed++;
+                if (processed >= adaptiveMaxItems) {
+                    itemBudgetHit = true;
+                    break;
+                }
+                if (isBudgetExceeded(startNs, maxNanos)) {
+                    timeBudgetHit = true;
+                    break;
+                }
             }
-
-            if (processed >= maxItems || isBudgetExceeded(startNs, maxNanos)) {
-                break;
+        } finally {
+            sliceWallNanos = System.nanoTime() - startNs;
+            pending.recordLastSliceTelemetry(
+                BuildPhase.EXPANDING,
+                null,
+                sliceWallNanos,
+                processed,
+                itemBudgetHit,
+                timeBudgetHit);
+            pending.expandMs += nanosToMillis(sliceWallNanos);
+            pending.expandSliceCount++;
+            if (itemBudgetHit) {
+                BuildProfiler.record("budget.expand.items", null, null, BuildProfiler.startSection(), "hit");
             }
+            if (timeBudgetHit) {
+                BuildProfiler.record("budget.expand.time", null, null, BuildProfiler.startSection(), "hit");
+            }
+            BuildProfiler.record(
+                "slice.expand",
+                null,
+                null,
+                expandSliceStartNs,
+                processed > 0 ? String.valueOf(processed) : null);
+            profilerScope.close();
         }
 
-        pending.expandMs += nanosToMillis(System.nanoTime() - startNs);
+        if (itemBudgetHit) {
+            pending.expandBudgetItemStops++;
+        }
+        if (timeBudgetHit) {
+            pending.expandBudgetTimeStops++;
+        }
 
         if (pending.isExpansionComplete()) {
             PolyglotTooltip.LOG.info(
@@ -500,7 +601,16 @@ public final class FullNameCacheBuilder {
             if (tab == null || !state.attemptedTabs.add(tab)) {
                 continue;
             }
+            int variantsBefore = state.variants.size();
+            long profileStartNs = BuildProfiler.startSection();
             addSubItems(state.item, tab, state.variants);
+            int variantsAdded = Math.max(0, state.variants.size() - variantsBefore);
+            BuildProfiler.record(
+                "expand.preferred_tab",
+                null,
+                null,
+                profileStartNs,
+                variantsAdded > 0 ? String.valueOf(variantsAdded) : null);
             return true;
         }
 
@@ -515,7 +625,16 @@ public final class FullNameCacheBuilder {
                 continue;
             }
             state.attemptedTabs.add(tab);
+            int variantsBefore = state.variants.size();
+            long profileStartNs = BuildProfiler.startSection();
             addSubItems(state.item, tab, state.variants);
+            int variantsAdded = Math.max(0, state.variants.size() - variantsBefore);
+            BuildProfiler.record(
+                "expand.fallback_tab",
+                null,
+                null,
+                profileStartNs,
+                variantsAdded > 0 ? String.valueOf(variantsAdded) : null);
             return true;
         }
 
@@ -525,35 +644,54 @@ public final class FullNameCacheBuilder {
 
     private static boolean advanceVariantCollection(PendingBuild pending,
             ExpansionState state, long startNs, long maxNanos) {
-        while (state.nextVariantIndex < state.variants.size()) {
-            ItemStack stack = state.variants.get(state.nextVariantIndex++);
-            if (stack == null || stack.getItem() == null) {
+        long profileStartNs = BuildProfiler.startSection();
+        int committed = 0;
+        try {
+            while (state.nextVariantIndex < state.variants.size()) {
+                ItemStack stack = state.variants.get(state.nextVariantIndex++);
+                if (stack == null || stack.getItem() == null) {
+                    if (isBudgetExceeded(startNs, maxNanos)) {
+                        return true;
+                    }
+                    continue;
+                }
+
+                String registryName = getRegistryName(stack.getItem());
+                if (registryName == null || registryName.isEmpty()) {
+                    if (isBudgetExceeded(startNs, maxNanos)) {
+                        return true;
+                    }
+                    continue;
+                }
+
+                StackKey stackKey = StackKey.of(stack);
+                if (stackKey != null && !pending.expandedStacks.containsKey(stackKey)) {
+                    ItemStack expandedStack = stack.copy();
+                    refreshLiveDisplayNameHintLanguage(pending);
+                    String liveDisplayName = captureLiveDisplayNameIfNeeded(expandedStack);
+                    ExpandedStack expanded = new ExpandedStack(
+                        new PrebuiltSecondaryNameIndexKey(registryName, stack.getItemDamage()),
+                        expandedStack,
+                        liveDisplayName);
+                    pending.expandedStacks.put(stackKey, expanded);
+                    pending.expandedEntries.add(expanded);
+                    committed++;
+                    if (expanded.liveDisplayName != null && !expanded.liveDisplayName.trim().isEmpty()) {
+                        pending.liveDisplayNameHints.put(expanded.stack, expanded.liveDisplayName);
+                    }
+                }
+
                 if (isBudgetExceeded(startNs, maxNanos)) {
                     return true;
                 }
-                continue;
             }
-
-            String registryName = getRegistryName(stack.getItem());
-            if (registryName == null || registryName.isEmpty()) {
-                if (isBudgetExceeded(startNs, maxNanos)) {
-                    return true;
-                }
-                continue;
-            }
-
-            StackKey stackKey = StackKey.of(stack);
-            if (stackKey != null && !pending.expandedStacks.containsKey(stackKey)) {
-                ExpandedStack expanded = new ExpandedStack(
-                    new PrebuiltSecondaryNameIndexKey(registryName, stack.getItemDamage()),
-                    stack.copy());
-                pending.expandedStacks.put(stackKey, expanded);
-                pending.expandedEntries.add(expanded);
-            }
-
-            if (isBudgetExceeded(startNs, maxNanos)) {
-                return true;
-            }
+        } finally {
+            BuildProfiler.record(
+                "expand.variant_commit",
+                null,
+                null,
+                profileStartNs,
+                committed > 0 ? String.valueOf(committed) : null);
         }
 
         state.variants.clear();
@@ -622,39 +760,30 @@ public final class FullNameCacheBuilder {
         pending.activeStats = new LanguageRunStats();
         pending.activeSavedLanguage = mc.gameSettings.language;
         pending.activeLanguageSwitched = false;
+        pending.activeStats.switchMode = SwitchResult.BACKGROUND;
 
         PolyglotTooltip.LOG.info(
-            "[PolyglotTooltips] {} build: resolving '{}' ({}/{})...",
+            "[PolyglotTooltips] {} build: resolving '{}' ({}/{}) via BACKGROUND mode; live language stays '{}'.",
             pending.owner.getDisplayName(),
             lang,
             pending.currentLanguageIndex + 1,
-            pending.targetLanguages.size());
+            pending.targetLanguages.size(),
+            pending.activeSavedLanguage == null ? "?" : pending.activeSavedLanguage);
+    }
 
-        if (sameLanguage(pending.activeSavedLanguage, lang)) {
-            pending.activeStats.switchMode = SwitchResult.FAST;
-            PolyglotTooltip.LOG.info(
-                "[PolyglotTooltips] {} build reusing current language '{}'.",
-                pending.owner.getDisplayName(),
-                lang);
-            return;
+    private static int blockingLanguageOrdinal(PendingBuild pending, String lang) {
+        if (pending == null || pending.targetLanguages == null || pending.targetLanguages.isEmpty()) {
+            return 1;
         }
 
-        long switchStart = System.currentTimeMillis();
-        SwitchResult sr = LanguageSwitcher.switchTo(mc, lang, Config.useFastLanguageSwitch);
-        long switchMs = System.currentTimeMillis() - switchStart;
-        if (sr == SwitchResult.FAILED) {
-            throw new IllegalStateException("Failed to switch to language '" + lang + "'.");
+        for (int i = 0; i < pending.targetLanguages.size(); i++) {
+            String configuredLanguage = pending.targetLanguages.get(i);
+            if (configuredLanguage != null && configuredLanguage.equalsIgnoreCase(lang)) {
+                return i + 1;
+            }
         }
 
-        pending.activeStats.switchMs += switchMs;
-        pending.activeStats.switchMode = combineSwitchModes(pending.activeStats.switchMode, sr);
-        pending.activeLanguageSwitched = true;
-        PolyglotTooltip.LOG.info(
-            "[PolyglotTooltips] {} build switched language to '{}' via {} path ({}ms).",
-            pending.owner.getDisplayName(),
-            lang,
-            sr.name(),
-            switchMs);
+        return Math.min(pending.targetLanguages.size(), pending.currentLanguageIndex + 1);
     }
 
     private static boolean resolveCurrentLanguageSlice(PendingBuild pending, int maxItems, long maxNanos) {
@@ -665,18 +794,105 @@ public final class FullNameCacheBuilder {
 
         String lang = pending.activeLanguage;
         long sliceStartNs = System.nanoTime();
+        long sliceWallNanos = 0L;
         int processed = 0;
-        while (pending.currentExpandedIndex < pending.expandedEntries.size()) {
-            ExpandedStack expanded = pending.expandedEntries.get(pending.currentExpandedIndex++);
-            processExpandedStack(pending, expanded, lang, pending.activeStats);
-            processed++;
+        int adaptiveMaxItems = maxItems <= 0 ? Integer.MAX_VALUE : maxItems;
+        int checkpointSize = determineResolveCheckpointSize(adaptiveMaxItems);
+        long softTargetNanos = determineSoftTargetNanos(maxNanos, RESOLVE_SOFT_TARGET_NANOS);
+        boolean itemBudgetHit = false;
+        boolean timeBudgetHit = false;
+        BuildProfiler.Scope profilerScope = pending.profiler.activate();
+        TranslationScope translationScope = null;
+        LiveDisplayNameHintScope liveDisplayNameHintScope = null;
+        long resolveSliceProfileStartNs = 0L;
+        try {
+            liveDisplayNameHintScope = beginLiveDisplayNameHintScope(pending);
+            long setupProfileStartNs = BuildProfiler.startSection();
+            long setupStart = System.currentTimeMillis();
+            translationScope = beginTranslationScope(pending, lang);
+            pending.activeStats.setupMs += System.currentTimeMillis() - setupStart;
+            BuildProfiler.record(
+                "scope.begin",
+                null,
+                lang,
+                setupProfileStartNs,
+                translationScope != null && translationScope.isActive() ? "active" : null);
 
-            if (processed >= maxItems || isBudgetExceeded(sliceStartNs, maxNanos)) {
-                break;
+            resolveSliceProfileStartNs = BuildProfiler.startSection();
+            long resolveStartNs = System.nanoTime();
+            long workSoftTargetNanos = determineRemainingWorkBudgetNanos(sliceStartNs, softTargetNanos);
+            while (pending.currentExpandedIndex < pending.expandedEntries.size()) {
+                ExpandedStack expanded = pending.expandedEntries.get(pending.currentExpandedIndex++);
+                processExpandedStack(pending, expanded, lang, pending.activeStats);
+                processed++;
+
+                if (shouldRecalculateAdaptiveCap(processed, checkpointSize)) {
+                    adaptiveMaxItems = adaptItemCap(
+                        processed,
+                        System.nanoTime() - resolveStartNs,
+                        workSoftTargetNanos,
+                        maxItems,
+                        checkpointSize);
+                }
+
+                if (processed >= adaptiveMaxItems) {
+                    itemBudgetHit = true;
+                    break;
+                }
+                if (isBudgetExceeded(sliceStartNs, maxNanos)) {
+                    timeBudgetHit = true;
+                    break;
+                }
             }
+            pending.activeStats.sliceCount++;
+            pending.activeStats.processedEntries += processed;
+            pending.activeStats.resolveMs += nanosToMillis(System.nanoTime() - resolveStartNs);
+            BuildProfiler.record(
+                "slice.resolve",
+                null,
+                lang,
+                resolveSliceProfileStartNs,
+                processed > 0 ? String.valueOf(processed) : null);
+        } finally {
+            if (translationScope != null) {
+                boolean activeTranslationScope = translationScope.isActive();
+                long closeProfileStartNs = BuildProfiler.startSection();
+                long closeStart = System.currentTimeMillis();
+                translationScope.close();
+                pending.activeStats.setupMs += System.currentTimeMillis() - closeStart;
+                BuildProfiler.record(
+                    "scope.close",
+                    null,
+                    lang,
+                    closeProfileStartNs,
+                    activeTranslationScope ? "restored" : null);
+            }
+            if (liveDisplayNameHintScope != null) {
+                liveDisplayNameHintScope.close();
+            }
+            if (itemBudgetHit) {
+                BuildProfiler.record("budget.resolve.items", null, lang, BuildProfiler.startSection(), "hit");
+            }
+            if (timeBudgetHit) {
+                BuildProfiler.record("budget.resolve.time", null, lang, BuildProfiler.startSection(), "hit");
+            }
+            profilerScope.close();
+            sliceWallNanos = System.nanoTime() - sliceStartNs;
+            pending.recordLastSliceTelemetry(
+                BuildPhase.RESOLVING,
+                lang,
+                sliceWallNanos,
+                processed,
+                itemBudgetHit,
+                timeBudgetHit);
         }
 
-        pending.activeStats.resolveMs += nanosToMillis(System.nanoTime() - sliceStartNs);
+        if (itemBudgetHit) {
+            pending.activeStats.budgetItemStops++;
+        }
+        if (timeBudgetHit) {
+            pending.activeStats.budgetTimeStops++;
+        }
 
         if (pending.currentExpandedIndex < pending.expandedEntries.size()) {
             return false;
@@ -731,8 +947,13 @@ public final class FullNameCacheBuilder {
 
     private static void finalizeLanguage(PendingBuild pending, String lang, LanguageRunStats stats) {
         pending.switchModePerLang.put(lang, stats.switchMode == null ? SwitchResult.FAILED.name() : stats.switchMode.name());
+        pending.setupMsPerLang.put(lang, Long.valueOf(stats.setupMs));
         pending.switchMsPerLang.put(lang, Long.valueOf(stats.switchMs));
         pending.resolveMsPerLang.put(lang, Long.valueOf(stats.resolveMs));
+        pending.resolveSliceCountPerLang.put(lang, Integer.valueOf(stats.sliceCount));
+        pending.resolveBudgetItemStopsPerLang.put(lang, Integer.valueOf(stats.budgetItemStops));
+        pending.resolveBudgetTimeStopsPerLang.put(lang, Integer.valueOf(stats.budgetTimeStops));
+        pending.resolveProcessedEntriesPerLang.put(lang, Integer.valueOf(stats.processedEntries));
         pending.collectedPerLang.put(lang, Integer.valueOf(stats.okCount));
         pending.emptyPerLang.put(lang, Integer.valueOf(stats.emptyCount));
         pending.rawKeyPerLang.put(lang, Integer.valueOf(stats.rawCount));
@@ -742,7 +963,7 @@ public final class FullNameCacheBuilder {
         pending.formatOnlyPerLang.put(lang, Integer.valueOf(stats.formatOnlyCount));
 
         PolyglotTooltip.LOG.info(
-            "[PolyglotTooltips] {} build lang={}: collected={}, good={}, empty={}, rawKey={}, cjkSuspect={}, mixed={}, formatOnly={}  resolve={}ms",
+            "[PolyglotTooltips] {} build lang={}: collected={}, good={}, empty={}, rawKey={}, cjkSuspect={}, mixed={}, formatOnly={}  setup={}ms  resolve={}ms  slices={}  budgetStops[item={}, time={}]",
             pending.owner.getDisplayName(),
             lang,
             stats.okCount,
@@ -752,7 +973,11 @@ public final class FullNameCacheBuilder {
             stats.cjkSuspectCount,
             stats.mixedLangCount,
             stats.formatOnlyCount,
-            stats.resolveMs);
+            stats.setupMs,
+            stats.resolveMs,
+            stats.sliceCount,
+            stats.budgetItemStops,
+            stats.budgetTimeStops);
     }
 
     private static void restoreActiveLanguage(PendingBuild pending, Minecraft mc) {
@@ -913,12 +1138,23 @@ public final class FullNameCacheBuilder {
         } catch (Throwable ignored) {
             // Fall through to stack.getDisplayName() fallback.
         }
-        return safeGetDisplayName(stack);
+        return safeGetDisplayName(stack, languageCode);
     }
 
-    private static String safeGetDisplayName(ItemStack stack) {
+    private static String safeGetDisplayName(ItemStack stack, String languageCode) {
         try {
-            String name = stack.getDisplayName();
+            long fallbackStartNs = BuildProfiler.startSection();
+            String name = null;
+            try {
+                name = ProgrammaticDisplayNameLookup.getItemDisplayName(stack, languageCode);
+            } finally {
+                BuildProfiler.record(
+                    "fallback.item_display_name",
+                    stack,
+                    languageCode,
+                    fallbackStartNs,
+                    name);
+            }
             if (name == null) {
                 return null;
             }
@@ -928,6 +1164,220 @@ public final class FullNameCacheBuilder {
         } catch (Throwable ignored) {
             return null;
         }
+    }
+
+    private static String captureLiveDisplayNameIfNeeded(ItemStack stack) {
+        if (!shouldCaptureLiveDisplayName(stack)) {
+            return null;
+        }
+
+        long captureStartNs = BuildProfiler.startSection();
+        String liveDisplayName = null;
+        try {
+            liveDisplayName = safeGetRawDisplayName(stack);
+        } finally {
+            BuildProfiler.record("capture.live_name", stack, null, captureStartNs, liveDisplayName);
+        }
+
+        return liveDisplayName == null || liveDisplayName.trim().isEmpty() ? null : liveDisplayName;
+    }
+
+    private static String safeGetRawDisplayName(ItemStack stack) {
+        if (stack == null || stack.getItem() == null) {
+            return null;
+        }
+
+        try {
+            return stack.getDisplayName();
+        } catch (Throwable ignored) {
+            return null;
+        }
+    }
+
+    private static boolean shouldCaptureLiveDisplayName(ItemStack stack) {
+        String itemClassName = safeGetItemClassName(stack);
+        String blockClassName = safeGetBlockClassName(stack);
+        String registryName = stack == null || stack.getItem() == null ? null : getRegistryName(stack.getItem());
+        String unlocalizedName = safeGetNormalizedUnlocalizedName(stack);
+        return isBinnieCandidate(itemClassName, blockClassName, registryName, unlocalizedName)
+            || isGregTechCandidate(itemClassName, blockClassName, registryName, unlocalizedName);
+    }
+
+    private static boolean isBinnieCandidate(String itemClassName, String blockClassName,
+            String registryName, String unlocalizedName) {
+        if (startsWithIgnoreCase(itemClassName, "binnie.")) {
+            return true;
+        }
+        if (startsWithIgnoreCase(blockClassName, "binnie.")) {
+            return true;
+        }
+
+        if (startsWithIgnoreCase(registryName, "ExtraBees:")
+            || startsWithIgnoreCase(registryName, "ExtraTrees:")
+            || startsWithIgnoreCase(registryName, "Botany:")
+            || startsWithIgnoreCase(registryName, "Genetics:")
+            || startsWithIgnoreCase(registryName, "BinnieCore:")) {
+            return true;
+        }
+
+        return startsWithIgnoreCase(unlocalizedName, "extrabees.")
+            || startsWithIgnoreCase(unlocalizedName, "extratrees.")
+            || startsWithIgnoreCase(unlocalizedName, "botany.")
+            || startsWithIgnoreCase(unlocalizedName, "genetics.")
+            || startsWithIgnoreCase(unlocalizedName, "binniecore.")
+            || startsWithIgnoreCase(unlocalizedName, "for.extratrees.");
+    }
+
+    private static boolean isGregTechCandidate(String itemClassName, String blockClassName,
+            String registryName, String unlocalizedName) {
+        if (startsWithIgnoreCase(itemClassName, "gregtech.")
+            || startsWithIgnoreCase(itemClassName, "bartworks.")
+            || startsWithIgnoreCase(blockClassName, "gregtech.")
+            || startsWithIgnoreCase(blockClassName, "bartworks.")) {
+            return true;
+        }
+
+        if (startsWithIgnoreCase(registryName, "gregtech:")
+            || startsWithIgnoreCase(registryName, "bartworks:")) {
+            return true;
+        }
+
+        return startsWithIgnoreCase(unlocalizedName, "gt.")
+            || startsWithIgnoreCase(unlocalizedName, "bw.")
+            || startsWithIgnoreCase(unlocalizedName, "gtplusplus.")
+            || startsWithIgnoreCase(unlocalizedName, "comb.")
+            || startsWithIgnoreCase(unlocalizedName, "propolis.");
+    }
+
+    private static String safeGetItemClassName(ItemStack stack) {
+        try {
+            return stack == null || stack.getItem() == null ? null : stack.getItem().getClass().getName();
+        } catch (Throwable ignored) {
+            return null;
+        }
+    }
+
+    private static String safeGetBlockClassName(ItemStack stack) {
+        try {
+            if (stack == null || stack.getItem() == null) {
+                return null;
+            }
+            Block block = Block.getBlockFromItem(stack.getItem());
+            return block == null ? null : block.getClass().getName();
+        } catch (Throwable ignored) {
+            return null;
+        }
+    }
+
+    private static String safeGetNormalizedUnlocalizedName(ItemStack stack) {
+        try {
+            if (stack == null) {
+                return null;
+            }
+
+            return normalizeUnlocalizedName(stack.getUnlocalizedName());
+        } catch (Throwable ignored) {
+            return null;
+        }
+    }
+
+    private static String normalizeUnlocalizedName(String unlocalizedName) {
+        if (unlocalizedName == null) {
+            return null;
+        }
+
+        String normalized = unlocalizedName.trim();
+        if (normalized.startsWith("item.") || normalized.startsWith("tile.")) {
+            return normalized.substring(5);
+        }
+        return normalized;
+    }
+
+    private static boolean startsWithIgnoreCase(String value, String prefix) {
+        if (value == null || prefix == null || value.length() < prefix.length()) {
+            return false;
+        }
+        return value.regionMatches(true, 0, prefix, 0, prefix.length());
+    }
+
+    private static LiveDisplayNameHintScope beginLiveDisplayNameHintScope(PendingBuild pending) {
+        refreshLiveDisplayNameHintLanguage(pending);
+        return ProgrammaticDisplayNameLookup.beginLiveDisplayNameHintScope(
+            pending == null ? null : pending.liveDisplayNameHints);
+    }
+
+    private static TranslationScope beginTranslationScope(PendingBuild pending, String languageCode) {
+        String liveLanguageCode = getCurrentLanguageCode();
+        if (sameLanguageCode(languageCode, liveLanguageCode)) {
+            return ProgrammaticDisplayNameLookup.beginScope(languageCode);
+        }
+
+        RestoreSnapshot restoreSnapshot =
+            getLiveTranslationRestoreSnapshot(pending, liveLanguageCode);
+        return ProgrammaticDisplayNameLookup.beginScope(languageCode, restoreSnapshot);
+    }
+
+    private static RestoreSnapshot getLiveTranslationRestoreSnapshot(PendingBuild pending,
+            String liveLanguageCode) {
+        if (pending == null || liveLanguageCode == null || liveLanguageCode.trim().isEmpty()) {
+            return null;
+        }
+
+        RestoreSnapshot cached = pending.liveTranslationRestoreSnapshots.get(liveLanguageCode);
+        if (cached != null) {
+            return cached;
+        }
+
+        RestoreSnapshot snapshot = ProgrammaticDisplayNameLookup.newRestoreSnapshot(liveLanguageCode);
+        pending.liveTranslationRestoreSnapshots.put(liveLanguageCode, snapshot);
+        return snapshot;
+    }
+
+    private static void refreshLiveDisplayNameHintLanguage(PendingBuild pending) {
+        if (pending == null) {
+            return;
+        }
+
+        String currentLanguageCode = getCurrentLanguageCode();
+        if (currentLanguageCode == null) {
+            return;
+        }
+
+        if (pending.liveDisplayNameHintLanguage == null
+            || pending.liveDisplayNameHintLanguage.trim().isEmpty()) {
+            pending.liveDisplayNameHintLanguage = currentLanguageCode;
+            return;
+        }
+
+        if (sameLanguageCode(pending.liveDisplayNameHintLanguage, currentLanguageCode)) {
+            return;
+        }
+
+        if (!pending.liveDisplayNameHints.isEmpty()) {
+            pending.liveDisplayNameHints.clear();
+            PolyglotTooltip.LOG.warn(
+                "[PolyglotTooltips] {} build cleared live-name hints after display language changed from '{}' to '{}'.",
+                pending.owner.getDisplayName(),
+                pending.liveDisplayNameHintLanguage,
+                currentLanguageCode);
+        }
+        pending.liveDisplayNameHintLanguage = currentLanguageCode;
+    }
+
+    private static boolean sameLanguageCode(String left, String right) {
+        return left != null && right != null && left.equalsIgnoreCase(right);
+    }
+
+    private static String getCurrentLanguageCode() {
+        try {
+            Minecraft minecraft = Minecraft.getMinecraft();
+            if (minecraft != null && minecraft.gameSettings != null && minecraft.gameSettings.language != null) {
+                String languageCode = minecraft.gameSettings.language.trim();
+                return languageCode.isEmpty() ? null : languageCode;
+            }
+        } catch (Throwable ignored) {
+        }
+        return null;
     }
 
     // =========================================================================
@@ -997,6 +1447,70 @@ public final class FullNameCacheBuilder {
         return maxNanos != Long.MAX_VALUE && System.nanoTime() - startNs >= maxNanos;
     }
 
+    private static long determineSoftTargetNanos(long maxNanos, long softTargetNanos) {
+        if (maxNanos == Long.MAX_VALUE || softTargetNanos <= 0L) {
+            return Long.MAX_VALUE;
+        }
+
+        return Math.min(maxNanos, softTargetNanos);
+    }
+
+    private static long determineRemainingWorkBudgetNanos(long sliceStartNs, long softTargetNanos) {
+        if (softTargetNanos == Long.MAX_VALUE) {
+            return Long.MAX_VALUE;
+        }
+
+        long elapsedBeforeWorkNs = System.nanoTime() - sliceStartNs;
+        long remaining = softTargetNanos - elapsedBeforeWorkNs;
+        return remaining <= 0L ? 1L * 1000L * 1000L : remaining;
+    }
+
+    private static int determineExpandCheckpointSize(int maxItems) {
+        return determineCheckpointSize(
+            maxItems,
+            MIN_EXPAND_CHECKPOINT_ITEMS,
+            MAX_EXPAND_CHECKPOINT_ITEMS);
+    }
+
+    private static int determineResolveCheckpointSize(int maxItems) {
+        return determineCheckpointSize(
+            maxItems,
+            MIN_RESOLVE_CHECKPOINT_ITEMS,
+            MAX_RESOLVE_CHECKPOINT_ITEMS);
+    }
+
+    private static int determineCheckpointSize(int maxItems, int minimum, int maximum) {
+        int hardCap = maxItems <= 0 || maxItems == Integer.MAX_VALUE ? maximum : maxItems;
+        int checkpoint = Math.max(minimum, hardCap / 4);
+        return Math.min(maximum, checkpoint);
+    }
+
+    private static boolean shouldRecalculateAdaptiveCap(int processed, int checkpointSize) {
+        return checkpointSize > 0 && processed >= checkpointSize && processed % checkpointSize == 0;
+    }
+
+    private static int adaptItemCap(int processed, long elapsedNanos, long targetNanos,
+            int hardCap, int checkpointSize) {
+        int normalizedHardCap = hardCap <= 0 ? Integer.MAX_VALUE : hardCap;
+        int minimumCap = Math.max(1, checkpointSize);
+        if (normalizedHardCap <= minimumCap || elapsedNanos <= 0L || targetNanos == Long.MAX_VALUE) {
+            return normalizedHardCap;
+        }
+
+        long projected = Math.round(processed * (double) targetNanos / (double) elapsedNanos);
+        if (projected <= 0L) {
+            return normalizedHardCap;
+        }
+
+        if (projected < minimumCap) {
+            projected = minimumCap;
+        }
+        if (projected > normalizedHardCap) {
+            projected = normalizedHardCap;
+        }
+        return (int) projected;
+    }
+
     private static long nanosToMillis(long nanos) {
         return nanos <= 0L ? 0L : nanos / 1000000L;
     }
@@ -1018,14 +1532,11 @@ public final class FullNameCacheBuilder {
             return SwitchResult.FULL;
         }
 
-        return SwitchResult.FAST;
-    }
-
-    private static boolean sameLanguage(String left, String right) {
-        if (left == null || right == null) {
-            return false;
+        if (existing == SwitchResult.FAST || next == SwitchResult.FAST) {
+            return SwitchResult.FAST;
         }
-        return left.trim().equalsIgnoreCase(right.trim());
+
+        return SwitchResult.BACKGROUND;
     }
 
     private static void claimActiveBuild(BuildOwner owner, PendingBuild pending) {
@@ -1096,6 +1607,11 @@ public final class FullNameCacheBuilder {
         private String activeSavedLanguage;
         private boolean activeLanguageSwitched;
         private LanguageRunStats activeStats;
+        private final Map<ItemStack, String> liveDisplayNameHints =
+            new IdentityHashMap<ItemStack, String>();
+        private String liveDisplayNameHintLanguage;
+        private final Map<String, RestoreSnapshot> liveTranslationRestoreSnapshots =
+            new LinkedHashMap<String, RestoreSnapshot>();
 
         private final Map<PrebuiltSecondaryNameIndexKey, Map<String, String>> previousCache;
         private final FullNameCacheMetadata previousMetadata;
@@ -1103,6 +1619,9 @@ public final class FullNameCacheBuilder {
         public final int itemsScanned;
         public final long enumMs;
         public long expandMs;
+        public int expandSliceCount;
+        public int expandBudgetItemStops;
+        public int expandBudgetTimeStops;
 
         final long startMs;
         final String filter;
@@ -1118,8 +1637,15 @@ public final class FullNameCacheBuilder {
         final Map<String, Integer> mixedLangPerLang = new LinkedHashMap<String, Integer>();
         final Map<String, Integer> formatOnlyPerLang = new LinkedHashMap<String, Integer>();
         final Map<String, String> switchModePerLang = new LinkedHashMap<String, String>();
+        final Map<String, Long> setupMsPerLang = new LinkedHashMap<String, Long>();
         final Map<String, Long> switchMsPerLang = new LinkedHashMap<String, Long>();
         final Map<String, Long> resolveMsPerLang = new LinkedHashMap<String, Long>();
+        final Map<String, Integer> resolveSliceCountPerLang = new LinkedHashMap<String, Integer>();
+        final Map<String, Integer> resolveBudgetItemStopsPerLang = new LinkedHashMap<String, Integer>();
+        final Map<String, Integer> resolveBudgetTimeStopsPerLang = new LinkedHashMap<String, Integer>();
+        final Map<String, Integer> resolveProcessedEntriesPerLang = new LinkedHashMap<String, Integer>();
+        final BuildProfiler profiler = new BuildProfiler();
+        private SliceTelemetry lastSliceTelemetry = SliceTelemetry.empty();
 
         PendingBuild(BuildOwner owner, List<Item> items, int itemsScanned, long enumMs, long startMs, String filter,
                 List<String> targetLanguages, boolean mergeWithPreviousCache,
@@ -1173,6 +1699,21 @@ public final class FullNameCacheBuilder {
                 System.currentTimeMillis() - startMs);
         }
 
+        public SliceTelemetry getLastSliceTelemetry() {
+            return lastSliceTelemetry;
+        }
+
+        private void recordLastSliceTelemetry(BuildPhase phase, String languageCode, long wallNanos,
+                int processed, boolean itemBudgetHit, boolean timeBudgetHit) {
+            lastSliceTelemetry = new SliceTelemetry(
+                phase,
+                languageCode,
+                nanosToMillis(wallNanos),
+                processed,
+                itemBudgetHit,
+                timeBudgetHit);
+        }
+
         private BuildPhase determinePhase() {
             if (!isExpansionComplete()) {
                 return BuildPhase.EXPANDING;
@@ -1181,6 +1722,33 @@ public final class FullNameCacheBuilder {
                 return BuildPhase.WRITING;
             }
             return BuildPhase.RESOLVING;
+        }
+    }
+
+    public static final class SliceTelemetry {
+
+        private static final SliceTelemetry EMPTY =
+            new SliceTelemetry(BuildPhase.EXPANDING, null, 0L, 0, false, false);
+
+        public final BuildPhase phase;
+        public final String languageCode;
+        public final long wallMs;
+        public final int processed;
+        public final boolean itemBudgetHit;
+        public final boolean timeBudgetHit;
+
+        private SliceTelemetry(BuildPhase phase, String languageCode, long wallMs,
+                int processed, boolean itemBudgetHit, boolean timeBudgetHit) {
+            this.phase = phase == null ? BuildPhase.EXPANDING : phase;
+            this.languageCode = languageCode;
+            this.wallMs = Math.max(0L, wallMs);
+            this.processed = Math.max(0, processed);
+            this.itemBudgetHit = itemBudgetHit;
+            this.timeBudgetHit = timeBudgetHit;
+        }
+
+        private static SliceTelemetry empty() {
+            return EMPTY;
         }
     }
 
@@ -1193,6 +1761,7 @@ public final class FullNameCacheBuilder {
         public final int itemsScanned;
         public final int subitemsExpanded;
         public final int uniqueKeys;
+        public final int capturedLiveDisplayNames;
         public final Map<String, Integer> collectedPerLang;
         public final Map<String, Integer> emptyPerLang;
         public final Map<String, Integer> rawKeyPerLang;
@@ -1201,25 +1770,41 @@ public final class FullNameCacheBuilder {
         public final Map<String, Integer> mixedLangPerLang;
         public final Map<String, Integer> formatOnlyPerLang;
         public final Map<String, String> switchModePerLang;
+        public final Map<String, Long> setupMsPerLang;
         public final Map<String, Long> switchMsPerLang;
         public final Map<String, Long> resolveMsPerLang;
+        public final Map<String, Integer> resolveSliceCountPerLang;
+        public final Map<String, Integer> resolveBudgetItemStopsPerLang;
+        public final Map<String, Integer> resolveBudgetTimeStopsPerLang;
+        public final Map<String, Integer> resolveProcessedEntriesPerLang;
         public final long enumMs;
         public final long expandMs;
+        public final int expandSliceCount;
+        public final int expandBudgetItemStops;
+        public final int expandBudgetTimeStops;
         public final long writeMs;
         public final String scanFilter;
         public final long elapsedMs;
+        public final BuildProfiler.Report profilerReport;
 
-        BuildResult(int itemsScanned, int subitemsExpanded, int uniqueKeys,
+        BuildResult(int itemsScanned, int subitemsExpanded, int uniqueKeys, int capturedLiveDisplayNames,
                 Map<String, Integer> collectedPerLang, Map<String, Integer> emptyPerLang,
                 Map<String, Integer> rawKeyPerLang, Map<String, Integer> goodPerLang,
                 Map<String, Integer> cjkSuspectPerLang, Map<String, Integer> mixedLangPerLang,
                 Map<String, Integer> formatOnlyPerLang, Map<String, String> switchModePerLang,
+                Map<String, Long> setupMsPerLang,
                 Map<String, Long> switchMsPerLang, Map<String, Long> resolveMsPerLang,
-                long enumMs, long expandMs, long writeMs,
-                String scanFilter, long elapsedMs) {
+                Map<String, Integer> resolveSliceCountPerLang,
+                Map<String, Integer> resolveBudgetItemStopsPerLang,
+                Map<String, Integer> resolveBudgetTimeStopsPerLang,
+                Map<String, Integer> resolveProcessedEntriesPerLang,
+                long enumMs, long expandMs, int expandSliceCount,
+                int expandBudgetItemStops, int expandBudgetTimeStops, long writeMs,
+                String scanFilter, long elapsedMs, BuildProfiler.Report profilerReport) {
             this.itemsScanned = itemsScanned;
             this.subitemsExpanded = subitemsExpanded;
             this.uniqueKeys = uniqueKeys;
+            this.capturedLiveDisplayNames = capturedLiveDisplayNames;
             this.collectedPerLang = collectedPerLang;
             this.emptyPerLang = emptyPerLang;
             this.rawKeyPerLang = rawKeyPerLang;
@@ -1228,13 +1813,22 @@ public final class FullNameCacheBuilder {
             this.mixedLangPerLang = mixedLangPerLang;
             this.formatOnlyPerLang = formatOnlyPerLang;
             this.switchModePerLang = switchModePerLang;
+            this.setupMsPerLang = setupMsPerLang;
             this.switchMsPerLang = switchMsPerLang;
             this.resolveMsPerLang = resolveMsPerLang;
+            this.resolveSliceCountPerLang = resolveSliceCountPerLang;
+            this.resolveBudgetItemStopsPerLang = resolveBudgetItemStopsPerLang;
+            this.resolveBudgetTimeStopsPerLang = resolveBudgetTimeStopsPerLang;
+            this.resolveProcessedEntriesPerLang = resolveProcessedEntriesPerLang;
             this.enumMs = enumMs;
             this.expandMs = expandMs;
+            this.expandSliceCount = expandSliceCount;
+            this.expandBudgetItemStops = expandBudgetItemStops;
+            this.expandBudgetTimeStops = expandBudgetTimeStops;
             this.writeMs = writeMs;
             this.scanFilter = scanFilter;
             this.elapsedMs = elapsedMs;
+            this.profilerReport = profilerReport;
         }
 
         public int totalEntries() {
@@ -1363,18 +1957,25 @@ public final class FullNameCacheBuilder {
 
         private final PrebuiltSecondaryNameIndexKey cacheKey;
         private final ItemStack stack;
+        private final String liveDisplayName;
 
-        private ExpandedStack(PrebuiltSecondaryNameIndexKey cacheKey, ItemStack stack) {
+        private ExpandedStack(PrebuiltSecondaryNameIndexKey cacheKey, ItemStack stack, String liveDisplayName) {
             this.cacheKey = cacheKey;
             this.stack = stack;
+            this.liveDisplayName = liveDisplayName;
         }
     }
 
     private static final class LanguageRunStats {
 
+        private long setupMs;
         private long resolveMs;
         private long switchMs;
         private SwitchResult switchMode;
+        private int sliceCount;
+        private int budgetItemStops;
+        private int budgetTimeStops;
+        private int processedEntries;
         private int okCount;
         private int emptyCount;
         private int rawCount;

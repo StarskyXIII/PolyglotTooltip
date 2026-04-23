@@ -2,6 +2,8 @@ package com.starskyxiii.polyglottooltip.name;
 
 import com.starskyxiii.polyglottooltip.i18n.GregTechMaterialTranslationResolver;
 import com.starskyxiii.polyglottooltip.i18n.LanguageCache;
+import com.starskyxiii.polyglottooltip.i18n.ProgrammaticDisplayNameLookup;
+import com.starskyxiii.polyglottooltip.name.prebuilt.BuildProfiler;
 
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumChatFormatting;
@@ -15,7 +17,13 @@ final class GregTechDisplayNameResolver {
             return null;
         }
 
-        String beeProductDisplayName = GregTechBeeProductDisplayNameResolver.tryResolveDisplayName(stack, languageCode);
+        long beeProductStartNs = BuildProfiler.startSection();
+        String beeProductDisplayName = null;
+        try {
+            beeProductDisplayName = GregTechBeeProductDisplayNameResolver.tryResolveDisplayName(stack, languageCode);
+        } finally {
+            BuildProfiler.record("gregtech.bee_product", stack, languageCode, beeProductStartNs, beeProductDisplayName);
+        }
         if (beeProductDisplayName != null && !beeProductDisplayName.isEmpty()) {
             return beeProductDisplayName;
         }
@@ -27,7 +35,17 @@ final class GregTechDisplayNameResolver {
 
         String translated = translate(languageCode, translationKey);
         if (translated == null || translated.isEmpty()) {
-            translated = resolveFromCurrentDisplayNameKey(stack, languageCode);
+            long currentDisplayKeyStartNs = BuildProfiler.startSection();
+            try {
+                translated = resolveFromCurrentDisplayNameKey(stack, languageCode);
+            } finally {
+                BuildProfiler.record(
+                    "gregtech.current_display_key",
+                    stack,
+                    languageCode,
+                    currentDisplayKeyStartNs,
+                    translated);
+            }
             if (translated == null || translated.isEmpty()) {
                 return null;
             }
@@ -116,7 +134,8 @@ final class GregTechDisplayNameResolver {
             return null;
         }
 
-        String currentDisplayName = EnumChatFormatting.getTextWithoutFormattingCodes(stack.getDisplayName());
+        String currentDisplayName = EnumChatFormatting.getTextWithoutFormattingCodes(
+            ProgrammaticDisplayNameLookup.getLiveLanguageDisplayName(stack));
         if (currentDisplayName == null || currentDisplayName.trim().isEmpty()) {
             return null;
         }

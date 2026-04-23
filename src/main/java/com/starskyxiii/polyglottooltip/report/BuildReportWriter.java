@@ -10,12 +10,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
 
 import net.minecraft.client.Minecraft;
 
 import com.starskyxiii.polyglottooltip.PolyglotTooltip;
+import com.starskyxiii.polyglottooltip.name.prebuilt.BuildProfiler;
 import com.starskyxiii.polyglottooltip.name.prebuilt.FullNameCacheBuilder.BuildResult;
 import com.starskyxiii.polyglottooltip.name.prebuilt.PrebuiltSecondaryNameIndexKey;
 
@@ -65,6 +67,10 @@ public final class BuildReportWriter {
         writeTextReport(result, data, modStats, new File(dir, "build-report.txt"));
         writeSummaryTsv(result, modStats, new File(dir, "build-summary.tsv"));
         writeSuspectEntriesTsv(data, new File(dir, "suspect-entries.tsv"));
+        if (hasProfilerData(result)) {
+            writeProfilerSummaryTsv(result.profilerReport, new File(dir, "build-profiler-summary.tsv"));
+            writeProfilerHotspotsTsv(result.profilerReport, new File(dir, "build-profiler-hotspots.tsv"));
+        }
 
         PolyglotTooltip.LOG.info("[PolyglotTooltips] Build reports written to: {}", dir.getAbsolutePath());
     }
@@ -125,7 +131,7 @@ public final class BuildReportWriter {
 
             line(w, "[ Per-Language Quality Breakdown ]");
             line(w, String.format("  %-12s  %8s  %8s  %8s  %8s  %8s  %8s  %8s  %s",
-                "Language", "Collected", "GOOD", "EMPTY", "RAW_KEY", "CJK_SUS", "MIXED", "FMT_ONLY", "SwitchMode"));
+                "Language", "Collected", "GOOD", "EMPTY", "RAW_KEY", "CJK_SUS", "MIXED", "FMT_ONLY", "Mode"));
             line(w, "  " + repeat("-", 96));
             for (String lang : langs) {
                 int collected = safeGet(r.collectedPerLang, lang);
@@ -180,23 +186,66 @@ public final class BuildReportWriter {
             line(w, "[ Expansion Diagnostics ]");
             line(w, "  Items with only damage=0 in cache : " + singleDamageItems
                 + "  (may indicate items that did not expand via getSubItems)");
+            line(w, "  Captured live-name hints          : " + r.capturedLiveDisplayNames);
             line(w, "");
 
             line(w, "[ Timing Breakdown ]");
             line(w, "  Total elapsed  : " + r.elapsedMs + " ms");
             line(w, "  Item enum      : " + r.enumMs + " ms");
             line(w, "  Sub-item expand: " + r.expandMs + " ms");
+            double expandAvgPairs = r.expandSliceCount > 0
+                ? (r.subitemsExpanded * 1.0D / r.expandSliceCount)
+                : 0.0D;
+            line(w, String.format(
+                java.util.Locale.ROOT,
+                "  Expand slices  : %d  (avg_pairs=%.1f  budgetStops[item=%d, time=%d])",
+                r.expandSliceCount,
+                expandAvgPairs,
+                r.expandBudgetItemStops,
+                r.expandBudgetTimeStops));
             line(w, "  Cache write    : " + r.writeMs + " ms");
-            line(w, String.format("  %-12s  %12s  %14s  %s",
-                "Language", "Switch (ms)", "Resolve (ms)", "Mode"));
-            line(w, "  " + repeat("-", 58));
+            line(w, String.format("  %-12s  %12s  %14s  %14s  %8s  %10s  %9s  %9s  %s",
+                "Language",
+                "Setup (ms)",
+                "Resolve (ms)",
+                "Switch (ms)",
+                "Slices",
+                "Avg/slice",
+                "StopItem",
+                "StopTime",
+                "Mode"));
+            line(w, "  " + repeat("-", 122));
             for (String lang : langs) {
+                long setup = r.setupMsPerLang.containsKey(lang) ? r.setupMsPerLang.get(lang) : -1L;
                 long sw = r.switchMsPerLang.containsKey(lang) ? r.switchMsPerLang.get(lang) : -1L;
                 long rs = r.resolveMsPerLang.containsKey(lang) ? r.resolveMsPerLang.get(lang) : -1L;
+                int slices = safeGet(r.resolveSliceCountPerLang, lang);
+                int processed = safeGet(r.resolveProcessedEntriesPerLang, lang);
+                int stopItem = safeGet(r.resolveBudgetItemStopsPerLang, lang);
+                int stopTime = safeGet(r.resolveBudgetTimeStopsPerLang, lang);
+                double avgPerSlice = slices > 0 ? (processed * 1.0D / slices) : 0.0D;
                 String mode = r.switchModePerLang.containsKey(lang) ? r.switchModePerLang.get(lang) : "?";
-                line(w, String.format("  %-12s  %12d  %14d  %s", lang, sw, rs, mode));
+                line(w, String.format(
+                    java.util.Locale.ROOT,
+                    "  %-12s  %12d  %14d  %14d  %8d  %10.1f  %9d  %9d  %s",
+                    lang,
+                    setup,
+                    rs,
+                    sw,
+                    slices,
+                    avgPerSlice,
+                    stopItem,
+                    stopTime,
+                    mode));
             }
             line(w, "");
+
+            if (hasProfilerData(r)) {
+                line(w, "  Profiler note: section total_ms values are inclusive and may overlap; do not sum them.");
+                line(w, "");
+                writeProfilerSummaryText(w, r.profilerReport);
+                writeProfilerHotspotsText(w, r.profilerReport);
+            }
 
             line(w, "=================================================================");
             line(w, "  Output: " + out.getParentFile().getAbsolutePath());
@@ -291,6 +340,124 @@ public final class BuildReportWriter {
     }
 
     // -------------------------------------------------------------------------
+    // build-profiler-*.tsv and text report sections
+    // -------------------------------------------------------------------------
+
+    private static void writeProfilerSummaryTsv(BuildProfiler.Report report, File out) throws Exception {
+        Writer w = null;
+        try {
+            w = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), UTF8));
+            w.write("section\tcalls\thits\thit_pct\ttotal_ms\tavg_ms\tmax_ms");
+            w.write(NL);
+
+            for (BuildProfiler.SectionSnapshot section : report.sections) {
+                w.write(esc(section.section));
+                w.write('\t');
+                w.write(String.valueOf(section.calls));
+                w.write('\t');
+                w.write(String.valueOf(section.hits));
+                w.write('\t');
+                w.write(formatHitPercent(section.hits, section.calls));
+                w.write('\t');
+                w.write(formatMillis(section.totalNanos));
+                w.write('\t');
+                w.write(formatMillis(section.calls <= 0 ? 0L : section.totalNanos / section.calls));
+                w.write('\t');
+                w.write(formatMillis(section.maxNanos));
+                w.write(NL);
+            }
+        } finally {
+            if (w != null) w.close();
+        }
+    }
+
+    private static void writeProfilerHotspotsTsv(BuildProfiler.Report report, File out) throws Exception {
+        Writer w = null;
+        try {
+            w = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), UTF8));
+            w.write("rank\tsection\tduration_ms\tlanguage_code\tregistry_name\tdamage\titem_class\thit");
+            w.write(NL);
+
+            for (int i = 0; i < report.slowCalls.size(); i++) {
+                BuildProfiler.SlowCallSnapshot slowCall = report.slowCalls.get(i);
+                w.write(String.valueOf(i + 1));
+                w.write('\t');
+                w.write(esc(slowCall.section));
+                w.write('\t');
+                w.write(formatMillis(slowCall.durationNanos));
+                w.write('\t');
+                w.write(esc(slowCall.languageCode));
+                w.write('\t');
+                w.write(esc(slowCall.registryName));
+                w.write('\t');
+                w.write(String.valueOf(slowCall.damage));
+                w.write('\t');
+                w.write(esc(slowCall.itemClass));
+                w.write('\t');
+                w.write(String.valueOf(slowCall.hit));
+                w.write(NL);
+            }
+        } finally {
+            if (w != null) w.close();
+        }
+    }
+
+    private static void writeProfilerSummaryText(Writer w, BuildProfiler.Report report) throws Exception {
+        line(w, "[ Profiler Summary ]");
+        line(w, String.format("  %-40s  %8s  %8s  %8s  %10s  %10s  %10s",
+            "Section", "Calls", "Hits", "Hit %", "Total ms", "Avg ms", "Max ms"));
+        line(w, "  " + repeat("-", 108));
+
+        int limit = Math.min(20, report.sections.size());
+        for (int i = 0; i < limit; i++) {
+            BuildProfiler.SectionSnapshot section = report.sections.get(i);
+            line(w, String.format(
+                "  %-40s  %8d  %8d  %8s  %10s  %10s  %10s",
+                trimForColumn(section.section, 40),
+                section.calls,
+                section.hits,
+                formatHitPercent(section.hits, section.calls),
+                formatMillis(section.totalNanos),
+                formatMillis(section.calls <= 0 ? 0L : section.totalNanos / section.calls),
+                formatMillis(section.maxNanos)));
+        }
+        if (report.sections.size() > limit) {
+            line(w, "  ... " + (report.sections.size() - limit) + " more sections in build-profiler-summary.tsv");
+        }
+        line(w, "");
+    }
+
+    private static void writeProfilerHotspotsText(Writer w, BuildProfiler.Report report) throws Exception {
+        line(w, "[ Profiler Hotspots ]");
+        line(w, String.format("  %-4s  %-32s  %10s  %-8s  %s",
+            "Rank", "Section", "Time ms", "Lang", "Registry"));
+        line(w, "  " + repeat("-", 96));
+
+        int limit = Math.min(20, report.slowCalls.size());
+        for (int i = 0; i < limit; i++) {
+            BuildProfiler.SlowCallSnapshot slowCall = report.slowCalls.get(i);
+            String registry = slowCall.registryName;
+            if (registry == null || registry.isEmpty()) {
+                registry = slowCall.itemClass == null || slowCall.itemClass.isEmpty()
+                    ? "<unknown>"
+                    : slowCall.itemClass;
+            }
+
+            line(w, String.format(
+                "  %-4d  %-32s  %10s  %-8s  %s",
+                i + 1,
+                trimForColumn(slowCall.section, 32),
+                formatMillis(slowCall.durationNanos),
+                trimForColumn(slowCall.languageCode, 8),
+                registry + "@" + slowCall.damage + (slowCall.hit ? "" : " [miss]")));
+        }
+        if (report.slowCalls.size() > limit) {
+            line(w, "  ... " + (report.slowCalls.size() - limit) + " more hotspots in build-profiler-hotspots.tsv");
+        }
+        line(w, "");
+    }
+
+    // -------------------------------------------------------------------------
     // Per-mod stats
     // -------------------------------------------------------------------------
 
@@ -369,6 +536,36 @@ public final class BuildReportWriter {
         int total = 0;
         for (int v : map.values()) total += v;
         return total;
+    }
+
+    private static boolean hasProfilerData(BuildResult result) {
+        return result != null
+            && result.profilerReport != null
+            && !result.profilerReport.isEmpty();
+    }
+
+    private static String formatMillis(long nanos) {
+        return String.format(Locale.US, "%.3f", nanos / 1000000.0D);
+    }
+
+    private static String formatHitPercent(int hits, int calls) {
+        if (calls <= 0) {
+            return "0.0";
+        }
+        return String.format(Locale.US, "%.1f", hits * 100.0D / calls);
+    }
+
+    private static String trimForColumn(String value, int maxLength) {
+        if (value == null) {
+            return "";
+        }
+        if (value.length() <= maxLength) {
+            return value;
+        }
+        if (maxLength <= 3) {
+            return value.substring(0, maxLength);
+        }
+        return value.substring(0, maxLength - 3) + "...";
     }
 
     private static void line(Writer w, String text) throws Exception {

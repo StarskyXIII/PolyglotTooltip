@@ -5,6 +5,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
 import com.starskyxiii.polyglottooltip.i18n.LanguageCache;
+import com.starskyxiii.polyglottooltip.i18n.ProgrammaticDisplayNameLookup;
 
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumChatFormatting;
@@ -213,7 +214,7 @@ final class GregTechBeeProductDisplayNameResolver {
             return null;
         }
 
-        String displayName = stack.getDisplayName();
+        String displayName = ProgrammaticDisplayNameLookup.getLiveLanguageDisplayName(stack);
         if (displayName == null || displayName.trim().isEmpty()) {
             return null;
         }

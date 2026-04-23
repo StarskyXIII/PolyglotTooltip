@@ -28,6 +28,7 @@ import com.starskyxiii.polyglottooltip.PolyglotTooltip;
 public final class LanguageSwitcher {
 
     public enum SwitchResult {
+        BACKGROUND,
         FAST,
         FULL,
         FAILED

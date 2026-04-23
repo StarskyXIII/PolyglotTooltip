@@ -5,11 +5,14 @@ import java.util.List;
 
 import com.starskyxiii.polyglottooltip.PolyglotTooltip;
 import com.starskyxiii.polyglottooltip.config.Config;
+import com.starskyxiii.polyglottooltip.name.prebuilt.FullNameCacheBuilder.ActiveBuildSnapshot;
 import com.starskyxiii.polyglottooltip.name.prebuilt.FullNameCacheBuilder.BuildOwner;
+import com.starskyxiii.polyglottooltip.name.prebuilt.FullNameCacheBuilder.BuildPhase;
 import com.starskyxiii.polyglottooltip.name.prebuilt.FullNameCacheBuilder.CompletedBuild;
 import com.starskyxiii.polyglottooltip.name.prebuilt.FullNameCacheBuilder.BuildResult;
 import com.starskyxiii.polyglottooltip.name.prebuilt.FullNameCacheBuilder.PendingBuild;
 import com.starskyxiii.polyglottooltip.name.prebuilt.FullNameCacheBuilder.SliceBudget;
+import com.starskyxiii.polyglottooltip.name.prebuilt.FullNameCacheBuilder.SliceTelemetry;
 
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.TickEvent;
@@ -26,8 +29,13 @@ import net.minecraft.client.Minecraft;
 public final class AutoFullNameCacheBootstrap {
 
     private static final int REQUIRED_STABLE_TICKS = 5;
-    private static final SliceBudget SLICE_BUDGET =
-        SliceBudget.uniform(96, 8L * 1000L * 1000L);
+    private static final SliceBudget AUTO_TURBO_SLICE_BUDGET =
+        SliceBudget.of(
+            256,
+            20L * 1000L * 1000L,
+            2048,
+            48L * 1000L * 1000L);
+    private static final long PROGRESS_LOG_INTERVAL_MS = 5000L;
 
     private enum State { IDLE, WAITING, RUNNING, DONE }
 
@@ -35,24 +43,31 @@ public final class AutoFullNameCacheBootstrap {
     private PendingBuild pending;
     private CompletedBuild completedBuild;
     private boolean finishQueued;
+    private boolean autoRetrySuppressed;
+    private boolean sliceWorkObserved;
     private int stableTicks;
+    private long lastProgressLogMs;
 
     public void onLoadComplete() {
         if (!Config.autoRebuildFullNameCache) {
-            if (pending != null) {
-                FullNameCacheBuilder.cancelBuild(pending);
-                pending = null;
-            }
+            cancelPendingBuildSafely("Auto-build cleanup failed while disabling auto rebuild during load.");
             completedBuild = null;
-            state = State.DONE;
-            finishQueued = false;
-            stableTicks = 0;
+            resetState(true);
+            return;
+        }
+
+        if (autoRetrySuppressed) {
+            cancelPendingBuildSafely("Auto-build suppression cleanup failed during load.");
+            completedBuild = null;
+            resetState(false);
+            PolyglotTooltip.LOG.info(
+                "[PolyglotTooltips] Auto-build retry remains suppressed for this session; skipping load-triggered retry.");
             return;
         }
 
         BuildPlan plan = determineBuildPlan();
         if (!plan.shouldBuild()) {
-            state = State.DONE;
+            resetState(true);
             return;
         }
 
@@ -69,6 +84,7 @@ public final class AutoFullNameCacheBootstrap {
                 plan.mergeWithExistingCache,
                 BuildOwner.AUTO);
             finishQueued = false;
+            sliceWorkObserved = false;
             state = State.WAITING;
             PolyglotTooltip.LOG.info(
                 "[PolyglotTooltips] Auto-build queued during load: {} (languages={}, merge={}).",
@@ -77,11 +93,16 @@ public final class AutoFullNameCacheBootstrap {
                 plan.mergeWithExistingCache);
         } catch (Throwable t) {
             PolyglotTooltip.LOG.warn(
-                "[PolyglotTooltips] Auto-build setup failed during load: {}",
-                t.getMessage());
+                "[PolyglotTooltips] Auto-build setup failed during load; suppressing auto retries for this session.",
+                t);
             pending = null;
             completedBuild = null;
             state = State.DONE;
+            finishQueued = false;
+            autoRetrySuppressed = true;
+            sliceWorkObserved = false;
+            stableTicks = 0;
+            lastProgressLogMs = 0L;
         }
     }
 
@@ -92,18 +113,13 @@ public final class AutoFullNameCacheBootstrap {
         }
 
         if (!Config.autoRebuildFullNameCache) {
-            if (pending != null) {
-                FullNameCacheBuilder.cancelBuild(pending);
-                pending = null;
-            }
+            cancelPendingBuildSafely("Auto-build cleanup failed while auto rebuild was disabled.");
             if (completedBuild != null) {
                 PolyglotTooltip.LOG.info(
                     "[PolyglotTooltips] Auto-build report phase skipped because auto rebuild was disabled.");
                 completedBuild = null;
             }
-            state = State.DONE;
-            finishQueued = false;
-            stableTicks = 0;
+            resetState(true);
             return;
         }
 
@@ -119,18 +135,20 @@ public final class AutoFullNameCacheBootstrap {
             } finally {
                 pending = null;
                 completedBuild = null;
-                finishQueued = false;
-                stableTicks = 0;
-                state = State.DONE;
+                resetState(true);
             }
             return;
         }
 
         if (pending == null) {
+            if (autoRetrySuppressed) {
+                resetState(false);
+                return;
+            }
+
             BuildPlan plan = determineBuildPlan();
             if (!plan.shouldBuild()) {
-                state = State.DONE;
-                stableTicks = 0;
+                resetState(true);
                 return;
             }
 
@@ -158,7 +176,9 @@ public final class AutoFullNameCacheBootstrap {
                     plan.mergeWithExistingCache,
                     BuildOwner.AUTO);
                 finishQueued = false;
+                sliceWorkObserved = false;
                 stableTicks = 0;
+                lastProgressLogMs = 0L;
                 state = State.WAITING;
                 PolyglotTooltip.LOG.info(
                     "[PolyglotTooltips] Auto-build started: {} (languages={}, merge={}).",
@@ -167,10 +187,15 @@ public final class AutoFullNameCacheBootstrap {
                     plan.mergeWithExistingCache);
             } catch (Throwable t) {
                 PolyglotTooltip.LOG.warn(
-                    "[PolyglotTooltips] Auto-build start failed: {}",
-                    t.getMessage());
+                    "[PolyglotTooltips] Auto-build start failed; suppressing auto retries for this session.",
+                    t);
                 pending = null;
+                finishQueued = false;
+                autoRetrySuppressed = true;
                 state = State.DONE;
+                sliceWorkObserved = false;
+                stableTicks = 0;
+                lastProgressLogMs = 0L;
             }
             return;
         }
@@ -181,7 +206,7 @@ public final class AutoFullNameCacheBootstrap {
             return;
         }
 
-        if (state == State.WAITING && ++stableTicks < REQUIRED_STABLE_TICKS) {
+        if (!sliceWorkObserved && state == State.WAITING && ++stableTicks < REQUIRED_STABLE_TICKS) {
             return;
         }
 
@@ -192,7 +217,9 @@ public final class AutoFullNameCacheBootstrap {
             if (!finishQueued) {
                 boolean complete = FullNameCacheBuilder.resolveNextSlice(
                     pending,
-                    SLICE_BUDGET);
+                    AUTO_TURBO_SLICE_BUDGET);
+                sliceWorkObserved = true;
+                emitProgressIfNeeded();
                 if (!complete) {
                     return;
                 }
@@ -210,19 +237,16 @@ public final class AutoFullNameCacheBootstrap {
                 result.toSummaryLine());
         } catch (Throwable t) {
             PolyglotTooltip.LOG.warn(
-                "[PolyglotTooltips] Auto-build failed: {}",
-                t.getMessage());
-            if (pending != null) {
-                FullNameCacheBuilder.cancelBuild(pending);
-            }
+                "[PolyglotTooltips] Auto-build failed; suppressing auto retries for this session.",
+                t);
+            autoRetrySuppressed = true;
             finished = true;
+            cancelPendingBuildSafely("Auto-build cleanup failed after an auto-build error.");
         } finally {
             if (finished) {
                 pending = null;
                 completedBuild = null;
-                finishQueued = false;
-                stableTicks = 0;
-                state = State.DONE;
+                resetState(false);
             }
         }
     }
@@ -282,6 +306,110 @@ public final class AutoFullNameCacheBootstrap {
             return false;
         }
         return mc.currentScreen != null || mc.theWorld != null;
+    }
+
+    private void emitProgressIfNeeded() {
+        if (pending == null) {
+            return;
+        }
+
+        long now = System.currentTimeMillis();
+        if (now - lastProgressLogMs < PROGRESS_LOG_INTERVAL_MS) {
+            return;
+        }
+
+        lastProgressLogMs = now;
+        ActiveBuildSnapshot snapshot = pending.snapshot(BuildOwner.AUTO);
+        SliceTelemetry telemetry = pending.getLastSliceTelemetry();
+        PolyglotTooltip.LOG.info(
+            "[PolyglotTooltips] Auto-build progress [TURBO slice={}ms processed={}]: {}",
+            telemetry == null ? 0L : telemetry.wallMs,
+            telemetry == null ? 0 : telemetry.processed,
+            formatProgressLine(snapshot));
+    }
+
+    private void cancelPendingBuildSafely(String failureMessage) {
+        PendingBuild buildToCancel = pending;
+        if (buildToCancel == null) {
+            return;
+        }
+
+        try {
+            FullNameCacheBuilder.cancelBuild(buildToCancel);
+        } catch (Throwable t) {
+            PolyglotTooltip.LOG.warn(
+                "[PolyglotTooltips] {}",
+                failureMessage,
+                t);
+        } finally {
+            pending = null;
+        }
+    }
+
+    private void resetState(boolean clearRetrySuppression) {
+        pending = null;
+        completedBuild = null;
+        state = State.DONE;
+        finishQueued = false;
+        sliceWorkObserved = false;
+        stableTicks = 0;
+        lastProgressLogMs = 0L;
+        if (clearRetrySuppression) {
+            autoRetrySuppressed = false;
+        }
+    }
+
+    private static String formatProgressLine(ActiveBuildSnapshot snapshot) {
+        if (snapshot == null) {
+            return "no active build";
+        }
+
+        if (snapshot.phase == BuildPhase.EXPANDING) {
+            return String.format(
+                java.util.Locale.ROOT,
+                "expanding items %d/%d (%d%%), unique pairs=%d, elapsed=%s",
+                snapshot.itemsExpanded,
+                snapshot.itemsScanned,
+                percent(snapshot.itemsExpanded, snapshot.itemsScanned),
+                snapshot.uniqueKeysExpanded,
+                formatElapsed(snapshot.elapsedMs));
+        }
+
+        if (snapshot.phase == BuildPhase.RESOLVING) {
+            return String.format(
+                java.util.Locale.ROOT,
+                "resolving %s (%d/%d) %d/%d entries (%d%%), keys=%d, elapsed=%s",
+                snapshot.currentLanguage == null ? "?" : snapshot.currentLanguage,
+                snapshot.currentLanguageOrdinal,
+                snapshot.totalLanguages,
+                snapshot.currentLanguageEntriesResolved,
+                snapshot.currentLanguageEntriesTotal,
+                percent(snapshot.currentLanguageEntriesResolved, snapshot.currentLanguageEntriesTotal),
+                snapshot.collectedKeyCount,
+                formatElapsed(snapshot.elapsedMs));
+        }
+
+        return String.format(
+            java.util.Locale.ROOT,
+            "writing cache output, keys=%d, elapsed=%s",
+            snapshot.collectedKeyCount,
+            formatElapsed(snapshot.elapsedMs));
+    }
+
+    private static int percent(int current, int total) {
+        if (total <= 0) {
+            return 0;
+        }
+        return Math.max(0, Math.min(100, (int) ((current * 100L) / total)));
+    }
+
+    private static String formatElapsed(long elapsedMs) {
+        long totalSeconds = Math.max(0L, elapsedMs / 1000L);
+        long minutes = totalSeconds / 60L;
+        long seconds = totalSeconds % 60L;
+        return minutes > 0L
+            ? String.format(java.util.Locale.ROOT, "%dm%02ds", minutes, seconds)
+            : String.format(java.util.Locale.ROOT, "%ds", seconds);
     }
 
     private static final class BuildPlan {

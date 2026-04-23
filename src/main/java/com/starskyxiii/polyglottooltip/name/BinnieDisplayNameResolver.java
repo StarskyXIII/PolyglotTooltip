@@ -4,6 +4,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
 import com.starskyxiii.polyglottooltip.i18n.LanguageCache;
+import com.starskyxiii.polyglottooltip.i18n.ProgrammaticDisplayNameLookup;
+import com.starskyxiii.polyglottooltip.name.prebuilt.BuildProfiler;
 
 import net.minecraft.block.Block;
 import net.minecraft.item.ItemStack;
@@ -60,12 +62,25 @@ final class BinnieDisplayNameResolver {
             return null;
         }
 
-        String specialName = tryResolveSpecialDisplayName(stack, languageCode, block, itemClassName, blockClassName);
+        long specialStartNs = BuildProfiler.startSection();
+        String specialName = null;
+        try {
+            specialName = tryResolveSpecialDisplayName(stack, languageCode, block, itemClassName, blockClassName);
+        } finally {
+            BuildProfiler.record("binnie.special", stack, languageCode, specialStartNs, specialName);
+        }
         if (specialName != null && !specialName.isEmpty()) {
             return specialName;
         }
 
-        return tryResolveDirectKeyName(stack, languageCode);
+        long directStartNs = BuildProfiler.startSection();
+        String directName = null;
+        try {
+            directName = tryResolveDirectKeyName(stack, languageCode);
+        } finally {
+            BuildProfiler.record("binnie.direct", stack, languageCode, directStartNs, directName);
+        }
+        return directName;
     }
 
     private static String tryResolveSpecialDisplayName(ItemStack stack, String languageCode, Block block,
@@ -84,11 +99,20 @@ final class BinnieDisplayNameResolver {
     }
 
     private static String tryResolveDirectKeyName(ItemStack stack, String languageCode) {
-        String currentDisplayName = EnumChatFormatting.getTextWithoutFormattingCodes(stack.getDisplayName());
+        long liveNameStartNs = BuildProfiler.startSection();
+        String currentDisplayName = null;
+        try {
+            currentDisplayName = EnumChatFormatting.getTextWithoutFormattingCodes(
+                ProgrammaticDisplayNameLookup.getLiveLanguageDisplayName(stack));
+        } finally {
+            BuildProfiler.record("binnie.direct.live_name", stack, languageCode, liveNameStartNs, currentDisplayName);
+        }
         if (currentDisplayName == null || currentDisplayName.trim().isEmpty()) {
             return null;
         }
 
+        long reverseLookupStartNs = BuildProfiler.startSection();
+        String resolvedName = null;
         for (String prefix : DIRECT_KEY_PREFIXES) {
             String translationKey = LanguageCache.findCurrentLanguageTranslationKey(currentDisplayName.trim(), prefix);
             if (translationKey == null || translationKey.trim().isEmpty()) {
@@ -97,11 +121,13 @@ final class BinnieDisplayNameResolver {
 
             String translated = LanguageCache.translate(languageCode, translationKey);
             if (translated != null && !translated.trim().isEmpty()) {
-                return translated.trim();
+                resolvedName = translated.trim();
+                break;
             }
         }
 
-        return null;
+        BuildProfiler.record("binnie.direct.reverse_lookup", stack, languageCode, reverseLookupStartNs, resolvedName);
+        return resolvedName;
     }
 
     private static String tryResolveExtraTreesCompositeName(ItemStack stack, String languageCode, String itemClassName,

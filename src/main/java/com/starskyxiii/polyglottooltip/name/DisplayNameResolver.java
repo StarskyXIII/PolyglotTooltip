@@ -7,10 +7,13 @@ import java.util.List;
 
 import com.starskyxiii.polyglottooltip.config.Config;
 import com.starskyxiii.polyglottooltip.i18n.LanguageCache;
+import com.starskyxiii.polyglottooltip.i18n.ProgrammaticDisplayNameLookup;
+import com.starskyxiii.polyglottooltip.name.prebuilt.BuildProfiler;
+import com.starskyxiii.polyglottooltip.name.prebuilt.FullNameCache;
 import com.starskyxiii.polyglottooltip.report.NameQuality;
 import com.starskyxiii.polyglottooltip.report.NameQualityClassifier;
-import com.starskyxiii.polyglottooltip.name.prebuilt.FullNameCache;
 
+import net.minecraft.block.Block;
 import net.minecraft.init.Items;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemPotion;
@@ -31,6 +34,9 @@ public final class DisplayNameResolver {
     private static final String BW_WERKSTOFF_BLOCK_CASING_REGISTRY_NAME = "bartworks:bw.werkstoffblockscasing.01";
     private static final String BW_WERKSTOFF_BLOCK_CASING_ADVANCED_REGISTRY_NAME =
         "bartworks:bw.werkstoffblockscasingadvanced.01";
+    private static final String BINNIE_CLASS_PREFIX = "binnie.";
+    private static final String GREGTECH_CLASS_PREFIX = "gregtech.";
+    private static final String BARTWORKS_CLASS_PREFIX = "bartworks.";
 
     private DisplayNameResolver() {}
 
@@ -70,88 +76,244 @@ public final class DisplayNameResolver {
         // of what language is requested. Resolve these before the cache, which would contain
         // stale startup-language names.
         if (depth == 0) {
-            String ae2DisplayName = Ae2DisplayNameResolver.tryResolveDisplayName(stack, languageCode);
+            long identityStartNs = startProfiledSection();
+            String depth0ItemClassName = null;
+            String depth0BlockClassName = null;
+            String depth0RegistryName = null;
+            String depth0UnlocalizedName = null;
+            try {
+                depth0ItemClassName = safeGetItemClassName(stack);
+                depth0BlockClassName = safeGetBlockClassName(stack);
+                depth0RegistryName = getRegistryName(stack);
+                depth0UnlocalizedName = safeGetNormalizedUnlocalizedName(stack);
+            } finally {
+                finishProfiledSection(
+                    "depth0.identity",
+                    stack,
+                    languageCode,
+                    identityStartNs,
+                    depth0ItemClassName == null ? depth0RegistryName : depth0ItemClassName);
+            }
+
+            long ae2StartNs = startProfiledSection();
+            String ae2DisplayName = null;
+            try {
+                ae2DisplayName = Ae2DisplayNameResolver.tryResolveDisplayName(stack, languageCode);
+            } finally {
+                finishProfiledSection("depth0.ae2_prepass", stack, languageCode, ae2StartNs, ae2DisplayName);
+            }
             if (ae2DisplayName != null && !ae2DisplayName.isEmpty()) {
                 return ae2DisplayName;
             }
 
             // TConstruct modular tools: full-name-cache keys on (registry, damage) but all
-            // TConstruct tools have damage=0 regardless of material — getSubItems() collapses
+            // TConstruct tools have damage=0 regardless of material; getSubItems() collapses
             // all variants to the same cache key. Read material from InfiTool.Head NBT instead.
-            String tconstructDisplayName = TinkerConstructDisplayNameResolver.tryResolveDisplayName(stack, languageCode);
+            long tconstructStartNs = startProfiledSection();
+            String tconstructDisplayName = null;
+            try {
+                tconstructDisplayName = TinkerConstructDisplayNameResolver.tryResolveDisplayName(stack, languageCode);
+            } finally {
+                finishProfiledSection("depth0.tconstruct", stack, languageCode, tconstructStartNs, tconstructDisplayName);
+            }
             if (tconstructDisplayName != null && !tconstructDisplayName.isEmpty()) {
                 return tconstructDisplayName;
             }
 
-            String tgregworksPartDisplayName = TGregworksPartDisplayNameResolver.tryResolveDisplayName(stack, languageCode);
+            long tgregworksStartNs = startProfiledSection();
+            String tgregworksPartDisplayName = null;
+            try {
+                tgregworksPartDisplayName = TGregworksPartDisplayNameResolver.tryResolveDisplayName(stack, languageCode);
+            } finally {
+                finishProfiledSection(
+                    "depth0.tgregworks",
+                    stack,
+                    languageCode,
+                    tgregworksStartNs,
+                    tgregworksPartDisplayName);
+            }
             if (tgregworksPartDisplayName != null && !tgregworksPartDisplayName.isEmpty()) {
                 return tgregworksPartDisplayName;
             }
 
-            // Thaumcraft wands: same NBT-keyed-variant problem — many cap+rod combinations share
+            // Thaumcraft wands: same NBT-keyed-variant problem; many cap+rod combinations share
             // the same (registry, damage) cache key. Read cap/rod tags from NBT directly.
-            String thaumcraftDisplayName = ThaumcraftDisplayNameResolver.tryResolveDisplayName(stack, languageCode);
+            long thaumcraftStartNs = startProfiledSection();
+            String thaumcraftDisplayName = null;
+            try {
+                thaumcraftDisplayName = ThaumcraftDisplayNameResolver.tryResolveDisplayName(stack, languageCode);
+            } finally {
+                finishProfiledSection("depth0.thaumcraft", stack, languageCode, thaumcraftStartNs, thaumcraftDisplayName);
+            }
             if (thaumcraftDisplayName != null && !thaumcraftDisplayName.isEmpty()) {
                 return thaumcraftDisplayName;
             }
 
             // Thaumcraft NEI Plugin aspects also share one (registry, damage) cache key and
             // differ only by the NBT "Aspects" payload, so resolve them before cache lookup.
-            String thaumcraftNeiPluginDisplayName =
-                ThaumcraftNeiPluginDisplayNameResolver.tryResolveDisplayName(stack, languageCode);
+            long thaumcraftNeiStartNs = startProfiledSection();
+            String thaumcraftNeiPluginDisplayName = null;
+            try {
+                thaumcraftNeiPluginDisplayName =
+                    ThaumcraftNeiPluginDisplayNameResolver.tryResolveDisplayName(stack, languageCode);
+            } finally {
+                finishProfiledSection(
+                    "depth0.thaumcraft_nei",
+                    stack,
+                    languageCode,
+                    thaumcraftNeiStartNs,
+                    thaumcraftNeiPluginDisplayName);
+            }
             if (thaumcraftNeiPluginDisplayName != null && !thaumcraftNeiPluginDisplayName.isEmpty()) {
                 return thaumcraftNeiPluginDisplayName;
             }
 
             // ElectriCraft: ore names stored in ElectriOres.oreName at init time.
-            String electriDisplayName = ElectriCraftDisplayNameResolver.tryResolveDisplayName(stack, languageCode);
+            long electriStartNs = startProfiledSection();
+            String electriDisplayName = null;
+            try {
+                electriDisplayName = ElectriCraftDisplayNameResolver.tryResolveDisplayName(stack, languageCode);
+            } finally {
+                finishProfiledSection("depth0.electricraft", stack, languageCode, electriStartNs, electriDisplayName);
+            }
             if (electriDisplayName != null && !electriDisplayName.isEmpty()) {
                 return electriDisplayName;
             }
 
             // ReactorCraft: ore/crafting names stored in ReactorOres.oreName and
             // CraftingItems.itemName at init time.
-            String reactorDisplayName = ReactorCraftDisplayNameResolver.tryResolveDisplayName(stack, languageCode);
+            long reactorStartNs = startProfiledSection();
+            String reactorDisplayName = null;
+            try {
+                reactorDisplayName = ReactorCraftDisplayNameResolver.tryResolveDisplayName(stack, languageCode);
+            } finally {
+                finishProfiledSection("depth0.reactorcraft", stack, languageCode, reactorStartNs, reactorDisplayName);
+            }
             if (reactorDisplayName != null && !reactorDisplayName.isEmpty()) {
                 return reactorDisplayName;
             }
 
-            String binnieDisplayName = BinnieDisplayNameResolver.tryResolveDisplayName(stack, languageCode);
-            if (binnieDisplayName != null && !binnieDisplayName.isEmpty()) {
-                return binnieDisplayName;
+            long binnieGateStartNs = startProfiledSection();
+            boolean binnieCandidate = false;
+            try {
+                binnieCandidate = isBinnieCandidate(
+                    depth0ItemClassName,
+                    depth0BlockClassName,
+                    depth0RegistryName,
+                    depth0UnlocalizedName);
+            } finally {
+                finishProfiledSection(
+                    "gate.binnie_candidate",
+                    stack,
+                    languageCode,
+                    binnieGateStartNs,
+                    binnieCandidate ? "candidate" : null);
+            }
+            if (binnieCandidate) {
+                long binnieStartNs = startProfiledSection();
+                String binnieDisplayName = null;
+                try {
+                    binnieDisplayName = BinnieDisplayNameResolver.tryResolveDisplayName(stack, languageCode);
+                } finally {
+                    finishProfiledSection("depth0.binnie", stack, languageCode, binnieStartNs, binnieDisplayName);
+                }
+                if (binnieDisplayName != null && !binnieDisplayName.isEmpty()) {
+                    return binnieDisplayName;
+                }
             }
 
-            String gtNeiOrePluginDisplayName = GtNeiOrePluginDisplayNameResolver.tryResolveDisplayName(stack, languageCode);
+            long gtNeiOreStartNs = startProfiledSection();
+            String gtNeiOrePluginDisplayName = null;
+            try {
+                gtNeiOrePluginDisplayName = GtNeiOrePluginDisplayNameResolver.tryResolveDisplayName(stack, languageCode);
+            } finally {
+                finishProfiledSection(
+                    "depth0.gt_nei_ore",
+                    stack,
+                    languageCode,
+                    gtNeiOreStartNs,
+                    gtNeiOrePluginDisplayName);
+            }
             if (gtNeiOrePluginDisplayName != null && !gtNeiOrePluginDisplayName.isEmpty()) {
                 return gtNeiOrePluginDisplayName;
             }
 
-            String bartWorksDisplayName = BartWorksDisplayNameResolver.tryResolveDisplayName(stack, languageCode);
+            long bartWorksStartNs = startProfiledSection();
+            String bartWorksDisplayName = null;
+            try {
+                bartWorksDisplayName = BartWorksDisplayNameResolver.tryResolveDisplayName(stack, languageCode);
+            } finally {
+                finishProfiledSection("depth0.bartworks", stack, languageCode, bartWorksStartNs, bartWorksDisplayName);
+            }
             if (bartWorksDisplayName != null && !bartWorksDisplayName.isEmpty()) {
                 return bartWorksDisplayName;
             }
 
-            String gregTechDisplayName = GregTechDisplayNameResolver.tryResolveDisplayName(stack, languageCode);
-            if (gregTechDisplayName != null && !gregTechDisplayName.isEmpty()) {
-                return gregTechDisplayName;
+            long gregTechGateStartNs = startProfiledSection();
+            boolean gregTechCandidate = false;
+            try {
+                gregTechCandidate = isGregTechCandidate(
+                    depth0ItemClassName,
+                    depth0BlockClassName,
+                    depth0RegistryName,
+                    depth0UnlocalizedName);
+            } finally {
+                finishProfiledSection(
+                    "gate.gregtech_candidate",
+                    stack,
+                    languageCode,
+                    gregTechGateStartNs,
+                    gregTechCandidate ? "candidate" : null);
+            }
+            if (gregTechCandidate) {
+                long gregTechStartNs = startProfiledSection();
+                String gregTechDisplayName = null;
+                try {
+                    gregTechDisplayName = GregTechDisplayNameResolver.tryResolveDisplayName(stack, languageCode);
+                } finally {
+                    finishProfiledSection("depth0.gregtech", stack, languageCode, gregTechStartNs, gregTechDisplayName);
+                }
+                if (gregTechDisplayName != null && !gregTechDisplayName.isEmpty()) {
+                    return gregTechDisplayName;
+                }
             }
 
-            String gtPlusPlusDisplayName = GtPlusPlusDisplayNameResolver.tryResolveDisplayName(stack, languageCode);
+            long gtPlusPlusStartNs = startProfiledSection();
+            String gtPlusPlusDisplayName = null;
+            try {
+                gtPlusPlusDisplayName = GtPlusPlusDisplayNameResolver.tryResolveDisplayName(stack, languageCode);
+            } finally {
+                finishProfiledSection("depth0.gtplusplus", stack, languageCode, gtPlusPlusStartNs, gtPlusPlusDisplayName);
+            }
             if (gtPlusPlusDisplayName != null && !gtPlusPlusDisplayName.isEmpty()) {
                 return gtPlusPlusDisplayName;
             }
 
-            String spawnEggDisplayName = SpawnEggResolver.tryResolveDisplayName(stack, languageCode);
+            long spawnEggStartNs = startProfiledSection();
+            String spawnEggDisplayName = null;
+            try {
+                spawnEggDisplayName = SpawnEggResolver.tryResolveDisplayName(stack, languageCode);
+            } finally {
+                finishProfiledSection("depth0.spawn_egg", stack, languageCode, spawnEggStartNs, spawnEggDisplayName);
+            }
             if (spawnEggDisplayName != null && !spawnEggDisplayName.isEmpty()) {
                 return spawnEggDisplayName;
             }
 
-            // ManaMetal AlchemyGem: OKingot stores a runtime-translated gem name (e.g. "钻石")
-            // so the full cache contains mixed-language entries like "Shattered钻石". The
-            // dedicated resolver now uses hardcoded English key suffixes and is correct here.
-            // Other ManaMetal items (e.g. ItemPetEggs1) use the normal chain below so the
-            // full cache can still serve intentionally mixed names like "大黑塔Pet Egg".
-            String alchemyGemDisplayName = ManaMetalDisplayNameResolver.tryResolveAlchemyGemDisplayName(stack, languageCode);
+            // ManaMetal AlchemyGem: OKingot stores a runtime-translated gem name so the full
+            // cache can contain mixed-language entries. Use the dedicated resolver first.
+            long alchemyGemStartNs = startProfiledSection();
+            String alchemyGemDisplayName = null;
+            try {
+                alchemyGemDisplayName = ManaMetalDisplayNameResolver.tryResolveAlchemyGemDisplayName(stack, languageCode);
+            } finally {
+                finishProfiledSection(
+                    "depth0.manametal_alchemy",
+                    stack,
+                    languageCode,
+                    alchemyGemStartNs,
+                    alchemyGemDisplayName);
+            }
             if (alchemyGemDisplayName != null && !alchemyGemDisplayName.isEmpty()) {
                 return alchemyGemDisplayName;
             }
@@ -160,39 +322,91 @@ public final class DisplayNameResolver {
         // Fast path: check the full prebuilt cache first (populated by /polyglotbuild).
         // Only at depth 0 to avoid incorrectly short-circuiting recursive calls (e.g. AE2 facades).
         if (depth == 0 && !ThaumcraftNeiPluginDisplayNameResolver.isAspectItem(stack)) {
-            String cachedName = resolveFromFullCache(stack, languageCode);
-            if (cachedName != null
-                && !cachedName.isEmpty()
-                && !shouldIgnoreSuspiciousBartWorksCasingCache(stack, languageCode, cachedName)) {
-                return cachedName;
+            long cacheStartNs = startProfiledSection();
+            String acceptedCachedName = null;
+            try {
+                String cachedName = resolveFromFullCache(stack, languageCode);
+                if (cachedName != null
+                    && !cachedName.isEmpty()
+                    && !shouldIgnoreSuspiciousBartWorksCasingCache(stack, languageCode, cachedName)) {
+                    acceptedCachedName = cachedName;
+                }
+            } finally {
+                finishProfiledSection("cache.full_name", stack, languageCode, cacheStartNs, acceptedCachedName);
+            }
+            if (acceptedCachedName != null && !acceptedCachedName.isEmpty()) {
+                return acceptedCachedName;
             }
 
-            String bartWorksCasingDisplayName =
-                BartWorksDisplayNameResolver.tryResolveGeneratedCasingDisplayName(stack, languageCode);
+            long bartWorksCasingStartNs = startProfiledSection();
+            String bartWorksCasingDisplayName = null;
+            try {
+                bartWorksCasingDisplayName =
+                    BartWorksDisplayNameResolver.tryResolveGeneratedCasingDisplayName(stack, languageCode);
+            } finally {
+                finishProfiledSection(
+                    "cache.bartworks_generated_casing",
+                    stack,
+                    languageCode,
+                    bartWorksCasingStartNs,
+                    bartWorksCasingDisplayName);
+            }
             if (bartWorksCasingDisplayName != null && !bartWorksCasingDisplayName.isEmpty()) {
                 return bartWorksCasingDisplayName;
             }
         }
 
-        String facadeDisplayName = resolveFacadeDisplayName(stack, languageCode, depth);
+        long facadeStartNs = startProfiledSection();
+        String facadeDisplayName = null;
+        try {
+            facadeDisplayName = resolveFacadeDisplayName(stack, languageCode, depth);
+        } finally {
+            finishProfiledSection("stage.facade", stack, languageCode, facadeStartNs, facadeDisplayName);
+        }
         if (facadeDisplayName != null && !facadeDisplayName.isEmpty()) {
             return facadeDisplayName;
         }
 
         if (stack.getItem() instanceof ItemPotion) {
-            return resolvePotionDisplayName(stack, languageCode);
+            long potionStartNs = startProfiledSection();
+            String potionDisplayName = null;
+            try {
+                potionDisplayName = resolvePotionDisplayName(stack, languageCode);
+            } finally {
+                finishProfiledSection("stage.potion", stack, languageCode, potionStartNs, potionDisplayName);
+            }
+            return potionDisplayName;
         }
 
         if (stack.getItem() instanceof ItemSkull) {
-            return resolveSkullDisplayName(stack, languageCode);
+            long skullStartNs = startProfiledSection();
+            String skullDisplayName = null;
+            try {
+                skullDisplayName = resolveSkullDisplayName(stack, languageCode);
+            } finally {
+                finishProfiledSection("stage.skull", stack, languageCode, skullStartNs, skullDisplayName);
+            }
+            return skullDisplayName;
         }
 
-        String dynamicDisplayName = resolveDynamicDisplayName(stack, languageCode, depth);
+        long dynamicStartNs = startProfiledSection();
+        String dynamicDisplayName = null;
+        try {
+            dynamicDisplayName = resolveDynamicDisplayName(stack, languageCode, depth);
+        } finally {
+            finishProfiledSection("stage.dynamic", stack, languageCode, dynamicStartNs, dynamicDisplayName);
+        }
         if (dynamicDisplayName != null && !dynamicDisplayName.isEmpty()) {
             return dynamicDisplayName;
         }
 
-        String genericDisplayName = resolveGenericDisplayName(stack, languageCode);
+        long genericStartNs = startProfiledSection();
+        String genericDisplayName = null;
+        try {
+            genericDisplayName = resolveGenericDisplayName(stack, languageCode);
+        } finally {
+            finishProfiledSection("stage.generic", stack, languageCode, genericStartNs, genericDisplayName);
+        }
         if (genericDisplayName != null && !genericDisplayName.isEmpty()) {
             return genericDisplayName;
         }
@@ -213,7 +427,24 @@ public final class DisplayNameResolver {
 
         String textureName = resolveDisplayName(textureItem, languageCode, depth + 1);
         if (textureName == null || textureName.isEmpty()) {
-            textureName = EnumChatFormatting.getTextWithoutFormattingCodes(textureItem.getDisplayName());
+            long textureFallbackStartNs = startProfiledSection();
+            String textureDisplayName = null;
+            try {
+                textureDisplayName = ProgrammaticDisplayNameLookup.getItemDisplayName(textureItem, languageCode);
+            } finally {
+                finishProfiledSection(
+                    "facade.texture_fallback_display_name",
+                    textureItem,
+                    languageCode,
+                    textureFallbackStartNs,
+                    textureDisplayName);
+            }
+            if (textureDisplayName != null && !textureDisplayName.trim().isEmpty()) {
+                String strippedTextureName = EnumChatFormatting.getTextWithoutFormattingCodes(textureDisplayName);
+                textureName = strippedTextureName != null
+                    ? strippedTextureName.trim()
+                    : textureDisplayName.trim();
+            }
         }
 
         if (textureName == null || textureName.isEmpty()) {
@@ -293,7 +524,7 @@ public final class DisplayNameResolver {
     }
 
     private static boolean shouldIgnoreSuspiciousBartWorksCasingCache(ItemStack stack, String languageCode,
-        String cachedName) {
+            String cachedName) {
         if (stack == null || stack.getItem() == null || cachedName == null || cachedName.trim().isEmpty()) {
             return false;
         }
@@ -311,6 +542,118 @@ public final class DisplayNameResolver {
 
         NameQuality quality = NameQualityClassifier.classify(cachedName.trim(), languageCode);
         return quality == NameQuality.CONTAINS_CJK || quality == NameQuality.MIXED_LANGUAGE;
+    }
+
+    private static boolean isBinnieCandidate(String itemClassName, String blockClassName,
+            String registryName, String unlocalizedName) {
+        if (startsWithIgnoreCase(itemClassName, BINNIE_CLASS_PREFIX)) {
+            return true;
+        }
+        if (startsWithIgnoreCase(blockClassName, BINNIE_CLASS_PREFIX)) {
+            return true;
+        }
+
+        if (startsWithIgnoreCase(registryName, "ExtraBees:")
+            || startsWithIgnoreCase(registryName, "ExtraTrees:")
+            || startsWithIgnoreCase(registryName, "Botany:")
+            || startsWithIgnoreCase(registryName, "Genetics:")
+            || startsWithIgnoreCase(registryName, "BinnieCore:")) {
+            return true;
+        }
+
+        return startsWithIgnoreCase(unlocalizedName, "extrabees.")
+            || startsWithIgnoreCase(unlocalizedName, "extratrees.")
+            || startsWithIgnoreCase(unlocalizedName, "botany.")
+            || startsWithIgnoreCase(unlocalizedName, "genetics.")
+            || startsWithIgnoreCase(unlocalizedName, "binniecore.")
+            || startsWithIgnoreCase(unlocalizedName, "for.extratrees.");
+    }
+
+    private static boolean isGregTechCandidate(String itemClassName, String blockClassName,
+            String registryName, String unlocalizedName) {
+        if (startsWithIgnoreCase(itemClassName, GREGTECH_CLASS_PREFIX)
+            || startsWithIgnoreCase(itemClassName, BARTWORKS_CLASS_PREFIX)
+            || startsWithIgnoreCase(blockClassName, GREGTECH_CLASS_PREFIX)
+            || startsWithIgnoreCase(blockClassName, BARTWORKS_CLASS_PREFIX)) {
+            return true;
+        }
+
+        if (startsWithIgnoreCase(registryName, "gregtech:")
+            || startsWithIgnoreCase(registryName, "bartworks:")) {
+            return true;
+        }
+
+        return startsWithIgnoreCase(unlocalizedName, "gt.")
+            || startsWithIgnoreCase(unlocalizedName, "bw.")
+            || startsWithIgnoreCase(unlocalizedName, "gtplusplus.")
+            || startsWithIgnoreCase(unlocalizedName, "comb.")
+            || startsWithIgnoreCase(unlocalizedName, "propolis.");
+    }
+
+    private static String getRegistryName(ItemStack stack) {
+        if (stack == null || stack.getItem() == null) {
+            return null;
+        }
+
+        try {
+            Object registryNameObj = Item.itemRegistry.getNameForObject(stack.getItem());
+            return registryNameObj == null ? null : String.valueOf(registryNameObj);
+        } catch (Throwable ignored) {
+            return null;
+        }
+    }
+
+    private static String safeGetItemClassName(ItemStack stack) {
+        try {
+            return stack == null || stack.getItem() == null ? null : stack.getItem().getClass().getName();
+        } catch (Throwable ignored) {
+            return null;
+        }
+    }
+
+    private static String safeGetBlockClassName(ItemStack stack) {
+        try {
+            if (stack == null || stack.getItem() == null) {
+                return null;
+            }
+            Block block = Block.getBlockFromItem(stack.getItem());
+            return block == null ? null : block.getClass().getName();
+        } catch (Throwable ignored) {
+            return null;
+        }
+    }
+
+    private static String safeGetNormalizedUnlocalizedName(ItemStack stack) {
+        try {
+            return stack == null ? null : normalizeUnlocalizedName(stack.getUnlocalizedName());
+        } catch (Throwable ignored) {
+            return null;
+        }
+    }
+
+    private static String normalizeUnlocalizedName(String unlocalizedName) {
+        if (unlocalizedName == null) {
+            return null;
+        }
+
+        String normalized = unlocalizedName.trim();
+        if (normalized.startsWith("item.")) {
+            return normalized.substring(5);
+        }
+        if (normalized.startsWith("tile.")) {
+            return normalized.substring(5);
+        }
+        return normalized;
+    }
+
+    private static boolean startsWithIgnoreCase(String value, String prefix) {
+        if (value == null || prefix == null) {
+            return false;
+        }
+        if (value.length() < prefix.length()) {
+            return false;
+        }
+        return value.regionMatches(true, 0, prefix, 0, prefix.length());
     }
 
     private static String getTranslationKey(ItemStack stack) {
@@ -364,6 +707,15 @@ public final class DisplayNameResolver {
         }
 
         builder.append(translated.trim());
+    }
+
+    private static long startProfiledSection() {
+        return BuildProfiler.startSection();
+    }
+
+    private static void finishProfiledSection(String section, ItemStack stack, String languageCode,
+            long startNs, String result) {
+        BuildProfiler.record(section, stack, languageCode, startNs, result);
     }
 
 }
