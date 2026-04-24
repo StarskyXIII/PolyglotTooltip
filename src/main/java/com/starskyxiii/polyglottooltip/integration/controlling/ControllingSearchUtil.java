@@ -55,6 +55,12 @@ public final class ControllingSearchUtil {
         return Optional.empty();
     }
 
+    public static boolean matchesKeyText(KeyBindsList.Entry entry, String query) {
+        return resolveKeySearchText(entry)
+                .map(text -> StringUtils.containsIgnoreCase(text, query))
+                .orElse(false);
+    }
+
     public static Optional<String> resolveNameText(KeyBindsList.Entry entry) {
         if (isEntry(entry, KEY_ENTRY)) {
             return componentText(invoke(entry, "getKeyDesc"));
@@ -64,6 +70,12 @@ public final class ControllingSearchUtil {
             return input == null ? Optional.empty() : Optional.ofNullable(invokeString(input, "getName"));
         }
         return Optional.empty();
+    }
+
+    public static boolean matchesNameText(KeyBindsList.Entry entry, String query) {
+        return resolveNameSearchText(entry)
+                .map(text -> StringUtils.containsIgnoreCase(text, query))
+                .orElse(false);
     }
 
     private static Optional<String> resolveCategorySearchText(KeyBindsList.Entry entry) {
@@ -76,12 +88,43 @@ public final class ControllingSearchUtil {
         return Optional.empty();
     }
 
+    private static Optional<String> resolveKeySearchText(KeyBindsList.Entry entry) {
+        if (!isEntry(entry, KEY_ENTRY)) {
+            return Optional.empty();
+        }
+
+        return invokeMethod(entry, "getKey")
+                .filter(KeyMapping.class::isInstance)
+                .map(KeyMapping.class::cast)
+                .map(KeyMapping::getTranslatedKeyMessage)
+                .flatMap(ControllingSearchUtil::componentSearchText);
+    }
+
+    private static Optional<String> resolveNameSearchText(KeyBindsList.Entry entry) {
+        if (isEntry(entry, KEY_ENTRY)) {
+            return componentSearchText(invokeMethod(entry, "getKeyDesc").orElse(null));
+        }
+        if (isEntry(entry, INPUT_ENTRY)) {
+            return invokeMethod(entry, "getInput")
+                    .flatMap(input -> invokeMethod(input, "getName"))
+                    .filter(String.class::isInstance)
+                    .map(String.class::cast)
+                    .flatMap(ControllingSearchUtil::stringSearchText);
+        }
+        return Optional.empty();
+    }
+
     private static Optional<String> componentSearchText(Object value) {
         if (!(value instanceof Component component)) {
             return Optional.empty();
         }
 
         String built = new SearchTextCollector().addComponent(component).build();
+        return built.isBlank() ? Optional.empty() : Optional.of(built);
+    }
+
+    private static Optional<String> stringSearchText(String value) {
+        String built = new SearchTextCollector().addText(value).build();
         return built.isBlank() ? Optional.empty() : Optional.of(built);
     }
 
@@ -104,6 +147,10 @@ public final class ControllingSearchUtil {
         } catch (ReflectiveOperationException ignored) {
             return null;
         }
+    }
+
+    private static Optional<Object> invokeMethod(Object target, String methodName, Object... args) {
+        return Optional.ofNullable(invoke(target, methodName, args));
     }
 
     private static String invokeString(Object target, String methodName, Object... args) {

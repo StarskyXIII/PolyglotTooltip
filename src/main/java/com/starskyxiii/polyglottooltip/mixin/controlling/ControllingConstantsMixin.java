@@ -23,9 +23,21 @@ public abstract class ControllingConstantsMixin {
     @Inject(method = "<clinit>", at = @At("TAIL"), remap = false)
     private static void polyglot$expandCategorySearch(CallbackInfo ci) {
         SEARCHABLE_KEYBINDINGS = new SearchableType.Builder<KeyBindsList.Entry>()
-                .component(SearchableComponent.create("category", ControllingSearchUtil::resolveCategoryText, ControllingSearchUtil::matchesCategoryText))
-                .component(SearchableComponent.create("key", ControllingSearchUtil::resolveKeyText))
-                .defaultComponent(SearchableComponent.create("name", ControllingSearchUtil::resolveNameText))
+                .component(SearchableComponent.create(
+                        "category",
+                        ControllingSearchUtil::resolveCategoryText,
+                        ControllingSearchUtil::matchesCategoryText
+                ))
+                .component(SearchableComponent.create(
+                        "key",
+                        ControllingSearchUtil::resolveKeyText,
+                        ControllingSearchUtil::matchesKeyText
+                ))
+                .defaultComponent(SearchableComponent.create(
+                        "name",
+                        ControllingSearchUtil::resolveNameText,
+                        ControllingSearchUtil::matchesNameText
+                ))
                 .build();
     }
 }
