@@ -28,8 +28,16 @@ public abstract class ControllingConstantsMixin {
                         ControllingSearchUtil::resolveCategoryText,
                         ControllingSearchUtil::matchesCategoryText
                 ))
-                .component(SearchableComponent.create("key", ControllingSearchUtil::resolveKeyText))
-                .defaultComponent(SearchableComponent.create("name", ControllingSearchUtil::resolveNameText))
+                .component(SearchableComponent.create(
+                        "key",
+                        ControllingSearchUtil::resolveKeyText,
+                        ControllingSearchUtil::matchesKeyText
+                ))
+                .defaultComponent(SearchableComponent.create(
+                        "name",
+                        ControllingSearchUtil::resolveNameText,
+                        ControllingSearchUtil::matchesNameText
+                ))
                 .build();
     }
 }
