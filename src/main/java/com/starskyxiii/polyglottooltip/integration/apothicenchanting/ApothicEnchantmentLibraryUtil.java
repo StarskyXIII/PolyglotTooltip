@@ -5,7 +5,6 @@ import com.starskyxiii.polyglottooltip.SecondaryTooltipUtil;
 import com.starskyxiii.polyglottooltip.search.ChineseScriptSearchMatcher;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.core.Holder;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.world.item.enchantment.Enchantment;
@@ -81,7 +80,6 @@ public final class ApothicEnchantmentLibraryUtil {
         }
 
         return invokeSlotEnchantment(slot)
-                .map(Holder::value)
                 .map(ApothicEnchantmentLibraryUtil::getEnchantmentDisplayName);
     }
 
@@ -101,8 +99,7 @@ public final class ApothicEnchantmentLibraryUtil {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private static Optional<Holder<Enchantment>> invokeSlotEnchantment(Object slot) {
+    private static Optional<Enchantment> invokeSlotEnchantment(Object slot) {
         Optional<Method> method = SLOT_ENCHANTMENT_METHOD_CACHE.computeIfAbsent(
                 slot.getClass(),
                 ApothicEnchantmentLibraryUtil::findSlotEnchantmentMethod
@@ -113,8 +110,8 @@ public final class ApothicEnchantmentLibraryUtil {
 
         try {
             Object result = method.get().invoke(slot);
-            if (result instanceof Holder<?> holder && holder.value() instanceof Enchantment) {
-                return Optional.of((Holder<Enchantment>) holder);
+            if (result instanceof Enchantment enchantment) {
+                return Optional.of(enchantment);
             }
         } catch (ReflectiveOperationException ignored) {
         }
