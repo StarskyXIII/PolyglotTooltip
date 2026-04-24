@@ -4,7 +4,9 @@ import com.llamalad7.mixinextras.sugar.Local;
 import com.starskyxiii.polyglottooltip.LanguageCache;
 import com.starskyxiii.polyglottooltip.integration.productivebees.ProductiveBeesNameHelper;
 import mezz.jei.api.ingredients.ITypedIngredient;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
+import net.neoforged.neoforge.fluids.FluidStack;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Mutable;
@@ -13,6 +15,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -51,9 +54,7 @@ public class JeiListElementInfoMixin {
         Optional<ItemStack> optStack = value.getItemStack();
         List<String> secondaryNames = optStack.isPresent()
                 ? cache.resolveSearchNamesForAll(optStack.get())
-                : ProductiveBeesNameHelper.tryCreateBeeIngredientName(value.getIngredient())
-                        .map(cache::resolveComponentsForAll)
-                        .orElse(List.of());
+                : resolveNonItemSearchNames(value.getIngredient(), cache);
         if (secondaryNames.isEmpty()) return;
 
         String primaryName = names.isEmpty() ? "" : names.get(0);
@@ -69,5 +70,39 @@ public class JeiListElementInfoMixin {
         List<String> combined = new ArrayList<>(names);
         combined.addAll(toAdd);
         this.names = combined;
+    }
+
+    private static List<String> resolveNonItemSearchNames(Object ingredient, LanguageCache cache) {
+        if (ingredient instanceof FluidStack fluidStack) {
+            return cache.resolveComponentsForAll(fluidStack.getHoverName());
+        }
+        Optional<Component> chemicalName = resolveMekanismChemicalName(ingredient);
+        if (chemicalName.isPresent()) {
+            return cache.resolveComponentsForAll(chemicalName.get());
+        }
+        return ProductiveBeesNameHelper.tryCreateBeeIngredientName(ingredient)
+                .map(cache::resolveComponentsForAll)
+                .orElse(List.of());
+    }
+
+    private static Optional<Component> resolveMekanismChemicalName(Object ingredient) {
+        if (ingredient == null
+                || !"mekanism.api.chemical.ChemicalStack".equals(ingredient.getClass().getName())) {
+            return Optional.empty();
+        }
+
+        try {
+            Method getChemical = ingredient.getClass().getMethod("getChemical");
+            Object chemical = getChemical.invoke(ingredient);
+            if (chemical == null) {
+                return Optional.empty();
+            }
+
+            Method getTextComponent = chemical.getClass().getMethod("getTextComponent");
+            Object component = getTextComponent.invoke(chemical);
+            return component instanceof Component c ? Optional.of(c) : Optional.empty();
+        } catch (ReflectiveOperationException e) {
+            return Optional.empty();
+        }
     }
 }
