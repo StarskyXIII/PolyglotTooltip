@@ -27,37 +27,28 @@ public final class EmiNameSearchUtil {
             return false;
         }
 
+        List<String> secondaryNames = resolveSecondaryNames(emiStack);
+        if (secondaryNames.isEmpty()) {
+            return false;
+        }
+
+        return ChineseScriptSearchMatcher.containsMatch(query, secondaryNames);
+    }
+
+    private static List<String> resolveSecondaryNames(Object emiStack) {
         ItemStack stack = invokeMethod(emiStack, "getItemStack")
                 .filter(ItemStack.class::isInstance)
                 .map(ItemStack.class::cast)
                 .orElse(ItemStack.EMPTY);
-        if (stack.isEmpty()) {
-            return resolveDisplayName(emiStack)
-                    .map(component -> LanguageCache.getInstance().resolveComponentsForAll(component))
-                    .map(names -> ChineseScriptSearchMatcher.containsMatch(query, names))
-                    .orElse(false);
+        if (!stack.isEmpty()) {
+            return LanguageCache.getInstance().resolveSearchNamesForAll(stack);
         }
 
-        return ChineseScriptSearchMatcher.containsMatch(
-                query,
-                LanguageCache.getInstance().resolveSearchNamesForAll(stack)
-        );
-    }
-
-    private static Optional<Component> resolveDisplayName(Object emiStack) {
-        return invokeMethod(emiStack, "getTooltipText")
-                .filter(List.class::isInstance)
-                .map(List.class::cast)
-                .flatMap(EmiNameSearchUtil::getFirstComponent);
-    }
-
-    private static Optional<Component> getFirstComponent(List<?> tooltip) {
-        if (tooltip == null || tooltip.isEmpty()) {
-            return Optional.empty();
-        }
-
-        Object first = tooltip.get(0);
-        return first instanceof Component component ? Optional.of(component) : Optional.empty();
+        return invokeMethod(emiStack, "getName")
+                .filter(Component.class::isInstance)
+                .map(Component.class::cast)
+                .map(component -> LanguageCache.getInstance().resolveComponentsForAll(component))
+                .orElse(List.of());
     }
 
     private static Optional<Object> invokeMethod(Object target, String methodName) {
