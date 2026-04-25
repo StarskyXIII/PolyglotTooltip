@@ -15,6 +15,7 @@
     "ae2.Ae2PatternAccessTermScreenMixin",
     "ae2.Ae2PatternContainerRecordMixin",
     "ae2.Ae2FluidKeyRenderHandlerMixin",
+    "ae2.GtoCoreMultiLangNameSearchPredicateMixin",
     "controlling.ControllingConstantsMixin",
     "jade.JadeGtoCoreCompatMixin",
     "emi.EmiFluidEmiStackMixin",
