@@ -29,6 +29,8 @@
     "jec.JecFakeTreeMixin",
     "jei.JeiElementSearchLowMemMixin",
     "jei.JeiFluidHelperMixin",
+    "ldlib.LdlibTankWidgetFluidTooltipMixin",
+    "gtceu.GtceuTankWidgetFluidTooltipMixin",
     "mekanism.MekanismGuiChemicalBarMixin",
     "mekanism.MekanismGuiChemicalGaugeMixin",
     "mekanism.MekanismJeiChemicalStackRendererMixin",
