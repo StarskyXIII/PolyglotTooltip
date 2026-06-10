@@ -1,10 +1,13 @@
 package com.starskyxiii.polyglottooltip;
 
+import com.starskyxiii.polyglottooltip.compat.figura.FiguraEmojiContext;
 import com.starskyxiii.polyglottooltip.integration.occultism.OccultismSearchUtil;
 import com.starskyxiii.polyglottooltip.search.ChineseScriptSearchMatcher;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.language.ClientLanguage;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.ComponentContents;
 import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
@@ -19,6 +22,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
@@ -80,7 +84,7 @@ public class LanguageCache extends SimplePreparableReloadListener<List<ClientLan
         List<ClientLanguage> result = new ArrayList<>();
         for (String lang : langs) {
             try {
-                ClientLanguage loaded = ClientLanguage.loadFrom(resourceManager, List.of(lang), false);
+                ClientLanguage loaded = ClientLanguage.loadFrom(resourceManager, languageChain(lang), false);
                 PolyglotTooltip.LOGGER.info("[PolyglotTooltip] Loaded secondary language: {}", lang);
                 result.add(loaded);
             } catch (Exception e) {
@@ -122,24 +126,19 @@ public class LanguageCache extends SimplePreparableReloadListener<List<ClientLan
 
     /**
      * Returns the stack display name in the currently active game language,
-     * preferring integration-provided special naming rules when available.
+     * matching the actual tooltip title after other mods have post-processed it.
      */
     public String resolveCurrentDisplayName(ItemStack stack) {
-        return resolveSpecialDisplayName(stack, component -> Optional.of(component.getString()))
-                .orElseGet(() -> stack.getHoverName().getString());
+        return stack.getHoverName().getString();
     }
 
     private List<String> resolveDisplayNamesUncached(ItemStack stack) {
-        List<String> results = new ArrayList<>();
+        LinkedHashSet<String> results = new LinkedHashSet<>();
         for (ClientLanguage lang : loadedLanguages) {
             Function<Component, Optional<String>> resolver = comp -> resolveComponentWithLang(comp, lang);
-            Optional<String> name = resolveSpecialDisplayName(stack, resolver);
-            if (name.isEmpty()) {
-                name = resolveComponentWithLang(stack.getHoverName(), lang);
-            }
-            name.ifPresent(results::add);
+            resolveDisplayName(stack, resolver).ifPresent(results::add);
         }
-        return results;
+        return List.copyOf(results);
     }
 
     private List<String> resolveSearchNamesUncached(ItemStack stack) {
@@ -161,16 +160,77 @@ public class LanguageCache extends SimplePreparableReloadListener<List<ClientLan
      * Languages that have no translation for this component are omitted.
      */
     public List<String> resolveComponentsForAll(Component component) {
-        List<String> results = new ArrayList<>();
+        LinkedHashSet<String> results = new LinkedHashSet<>();
         for (ClientLanguage lang : loadedLanguages) {
             resolveComponentWithLang(component, lang).ifPresent(results::add);
         }
-        return results;
+        return List.copyOf(results);
     }
 
     // -------------------------------------------------------------------------
     // Private per-language resolution
     // -------------------------------------------------------------------------
+
+    private Optional<String> resolveDisplayName(ItemStack stack,
+                                                Function<Component, Optional<String>> componentResolver) {
+        Optional<Component> customName = resolveCustomNameComponent(stack);
+        if (customName.isPresent()) {
+            return customName.flatMap(componentResolver);
+        }
+
+        Optional<Component> explicitItemName = resolvePatchedItemNameComponent(stack);
+        if (explicitItemName.isPresent()) {
+            Optional<String> resolved = explicitItemName.flatMap(componentResolver);
+            if (resolved.isPresent()) {
+                return resolved;
+            }
+        }
+
+        Optional<String> specialName = FiguraEmojiContext.supplyInHoverName(
+                () -> resolveSpecialDisplayName(stack, componentResolver));
+        if (specialName.isPresent()) {
+            return specialName;
+        }
+
+        Optional<String> itemName = FiguraEmojiContext.supplyInHoverName(
+                () -> componentResolver.apply(stack.getItem().getName(stack)));
+        if (itemName.isPresent()) {
+            return itemName;
+        }
+
+        Optional<Component> defaultItemName = resolveDefaultItemNameComponent(stack);
+        if (defaultItemName.isPresent()) {
+            Optional<String> resolved = defaultItemName.flatMap(componentResolver);
+            if (resolved.isPresent()) {
+                return resolved;
+            }
+        }
+
+        return componentResolver.apply(stack.getHoverName());
+    }
+
+    private Optional<Component> resolveCustomNameComponent(ItemStack stack) {
+        Component customName = stack.get(DataComponents.CUSTOM_NAME);
+        if (customName != null) {
+            return Optional.of(customName);
+        }
+        return Optional.empty();
+    }
+
+    private Optional<Component> resolvePatchedItemNameComponent(ItemStack stack) {
+        Component itemName = stack.get(DataComponents.ITEM_NAME);
+        if (itemName == null) {
+            return Optional.empty();
+        }
+
+        Component defaultItemName = stack.getPrototype().get(DataComponents.ITEM_NAME);
+        return Objects.equals(itemName, defaultItemName) ? Optional.empty() : Optional.of(itemName);
+    }
+
+    private Optional<Component> resolveDefaultItemNameComponent(ItemStack stack) {
+        Component itemName = stack.get(DataComponents.ITEM_NAME);
+        return itemName == null ? Optional.empty() : Optional.of(itemName);
+    }
 
     private Optional<String> resolveSpecialDisplayName(ItemStack stack,
                                                        Function<Component, Optional<String>> componentResolver) {
@@ -197,42 +257,65 @@ public class LanguageCache extends SimplePreparableReloadListener<List<ClientLan
      */
     private Optional<String> resolveComponentWithLang(Component component, ClientLanguage lang) {
         if (lang == null) return Optional.empty();
-        if (!(component.getContents() instanceof TranslatableContents tc)) {
-            // Literal or other non-translatable content — same text in every language
-            return Optional.of(component.getString());
+        Optional<String> mainPart = resolveComponentContentsWithLang(component, lang);
+        if (mainPart.isEmpty()) {
+            return Optional.empty();
+        }
+
+        if (component.getSiblings().isEmpty()) {
+            return mainPart;
+        }
+        StringBuilder sb = new StringBuilder(mainPart.get());
+        for (Component sibling : component.getSiblings()) {
+            sb.append(resolveComponentWithLang(sibling, lang).orElse(""));
+        }
+        return Optional.of(sb.toString());
+    }
+
+    private Optional<String> resolveComponentContentsWithLang(Component component, ClientLanguage lang) {
+        ComponentContents contents = component.getContents();
+        if (!(contents instanceof TranslatableContents tc)) {
+            return Optional.of(resolvePlainContents(contents));
         }
 
         String template = lang.getOrDefault(tc.getKey(), null);
+        if (template == null) {
+            template = tc.getFallback();
+        }
         if (template == null) return Optional.empty();
 
-        // Resolve main content (with %s format args if any)
-        String mainPart;
         Object[] args = tc.getArgs();
         if (args.length == 0) {
-            mainPart = template;
-        } else {
-            Object[] resolvedArgs = new Object[args.length];
-            for (int i = 0; i < args.length; i++) {
-                resolvedArgs[i] = args[i] instanceof Component c
-                        ? resolveComponentWithLang(c, lang).orElse(c.getString())
-                        : String.valueOf(args[i]);
-            }
-            try {
-                mainPart = String.format(template, resolvedArgs);
-            } catch (Exception e) {
-                mainPart = template; // malformed format string — return raw template
-            }
+            return Optional.of(template);
         }
 
-        // Append sibling components (e.g., " " + "V" for enchantment level suffixes)
-        if (component.getSiblings().isEmpty()) {
-            return Optional.of(mainPart);
+        Object[] resolvedArgs = new Object[args.length];
+        for (int i = 0; i < args.length; i++) {
+            Object arg = args[i];
+            if (arg instanceof Component c) {
+                resolvedArgs[i] = resolveComponentWithLang(c, lang).orElse("");
+            } else {
+                resolvedArgs[i] = String.valueOf(arg);
+            }
         }
-        StringBuilder sb = new StringBuilder(mainPart);
-        for (Component sibling : component.getSiblings()) {
-            sb.append(resolveComponentWithLang(sibling, lang).orElse(sibling.getString()));
+        try {
+            return Optional.of(String.format(template, resolvedArgs));
+        } catch (Exception e) {
+            return Optional.of(template);
         }
-        return Optional.of(sb.toString());
+    }
+
+    private String resolvePlainContents(ComponentContents contents) {
+        StringBuilder sb = new StringBuilder();
+        contents.visit(text -> {
+            sb.append(text);
+            return Optional.empty();
+        });
+        return sb.toString();
+    }
+
+    private static List<String> languageChain(String lang) {
+        return "en_us".equalsIgnoreCase(lang) ? List.of("en_us") : List.of("en_us", lang);
     }
 
     /**
