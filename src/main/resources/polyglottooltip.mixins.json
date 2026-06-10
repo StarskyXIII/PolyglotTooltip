@@ -4,6 +4,8 @@
   "compatibilityLevel": "JAVA_25",
   "mixins": [],
   "client": [
+    "figura.ItemStackHoverNameContextMixin",
+    "figura.FiguraEmojiTranslatableGuardMixin",
     "apothicenchanting.ApothicEnchantmentLibraryScreenMixin",
     "arsnouveau.ArsNouveauGlyphButtonMixin",
     "arsnouveau.ArsNouveauGuiSpellBookMixin",
