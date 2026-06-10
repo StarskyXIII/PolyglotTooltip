@@ -1,11 +1,14 @@
 package com.starskyxiii.polyglottooltip;
 
+import com.starskyxiii.polyglottooltip.compat.figura.FiguraEmojiContext;
 import com.starskyxiii.polyglottooltip.integration.occultism.OccultismSearchUtil;
 import com.starskyxiii.polyglottooltip.search.ChineseScriptSearchMatcher;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.language.ClientLanguage;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.ComponentContents;
 import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
@@ -26,7 +29,7 @@ import java.util.function.Function;
 
 /**
  * Caches secondary-language translations using {@link ClientLanguage#loadFrom},
- * which merges translations key-by-key across all resource packs — the same
+ * which merges translations key-by-key across all resource packs, the same
  * strategy Minecraft's own {@code LanguageManager} uses.
  *
  * <p>Supports multiple simultaneously loaded languages; each configured language
@@ -71,7 +74,7 @@ public class LanguageCache extends SimplePreparableReloadListener<List<ClientLan
     }
 
     // -------------------------------------------------------------------------
-    // SimplePreparableReloadListener — runs on the resource-reload executor
+    // SimplePreparableReloadListener - runs on the resource-reload executor
     // -------------------------------------------------------------------------
 
     /** Runs on the background thread during resource reload. */
@@ -81,7 +84,7 @@ public class LanguageCache extends SimplePreparableReloadListener<List<ClientLan
         List<ClientLanguage> result = new ArrayList<>();
         for (String lang : langs) {
             try {
-                ClientLanguage loaded = ClientLanguage.loadFrom(resourceManager, List.of(lang), false);
+                ClientLanguage loaded = ClientLanguage.loadFrom(resourceManager, languageChain(lang), false);
                 PolyglotTooltip.LOGGER.info("[PolyglotTooltip] Loaded secondary language: {}", lang);
                 result.add(loaded);
             } catch (Exception e) {
@@ -122,20 +125,12 @@ public class LanguageCache extends SimplePreparableReloadListener<List<ClientLan
     }
 
     private List<String> resolveDisplayNamesUncached(ItemStack stack) {
-        List<String> results = new ArrayList<>();
+        LinkedHashSet<String> results = new LinkedHashSet<>();
         for (ClientLanguage lang : loadedLanguages) {
             Function<Component, Optional<String>> resolver = comp -> resolveComponentWithLang(comp, lang);
-            Optional<String> name = Optional.empty();
-            for (SpecialNameResolver sr : SPECIAL_NAME_RESOLVERS) {
-                name = sr.resolve(stack, resolver);
-                if (name.isPresent()) break;
-            }
-            if (name.isEmpty()) {
-                name = resolveComponentWithLang(stack.getHoverName(), lang);
-            }
-            name.ifPresent(results::add);
+            resolveDisplayName(stack, resolver).ifPresent(results::add);
         }
-        return results;
+        return List.copyOf(results);
     }
 
     private List<String> resolveSearchNamesUncached(ItemStack stack) {
@@ -157,67 +152,127 @@ public class LanguageCache extends SimplePreparableReloadListener<List<ClientLan
      * Languages that have no translation for this component are omitted.
      */
     public List<String> resolveComponentsForAll(Component component) {
-        List<String> results = new ArrayList<>();
+        LinkedHashSet<String> results = new LinkedHashSet<>();
         for (ClientLanguage lang : loadedLanguages) {
             resolveComponentWithLang(component, lang).ifPresent(results::add);
         }
-        return results;
+        return List.copyOf(results);
     }
 
     // -------------------------------------------------------------------------
     // Private per-language resolution
     // -------------------------------------------------------------------------
 
+    private Optional<String> resolveDisplayName(ItemStack stack,
+                                                Function<Component, Optional<String>> componentResolver) {
+        Optional<Component> customName = resolveCustomNameComponent(stack);
+        if (customName.isPresent()) {
+            return customName.flatMap(componentResolver);
+        }
+
+        Optional<String> specialName = FiguraEmojiContext.supplyInHoverName(
+                () -> resolveSpecialDisplayName(stack, componentResolver));
+        if (specialName.isPresent()) {
+            return specialName;
+        }
+
+        Optional<String> itemName = FiguraEmojiContext.supplyInHoverName(
+                () -> componentResolver.apply(stack.getItem().getName(stack)));
+        if (itemName.isPresent()) {
+            return itemName;
+        }
+
+        return componentResolver.apply(stack.getHoverName());
+    }
+
+    private Optional<Component> resolveCustomNameComponent(ItemStack stack) {
+        CompoundTag displayTag = stack.getTagElement(ItemStack.TAG_DISPLAY);
+        if (displayTag == null || !displayTag.contains(ItemStack.TAG_DISPLAY_NAME, Tag.TAG_STRING)) {
+            return Optional.empty();
+        }
+
+        try {
+            return Optional.ofNullable(Component.Serializer.fromJson(displayTag.getString(ItemStack.TAG_DISPLAY_NAME)));
+        } catch (RuntimeException ignored) {
+            return Optional.empty();
+        }
+    }
+
+    private Optional<String> resolveSpecialDisplayName(ItemStack stack,
+                                                       Function<Component, Optional<String>> componentResolver) {
+        for (SpecialNameResolver resolver : SPECIAL_NAME_RESOLVERS) {
+            Optional<String> name = resolver.resolve(stack, componentResolver);
+            if (name.isPresent()) {
+                return name;
+            }
+        }
+        return Optional.empty();
+    }
+
     /**
-     * Recursively resolves a {@link Component} using the given language cache,
-     * including any sibling components (e.g., the roman-numeral level suffix on
-     * enchantment names: "Unbreaking" + " " + "V").
-     *
-     * <p>Non-translatable components (literal text) are returned as-is since they
-     * are the same in every language. Translatable components with format args have
-     * each arg resolved recursively.
-     *
-     * <p>Returns {@link Optional#empty()} if this component's translation key is
-     * absent from the given language.
+     * Recursively resolves a {@link Component} using the given language cache.
      */
     private Optional<String> resolveComponentWithLang(Component component, ClientLanguage lang) {
         if (lang == null) return Optional.empty();
-        if (!(component.getContents() instanceof TranslatableContents tc)) {
-            // Literal or other non-translatable content — same text in every language
-            return Optional.of(component.getString());
+        Optional<String> mainPart = resolveComponentContentsWithLang(component, lang);
+        if (mainPart.isEmpty()) {
+            return Optional.empty();
+        }
+
+        if (component.getSiblings().isEmpty()) {
+            return mainPart;
+        }
+        StringBuilder sb = new StringBuilder(mainPart.get());
+        for (Component sibling : component.getSiblings()) {
+            sb.append(resolveComponentWithLang(sibling, lang).orElse(""));
+        }
+        return Optional.of(sb.toString());
+    }
+
+    private Optional<String> resolveComponentContentsWithLang(Component component, ClientLanguage lang) {
+        ComponentContents contents = component.getContents();
+        if (!(contents instanceof TranslatableContents tc)) {
+            return Optional.of(resolvePlainContents(contents));
         }
 
         String template = lang.getOrDefault(tc.getKey(), null);
+        if (template == null) {
+            template = tc.getFallback();
+        }
         if (template == null) return Optional.empty();
 
-        // Resolve main content (with %s format args if any)
-        String mainPart;
         Object[] args = tc.getArgs();
         if (args.length == 0) {
-            mainPart = template;
-        } else {
-            Object[] resolvedArgs = new Object[args.length];
-            for (int i = 0; i < args.length; i++) {
-                resolvedArgs[i] = args[i] instanceof Component c
-                        ? resolveComponentWithLang(c, lang).orElse(c.getString())
-                        : String.valueOf(args[i]);
-            }
-            try {
-                mainPart = String.format(template, resolvedArgs);
-            } catch (Exception e) {
-                mainPart = template; // malformed format string — return raw template
-            }
+            return Optional.of(template);
         }
 
-        // Append sibling components (e.g., " " + "V" for enchantment level suffixes)
-        if (component.getSiblings().isEmpty()) {
-            return Optional.of(mainPart);
+        Object[] resolvedArgs = new Object[args.length];
+        for (int i = 0; i < args.length; i++) {
+            Object arg = args[i];
+            if (arg instanceof Component c) {
+                resolvedArgs[i] = resolveComponentWithLang(c, lang).orElse("");
+            } else {
+                resolvedArgs[i] = String.valueOf(arg);
+            }
         }
-        StringBuilder sb = new StringBuilder(mainPart);
-        for (Component sibling : component.getSiblings()) {
-            sb.append(resolveComponentWithLang(sibling, lang).orElse(sibling.getString()));
+        try {
+            return Optional.of(String.format(template, resolvedArgs));
+        } catch (Exception e) {
+            return Optional.of(template);
         }
-        return Optional.of(sb.toString());
+    }
+
+    private String resolvePlainContents(ComponentContents contents) {
+        StringBuilder sb = new StringBuilder();
+        contents.visit(text -> {
+            sb.append(text);
+            return Optional.empty();
+        });
+        return sb.toString();
+    }
+
+    private static List<String> languageChain(String lang) {
+        return "en_us".equalsIgnoreCase(lang) ? List.of("en_us") : List.of("en_us", lang);
     }
 
     /**
