@@ -19,12 +19,12 @@ import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
-import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 /**
@@ -60,12 +60,12 @@ public class LanguageCache implements PreparableReloadListener {
 
     private static final LanguageCache INSTANCE = new LanguageCache();
 
-    private List<ClientLanguage> loadedLanguages = new ArrayList<>();
+    private volatile List<ClientLanguage> loadedLanguages = List.of();
 
     // Per-stack secondary-name cache. Some mods reuse one Item for many visible names
     // and derive the final text from NBT, so Item-only caching is too coarse.
-    private final Map<DisplayNameCacheKey, List<String>> displayNameCache = new HashMap<>();
-    private final Map<DisplayNameCacheKey, List<String>> searchNameCache = new HashMap<>();
+    private final Map<DisplayNameCacheKey, List<String>> displayNameCache = new ConcurrentHashMap<>();
+    private final Map<DisplayNameCacheKey, List<String>> searchNameCache = new ConcurrentHashMap<>();
 
     public static LanguageCache getInstance() {
         return INSTANCE;
@@ -310,7 +310,7 @@ public class LanguageCache implements PreparableReloadListener {
     }
 
     private void applyLanguages(List<ClientLanguage> languages) {
-        this.loadedLanguages = languages;
+        this.loadedLanguages = List.copyOf(languages);
         this.displayNameCache.clear();
         this.searchNameCache.clear();
         OccultismSearchUtil.clearTooltipCache();

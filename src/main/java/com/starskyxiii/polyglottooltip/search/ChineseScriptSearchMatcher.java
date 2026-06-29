@@ -5,11 +5,13 @@ import com.starskyxiii.polyglottooltip.Config;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.UnaryOperator;
 
 /**
@@ -24,16 +26,18 @@ public final class ChineseScriptSearchMatcher {
     private ChineseScriptSearchMatcher() {
     }
 
+    private record QueryCache(String query, Set<String> variants) {
+    }
+
     // Single-entry cache for query variants.
-    // Search runs on the client thread; all items in one search pass share the same query,
-    // so caching the last query avoids repeated Set allocations and OpenCC conversions.
-    private static String cachedQuery = null;
-    private static Set<String> cachedQueryVariants = Set.of();
+    // Search may run on worker and render threads, so keep the pair atomic.
+    private static final AtomicReference<QueryCache> QUERY_CACHE =
+            new AtomicReference<>(new QueryCache(null, Set.of()));
 
     // Permanent per-string cache for candidate variants.
     // Item names are fixed within a game session; caching them avoids redundant OpenCC
     // conversions when the same item is tested across multiple search passes.
-    private static final Map<String, Set<String>> CANDIDATE_CACHE = new HashMap<>();
+    private static final Map<String, Set<String>> CANDIDATE_CACHE = new ConcurrentHashMap<>();
 
     public static boolean isEnabled() {
         return Config.ENABLE_CHINESE_SCRIPT_MATCHING.get();
@@ -70,18 +74,19 @@ public final class ChineseScriptSearchMatcher {
      * so that cached variant sets are recomputed with the updated setting.
      */
     public static void clearCaches() {
-        cachedQuery = null;
-        cachedQueryVariants = Set.of();
+        QUERY_CACHE.set(new QueryCache(null, Set.of()));
         CANDIDATE_CACHE.clear();
     }
 
     /** Returns cached variants for {@code query}, recomputing only when the query string changes. */
     private static Set<String> queryVariants(String query) {
-        if (!query.equals(cachedQuery)) {
-            cachedQuery = query;
-            cachedQueryVariants = Collections.unmodifiableSet(normalizedVariants(query));
+        QueryCache cache = QUERY_CACHE.get();
+        if (Objects.equals(query, cache.query())) {
+            return cache.variants();
         }
-        return cachedQueryVariants;
+        Set<String> variants = Collections.unmodifiableSet(normalizedVariants(query));
+        QUERY_CACHE.set(new QueryCache(query, variants));
+        return variants;
     }
 
     private static boolean containsMatch(Set<String> queryVariants, String candidate) {
