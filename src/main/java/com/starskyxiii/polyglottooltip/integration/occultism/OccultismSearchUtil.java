@@ -9,7 +9,7 @@ import net.minecraft.world.item.TooltipFlag;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -26,7 +26,7 @@ public final class OccultismSearchUtil {
     // Tooltip search text is expensive to build (calls getTooltipLines on every item).
     // Cache by Item since tooltip content is determined by item type, not NBT, for
     // the vast majority of Occultism storage items.
-    private static final Map<Item, String> tooltipSearchCache = new HashMap<>();
+    private static final Map<Item, String> tooltipSearchCache = new ConcurrentHashMap<>();
 
     public static void clearTooltipCache() {
         tooltipSearchCache.clear();

@@ -20,7 +20,7 @@ import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -66,8 +66,8 @@ public class LanguageCache extends SimplePreparableReloadListener<List<ClientLan
     // and derive the final text from NBT, so Item-only caching is too coarse.
     // We intentionally still ignore custom hover names and only key off the stack data
     // that affects generated translations.
-    private final Map<DisplayNameCacheKey, List<String>> displayNameCache = new HashMap<>();
-    private final Map<DisplayNameCacheKey, List<String>> searchNameCache = new HashMap<>();
+    private final Map<DisplayNameCacheKey, List<String>> displayNameCache = new ConcurrentHashMap<>();
+    private final Map<DisplayNameCacheKey, List<String>> searchNameCache = new ConcurrentHashMap<>();
 
     public static LanguageCache getInstance() {
         return INSTANCE;
