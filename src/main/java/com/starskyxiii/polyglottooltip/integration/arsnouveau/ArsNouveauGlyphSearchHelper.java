@@ -7,6 +7,7 @@ import net.minecraft.network.chat.Component;
 import com.starskyxiii.polyglottooltip.search.SearchTextCollector;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -50,7 +51,7 @@ public final class ArsNouveauGlyphSearchHelper {
     }
 
     private static List<String> resolveSecondaryNames(Component sourceName) {
-        List<String> secondaryNames = LanguageCache.getInstance().resolveComponentsForAll(sourceName);
+        List<String> secondaryNames = new ArrayList<>(LanguageCache.getInstance().resolveComponentsForAll(sourceName));
         String primaryName = sourceName.getString();
         secondaryNames.removeIf(primaryName::equals);
         return secondaryNames;
