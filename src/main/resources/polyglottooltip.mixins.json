@@ -25,6 +25,7 @@
     "emi.EmiTagEmiIngredientMixin",
     "emi.EmiNameQueryMixin",
     "emi.EmiTooltipQueryMixin",
+    "jei.JeiBakedSubstringIndexBuilderMixin",
     "jei.JeiGeneralizedSuffixTreeMixin",
     "jei.JeiListElementInfoMixin",
     "jei.JeiSafeIngredientUtilMixin$TooltipMixin",

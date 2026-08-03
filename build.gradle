@@ -108,8 +108,8 @@ dependencies {
     // Only keep integrations that are directly imported by source.
     // The remaining optional integrations use string mixin targets or reflection
     // and compile cleanly without the target mod jars present.
-    compileOnly fg.deobf("mezz.jei:jei-1.20.1-common-api:15.20.0.129")
-    compileOnly fg.deobf("mezz.jei:jei-1.20.1-forge-api:15.20.0.129")
+    compileOnly fg.deobf("mezz.jei:jei-1.20.1-common-api:${jei_version}")
+    compileOnly fg.deobf("mezz.jei:jei-1.20.1-forge-api:${jei_version}")
     compileOnly fg.deobf("appeng:appliedenergistics2-forge:${ae2_version}")
     compileOnly fg.deobf("curse.maven:jade-324717:4573193")
     compileOnly fg.deobf("com.blamejared.searchables:Searchables-common-1.20.1:1.0.1")
