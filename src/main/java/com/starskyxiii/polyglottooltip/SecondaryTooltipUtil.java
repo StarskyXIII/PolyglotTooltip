@@ -6,7 +6,10 @@ import net.minecraft.network.chat.Style;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.function.Predicate;
 
 public final class SecondaryTooltipUtil {
 
@@ -38,6 +41,26 @@ public final class SecondaryTooltipUtil {
     public static void insertSecondaryName(List<Component> tooltip, Component sourceName) {
         if (!shouldShowSecondaryLanguage()) return;
         insertNames(tooltip, getSecondaryNames(sourceName));
+    }
+
+    /**
+     * Inserts secondary names below the first detail line when it matches the
+     * supplied predicate, or directly below the primary name otherwise.
+     *
+     * <p>Known secondary-name lines are removed before the predicate is tested.
+     * This lets an integration hook repair the final ordering after a broader
+     * tooltip hook has already inserted the same names.
+     */
+    public static void insertSecondaryNameAfterFirstDetailIf(List<Component> tooltip,
+                                                              Component sourceName,
+                                                              Predicate<Component> firstDetailPredicate) {
+        if (!shouldShowSecondaryLanguage()) return;
+
+        List<String> names = getSecondaryNames(sourceName);
+        removeLines(tooltip, names);
+
+        int insertAt = tooltip.size() > 1 && firstDetailPredicate.test(tooltip.get(1)) ? 2 : 1;
+        insertNamesAt(tooltip, names, Math.min(insertAt, tooltip.size()));
     }
 
     public static List<String> getSecondaryNames(ItemStack stack) {
@@ -78,13 +101,16 @@ public final class SecondaryTooltipUtil {
 
     private static void insertNames(List<Component> tooltip, List<String> names) {
         int insertAt = tooltip.isEmpty() ? 0 : 1;
-        // Insert at the same index in reverse order: inserting A then B at index 1
-        // yields [name, B, A, ...], so iterating in reverse (B first, then A) gives
-        // the correct top-to-bottom config order: [name, A, B, ...].
-        for (int i = names.size() - 1; i >= 0; i--) {
-            String secondary = names.get(i);
-            removeLine(tooltip, secondary);
-            tooltip.add(insertAt, createTooltipSecondaryLine(secondary));
+        removeLines(tooltip, names);
+        insertNamesAt(tooltip, names, Math.min(insertAt, tooltip.size()));
+    }
+
+    private static void insertNamesAt(List<Component> tooltip, List<String> names, int insertAt) {
+        Set<String> inserted = new HashSet<>();
+        for (String secondary : names) {
+            if (inserted.add(secondary)) {
+                tooltip.add(insertAt++, createTooltipSecondaryLine(secondary));
+            }
         }
     }
 
@@ -102,12 +128,14 @@ public final class SecondaryTooltipUtil {
         return Component.literal(secondary).withStyle(style);
     }
 
-    private static void removeLine(List<Component> tooltip, String text) {
-        for (int i = 0; i < tooltip.size(); i++) {
-            String lineText = tooltip.get(i).getString();
-            if (text.equals(lineText)) {
+    private static void removeLines(List<Component> tooltip, List<String> texts) {
+        if (texts.isEmpty()) return;
+        Style secondaryStyle = LegacyFormatStyleUtil.tooltipSecondaryNameStyle();
+        for (int i = tooltip.size() - 1; i >= 0; i--) {
+            Component line = tooltip.get(i);
+            if (texts.contains(line.getString())
+                    && secondaryStyle.equals(line.getStyle())) {
                 tooltip.remove(i);
-                return;
             }
         }
     }
