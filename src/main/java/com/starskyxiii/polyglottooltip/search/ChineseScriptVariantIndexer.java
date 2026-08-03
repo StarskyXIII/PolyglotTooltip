@@ -8,7 +8,7 @@ import java.util.function.BiConsumer;
  * Shared logic for indexing simplified/traditional Chinese script variants
  * into search trees that use a {@code put(String key, Object value)} API.
  *
- * <p>Used by both {@code JeiGeneralizedSuffixTreeMixin} and
+ * <p>Used by the JEI 19.27 and 19.43 storage mixins plus
  * {@code JecFakeTreeMixin}, which target different classes but need the
  * same recursion-guarded variant-insertion behaviour.
  */
