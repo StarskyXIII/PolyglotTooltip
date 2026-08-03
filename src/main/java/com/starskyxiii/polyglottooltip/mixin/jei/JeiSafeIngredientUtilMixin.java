@@ -44,12 +44,36 @@ public class JeiSafeIngredientUtilMixin {
                 .ifPresent(name -> insertSecondaryLinesIntoJeiTooltip(tooltip, name));
     }
 
-    @Inject(method = "getPlainTooltipForSearch", at = @At("RETURN"), cancellable = true, remap = false)
-    private static <T> void onGetPlainTooltipForSearch(IIngredientManager ingredientManager,
-                                                       IIngredientRenderer<T> ingredientRenderer,
-                                                       ITypedIngredient<T> typedIngredient,
-                                                       TooltipFlag.Default tooltipFlag,
-                                                       CallbackInfoReturnable<List<Component>> cir) {
+    @Inject(
+            method = "getPlainTooltipForSearch(Lmezz/jei/api/runtime/IIngredientManager;Lmezz/jei/api/ingredients/IIngredientRenderer;Lmezz/jei/api/ingredients/ITypedIngredient;Lnet/minecraft/world/item/TooltipFlag$Default;)Ljava/util/List;",
+            at = @At("RETURN"),
+            cancellable = true,
+            remap = false
+    )
+    private static <T> void onGetPlainTooltipForSearchLegacy(IIngredientManager ingredientManager,
+                                                             IIngredientRenderer<T> ingredientRenderer,
+                                                             ITypedIngredient<T> typedIngredient,
+                                                             TooltipFlag.Default tooltipFlag,
+                                                             CallbackInfoReturnable<List<Component>> cir) {
+        appendProductiveBeesSearchName(typedIngredient, cir);
+    }
+
+    @Inject(
+            method = "getPlainTooltipForSearch(Lmezz/jei/api/runtime/IIngredientManager;Lmezz/jei/api/ingredients/IIngredientRenderer;Lmezz/jei/api/ingredients/ITypedIngredient;Lnet/minecraft/world/item/TooltipFlag;)Ljava/util/List;",
+            at = @At("RETURN"),
+            cancellable = true,
+            remap = false
+    )
+    private static <T> void onGetPlainTooltipForSearchCurrent(IIngredientManager ingredientManager,
+                                                              IIngredientRenderer<T> ingredientRenderer,
+                                                              ITypedIngredient<T> typedIngredient,
+                                                              TooltipFlag tooltipFlag,
+                                                              CallbackInfoReturnable<List<Component>> cir) {
+        appendProductiveBeesSearchName(typedIngredient, cir);
+    }
+
+    private static <T> void appendProductiveBeesSearchName(ITypedIngredient<T> typedIngredient,
+                                                            CallbackInfoReturnable<List<Component>> cir) {
         ProductiveBeesNameHelper.tryCreateBeeIngredientName(typedIngredient.getIngredient())
                 .ifPresent(name -> {
                     List<Component> tooltip = new ArrayList<>(cir.getReturnValue());
