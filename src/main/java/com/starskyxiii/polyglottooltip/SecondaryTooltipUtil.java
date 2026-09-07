@@ -1,5 +1,6 @@
 package com.starskyxiii.polyglottooltip;
 
+import com.starskyxiii.polyglottooltip.core.SecondaryLanguagePolicy;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
@@ -19,10 +20,10 @@ public final class SecondaryTooltipUtil {
     public static boolean shouldShowSecondaryLanguage() {
         Minecraft mc = Minecraft.getInstance();
         if (mc == null || mc.options == null) return false;
-        if (Config.ALWAYS_SHOW.get()) return true;
-        String current = mc.options.languageCode;
-        return Config.DISPLAY_LANGUAGE.get().stream()
-                .anyMatch(lang -> !lang.equalsIgnoreCase(current));
+        return SecondaryLanguagePolicy.shouldShow(
+                Config.ALWAYS_SHOW.get(),
+                mc.options.languageCode,
+                Config.DISPLAY_LANGUAGE.get());
     }
 
     /**

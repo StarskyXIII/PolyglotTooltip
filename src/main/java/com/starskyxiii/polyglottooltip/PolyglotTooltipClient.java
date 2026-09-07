@@ -2,8 +2,11 @@ package com.starskyxiii.polyglottooltip;
 
 import com.starskyxiii.polyglottooltip.integration.arsnouveau.ArsNouveauNameHelper;
 import com.starskyxiii.polyglottooltip.integration.industrialforegoing.IndustrialForegoingNameHelper;
+import com.starskyxiii.polyglottooltip.integration.occultism.OccultismSearchUtil;
 import com.starskyxiii.polyglottooltip.integration.productivebees.ProductiveBeesNameHelper;
 import com.starskyxiii.polyglottooltip.integration.storagedrawers.StorageDrawersNameHelper;
+import com.starskyxiii.polyglottooltip.minecraft.MinecraftLanguageAdapter;
+import com.starskyxiii.polyglottooltip.search.ChineseScriptSearchMatcher;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
@@ -26,11 +29,16 @@ public class PolyglotTooltipClient {
         LanguageCache.registerSpecialNameResolver(IndustrialForegoingNameHelper::tryResolveSpecialName);
         LanguageCache.registerSpecialNameResolver(ProductiveBeesNameHelper::tryResolveSpecialName);
         LanguageCache.registerSpecialNameResolver(StorageDrawersNameHelper::tryResolveSpecialName);
+
+        MinecraftLanguageAdapter languageAdapter = MinecraftLanguageAdapter.getInstance();
+        languageAdapter.configureLanguages(Config.DISPLAY_LANGUAGE::get);
+        languageAdapter.registerDependentCacheInvalidator(OccultismSearchUtil::clearTooltipCache);
+        languageAdapter.registerDependentCacheInvalidator(ChineseScriptSearchMatcher::clearCaches);
     }
 
     @SubscribeEvent
     static void onRegisterReloadListeners(RegisterClientReloadListenersEvent event) {
-        event.registerReloadListener(LanguageCache.getInstance());
+        event.registerReloadListener(MinecraftLanguageAdapter.getInstance());
     }
 
     @SubscribeEvent

@@ -6,7 +6,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
 
@@ -17,7 +16,7 @@ class LanguageCacheComponentTest {
 
     @AfterEach
     void clearLoadedLanguages() {
-        setLoadedLanguages(List.of());
+        LanguageCache.getInstance().replaceLanguages(List.of());
     }
 
     @Test
@@ -56,6 +55,23 @@ class LanguageCacheComponentTest {
                 resolveAll(component, List.of(first, duplicate, second)));
     }
 
+    @Test
+    void preservesMissingChildAndMalformedFormatFallbacks() {
+        ClientLanguage language = language(Map.of(
+                "outer", "[%s]",
+                "malformed", "%q"
+        ));
+        Component missingChildren = Component.translatable(
+                "outer",
+                Component.translatable("missing.argument"))
+                .append(Component.translatable("missing.sibling"))
+                .append(Component.literal(" tail"));
+
+        assertEquals(List.of("[] tail"), resolveAll(missingChildren, List.of(language)));
+        assertEquals(List.of("%q"), resolveAll(
+                Component.translatable("malformed", "unused"), List.of(language)));
+    }
+
     private static ClientLanguage language(Map<String, String> translations) {
         try {
             Constructor<ClientLanguage> constructor = ClientLanguage.class.getDeclaredConstructor(
@@ -68,17 +84,7 @@ class LanguageCacheComponentTest {
     }
 
     private static List<String> resolveAll(Component component, List<ClientLanguage> languages) {
-        setLoadedLanguages(languages);
+        LanguageCache.getInstance().replaceLanguages(languages);
         return LanguageCache.getInstance().resolveComponentsForAll(component);
-    }
-
-    private static void setLoadedLanguages(List<ClientLanguage> languages) {
-        try {
-            Field field = LanguageCache.class.getDeclaredField("loadedLanguages");
-            field.setAccessible(true);
-            field.set(LanguageCache.getInstance(), List.copyOf(languages));
-        } catch (ReflectiveOperationException exception) {
-            throw new AssertionError("LanguageCache languages could not be configured", exception);
-        }
     }
 }

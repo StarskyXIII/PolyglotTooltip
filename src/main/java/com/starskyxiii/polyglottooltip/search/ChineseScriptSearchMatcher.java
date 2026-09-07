@@ -1,18 +1,15 @@
 package com.starskyxiii.polyglottooltip.search;
 
-import com.github.houbb.opencc4j.util.ZhConverterUtil;
 import com.starskyxiii.polyglottooltip.Config;
+import com.starskyxiii.polyglottooltip.core.ChineseScriptPolicy;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.UnaryOperator;
 
 /**
  * Reusable search helper that normalizes simplified/traditional Chinese script
@@ -91,8 +88,8 @@ public final class ChineseScriptSearchMatcher {
 
     private static boolean containsMatch(Set<String> queryVariants, String candidate) {
         Set<String> candidateVariants = CANDIDATE_CACHE.computeIfAbsent(
-                normalize(candidate),
-                k -> Collections.unmodifiableSet(normalizedVariants(candidate)));
+                ChineseScriptPolicy.normalize(candidate),
+                key -> normalizedVariants(candidate));
         for (String candidateVariant : candidateVariants) {
             for (String queryVariant : queryVariants) {
                 if (candidateVariant.contains(queryVariant)) {
@@ -104,39 +101,10 @@ public final class ChineseScriptSearchMatcher {
     }
 
     private static Set<String> normalizedVariants(String value) {
-        Set<String> variants = new LinkedHashSet<>();
-        String normalized = normalize(value);
+        String normalized = ChineseScriptPolicy.normalize(value);
         if (normalized.isEmpty()) {
-            return variants;
+            return Collections.emptySet();
         }
-
-        variants.add(normalized);
-        if (!isEnabled()) {
-            return variants;
-        }
-        if (!ZhConverterUtil.containsChinese(normalized)) {
-            return variants;
-        }
-
-        addConvertedVariant(variants, normalized, ZhConverterUtil::toSimple);
-        addConvertedVariant(variants, normalized, ZhConverterUtil::toTraditional);
-        return variants;
-    }
-
-    private static void addConvertedVariant(Set<String> variants,
-                                            String source,
-                                            UnaryOperator<String> converter) {
-        try {
-            String converted = normalize(converter.apply(source));
-            if (!converted.isEmpty()) {
-                variants.add(converted);
-            }
-        } catch (RuntimeException ignored) {
-            // Fall back to the original normalized form if conversion fails.
-        }
-    }
-
-    private static String normalize(String value) {
-        return value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
+        return ChineseScriptPolicy.normalizedVariants(normalized, isEnabled());
     }
 }
