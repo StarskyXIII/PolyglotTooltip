@@ -30,7 +30,11 @@ public final class ControllingSearchUtil {
 
     public static Optional<String> resolveCategoryText(KeyBindsList.Entry entry) {
         if (hasType(entry, CATEGORY_ENTRY)) {
+            //? if >=26 {
+            /*return categoryComponent(entry).flatMap(ControllingSearchUtil::componentText);
+            *///?} else {
             return componentText(invokeMethod(entry, "name").orElse(null));
+            //?}
         }
         if (hasType(entry, KEY_ENTRY)) {
             return componentText(invokeMethod(entry, "categoryName").orElse(null));
@@ -63,7 +67,11 @@ public final class ControllingSearchUtil {
 
     public static Optional<String> resolveNameText(KeyBindsList.Entry entry) {
         if (hasType(entry, KEY_ENTRY)) {
+            //? if >=26 {
+            /*return componentText(invokeMethod(entry, "getName").orElse(null));
+            *///?} else {
             return componentText(invokeMethod(entry, "getKeyDesc").orElse(null));
+            //?}
         }
         if (hasType(entry, INPUT_ENTRY)) {
             return invokeMethod(entry, "getInput")
@@ -82,7 +90,11 @@ public final class ControllingSearchUtil {
 
     private static Optional<String> resolveCategorySearchText(KeyBindsList.Entry entry) {
         if (hasType(entry, CATEGORY_ENTRY)) {
+            //? if >=26 {
+            /*return categoryComponent(entry).flatMap(ControllingSearchUtil::componentSearchText);
+            *///?} else {
             return componentSearchText(invokeMethod(entry, "name").orElse(null));
+            //?}
         }
         if (hasType(entry, KEY_ENTRY)) {
             return componentSearchText(invokeMethod(entry, "categoryName").orElse(null));
@@ -104,7 +116,11 @@ public final class ControllingSearchUtil {
 
     private static Optional<String> resolveNameSearchText(KeyBindsList.Entry entry) {
         if (hasType(entry, KEY_ENTRY)) {
+            //? if >=26 {
+            /*return componentSearchText(invokeMethod(entry, "getName").orElse(null));
+            *///?} else {
             return componentSearchText(invokeMethod(entry, "getKeyDesc").orElse(null));
+            //?}
         }
         if (hasType(entry, INPUT_ENTRY)) {
             return invokeMethod(entry, "getInput")
@@ -115,6 +131,13 @@ public final class ControllingSearchUtil {
         }
         return Optional.empty();
     }
+
+    //? if >=26 {
+    /*private static Optional<Object> categoryComponent(KeyBindsList.Entry entry) {
+        return invokeMethod(entry, "category")
+                .flatMap(category -> invokeMethod(category, "label"));
+    }
+    *///?}
 
     private static Optional<String> componentSearchText(Object value) {
         if (!(value instanceof Component component)) {

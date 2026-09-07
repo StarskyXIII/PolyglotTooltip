@@ -1,4 +1,5 @@
 package com.starskyxiii.polyglottooltip.integration.rs2;
+//~ rs_platform_resource
 
 import com.refinedmods.refinedstorage.api.resource.ResourceKey;
 import com.refinedmods.refinedstorage.api.resource.repository.ResourceRepositoryFilter;
@@ -28,12 +29,11 @@ public final class Rs2SearchUtil {
     // Cache for autocrafter group names (user-defined strings, not language-dependent).
     // The SearchTextCollector result for a given name is deterministic and never changes.
     private static final Map<String, String> nameSearchTextCache = new ConcurrentHashMap<>();
-
     public static ResourceRepositoryFilter<GridResource> wrapLiteralFilter(String query,
                                                                           ResourceRepositoryFilter<GridResource> delegate) {
         return (repository, resource) -> WrappedSearchMatcher.matches(
                 query,
-                resource.getName(),
+                GridResourceNameAdapter.getPrimaryNames(resource),
                 () -> delegate.test(repository, resource),
                 () -> resolveSecondaryNames(resource)
         );

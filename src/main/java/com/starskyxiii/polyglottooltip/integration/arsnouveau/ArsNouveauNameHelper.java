@@ -1,4 +1,5 @@
 package com.starskyxiii.polyglottooltip.integration.arsnouveau;
+//~ minecraft_identifier
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;

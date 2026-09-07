@@ -2,6 +2,7 @@ package com.starskyxiii.polyglottooltip.search;
 
 import com.starskyxiii.polyglottooltip.SecondaryTooltipUtil;
 
+import java.util.Collections;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
@@ -18,12 +19,23 @@ public final class WrappedSearchMatcher {
                                   String primaryName,
                                   BooleanSupplier nativeMatcher,
                                   Supplier<? extends Iterable<String>> secondaryNames) {
+        return matches(query, Collections.singletonList(primaryName), nativeMatcher, secondaryNames);
+    }
+
+    public static boolean matches(String query,
+                                  Iterable<String> primaryNames,
+                                  BooleanSupplier nativeMatcher,
+                                  Supplier<? extends Iterable<String>> secondaryNames) {
         if (query == null || query.trim().isEmpty()) {
             return true;
         }
 
-        if (ChineseScriptSearchMatcher.containsMatch(query, primaryName)) {
-            return true;
+        if (primaryNames != null) {
+            for (String primaryName : primaryNames) {
+                if (ChineseScriptSearchMatcher.containsMatch(query, primaryName)) {
+                    return true;
+                }
+            }
         }
 
         if (nativeMatcher.getAsBoolean()) {

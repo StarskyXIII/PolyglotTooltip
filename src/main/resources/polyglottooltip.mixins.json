@@ -1,7 +1,7 @@
 {
   "required": false,
   "package": "com.starskyxiii.polyglottooltip.mixin",
-  "compatibilityLevel": "JAVA_21",
+  "compatibilityLevel": "${java_level}",
   "mixins": [],
   "client": [
     "figura.ItemStackHoverNameContextMixin",
@@ -28,7 +28,7 @@
     "jei.JeiSafeIngredientUtilMixin",
     "jec.JecFakeTreeMixin",
     "jei.JeiElementSearchLowMemMixin",
-    "jei.JeiFluidHelperMixin",
+${jei_fluid_mixin}
     "mekanism.MekanismChemicalStackMixin",
     "mekanism.MekanismJeiChemicalStackRendererMixin",
     "mekanism.MekanismQioNameQueryMixin",
@@ -47,8 +47,7 @@
     "rs2.Rs2FluidGridResourceMixin",
     "rs2.Rs2FluidResourceRenderingMixin",
     "rs2.Rs2ItemResourceRenderingMixin",
-    "rs2.Rs2MekanismChemicalGridResourceMixin",
-    "rs2.Rs2MekanismChemicalResourceRenderingMixin",
+${rs2_mekanism_mixins}
     "integratedterminals.IntegratedTerminalsItemSearchMixin",
     "integratedterminals.IntegratedTerminalsClientFilterMixin",
     "naturescompass.NaturesCompassBiomeUtilsMixin",

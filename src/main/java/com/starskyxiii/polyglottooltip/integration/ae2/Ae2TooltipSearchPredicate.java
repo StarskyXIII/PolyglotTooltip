@@ -1,4 +1,5 @@
 package com.starskyxiii.polyglottooltip.integration.ae2;
+//~ ae_key_rendering_package
 
 import appeng.api.client.AEKeyRendering;
 import appeng.api.stacks.AEKey;

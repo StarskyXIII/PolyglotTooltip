@@ -1,4 +1,5 @@
 package com.starskyxiii.polyglottooltip.integration.jade;
+//~ minecraft_identifier
 
 import com.starskyxiii.polyglottooltip.PolyglotTooltip;
 import com.starskyxiii.polyglottooltip.SecondaryTooltipUtil;

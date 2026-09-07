@@ -1,4 +1,5 @@
 package com.starskyxiii.polyglottooltip.mixin.ae2;
+//~ ae_fluid_renderer
 
 import appeng.api.stacks.AEFluidKey;
 import com.starskyxiii.polyglottooltip.SecondaryTooltipUtil;
@@ -13,7 +14,10 @@ import java.util.List;
 @Mixin(targets = "appeng.init.client.InitStackRenderHandlers$FluidKeyRenderHandler", remap = false)
 public class Ae2FluidKeyRenderHandlerMixin {
 
-    @Inject(method = "getTooltip", at = @At("RETURN"))
+    @Inject(
+            method = "getTooltip(Lappeng/api/stacks/AEFluidKey;)Ljava/util/List;",
+            at = @At("RETURN")
+    )
     private void onGetTooltip(AEFluidKey ingredient, CallbackInfoReturnable<List<Component>> cir) {
         SecondaryTooltipUtil.insertSecondaryName(cir.getReturnValue(), ingredient.toStack(1).getHoverName());
     }

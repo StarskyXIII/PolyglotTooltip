@@ -45,9 +45,20 @@ public final class IntegratedTerminalSearchHelper {
     }
 
     private static boolean matchesMod(ItemStack stack, String query) {
+        //? if >=26 {
+        /*var minecraft = Minecraft.getInstance();
+        if (minecraft.getConnection() == null) {
+            return false;
+        }
+        return matchesText(Optional.ofNullable(stack.getItem().getCreatorModId(
+                        minecraft.getConnection().registryAccess(), stack))
+                .orElse("minecraft")
+                .toLowerCase(Locale.ENGLISH), query);
+        *///?} else {
         return matchesText(Optional.ofNullable(stack.getItem().getCreatorModId(stack))
                 .orElse("minecraft")
                 .toLowerCase(Locale.ENGLISH), query);
+        //?}
     }
 
     private static boolean matchesTooltip(ItemStack stack, String query) {
@@ -68,7 +79,11 @@ public final class IntegratedTerminalSearchHelper {
     private static boolean matchesTags(ItemStack stack, String query) {
         return stack.getItem().builtInRegistryHolder().tags()
                 .filter(tag -> matchesText(tag.location().toString().toLowerCase(Locale.ENGLISH), query))
+                //? if >=26 {
+                /*.anyMatch(tag -> BuiltInRegistries.ITEM.get(tag).isPresent());
+                *///?} else {
                 .anyMatch(tag -> !BuiltInRegistries.ITEM.getTag(tag).isEmpty());
+                //?}
     }
 
     private static boolean matchesSearchText(ItemStack stack, String query) {

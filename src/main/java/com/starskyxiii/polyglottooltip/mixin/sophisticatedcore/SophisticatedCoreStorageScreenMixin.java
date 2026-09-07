@@ -25,11 +25,17 @@ public abstract class SophisticatedCoreStorageScreenMixin {
     @Shadow
     private Predicate<ItemStack> stackFilter;
 
+    //? if >=26 {
+    /*@Inject(method = "updateSearchFilter(Ljava/lang/String;)V", at = @At("TAIL"))
+    *///?} else {
     @Inject(method = "updateSearchFilter", at = @At("HEAD"), cancellable = true)
+    //?}
     private void polyglottooltip$useSecondaryLanguageItemSearch(String searchPhrase, CallbackInfo ci) {
         if (searchPhrase.trim().isEmpty()) {
             stackFilter = stack -> true;
+            //? if <26 {
             ci.cancel();
+            //?}
             return;
         }
 
@@ -52,7 +58,9 @@ public abstract class SophisticatedCoreStorageScreenMixin {
         }
 
         stackFilter = stack -> !stack.isEmpty() && filters.stream().allMatch(filter -> filter.test(stack));
+        //? if <26 {
         ci.cancel();
+        //?}
     }
 
     private static boolean polyglottooltip$matchesItemName(ItemStack stack, String searchTerm) {

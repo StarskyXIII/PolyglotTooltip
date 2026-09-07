@@ -5,6 +5,14 @@ on: [push, pull_request]
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - project: 1.21.1-neoforge
+            java: '21'
+          - project: 26.1.2-neoforge
+            java: '25'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -12,10 +20,10 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
-      - name: Setup JDK 21
+      - name: Setup JDK ${{ matrix.java }}
         uses: actions/setup-java@v4
         with:
-          java-version: '21'
+          java-version: ${{ matrix.java }}
           distribution: 'temurin'
 
       - name: Setup Gradle
@@ -27,4 +35,4 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Build with Gradle
-        run: ./gradlew build
+        run: ./gradlew :${{ matrix.project }}:build

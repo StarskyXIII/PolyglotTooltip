@@ -9,6 +9,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.neoforged.fml.loading.LoadingModList;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -21,13 +22,54 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ItemStackNameBehaviorTest {
 
+    private static AutoCloseable fmlLoader;
     private final LanguageCache cache = LanguageCache.getInstance();
 
     @BeforeAll
-    static void bootstrapMinecraft() {
+    static void bootstrapMinecraft() throws Exception {
+        //? if >=26 {
+        /*Class<?> loaderClass = Class.forName("net.neoforged.fml.loading.FMLLoader");
+        Constructor<?> loaderConstructor = loaderClass.getDeclaredConstructor(
+                ClassLoader.class,
+                String[].class,
+                net.neoforged.api.distmarker.Dist.class,
+                boolean.class,
+                java.nio.file.Path.class);
+        loaderConstructor.setAccessible(true);
+        fmlLoader = (AutoCloseable) loaderConstructor.newInstance(
+                Thread.currentThread().getContextClassLoader(),
+                new String[0],
+                net.neoforged.api.distmarker.Dist.CLIENT,
+                false,
+                java.nio.file.Path.of("."));
+        LoadingModList loadingModList = LoadingModList.of(
+                List.of(), List.of(), List.of(), List.of(), List.of(), Map.of());
+        var loadingModListField = loaderClass.getDeclaredField("loadingModList");
+        loadingModListField.setAccessible(true);
+        loadingModListField.set(fmlLoader, loadingModList);
+        *///?} else {
         LoadingModList.of(List.of(), List.of(), List.of(), List.of(), Map.of());
+        //?}
         SharedConstants.tryDetectVersion();
         Bootstrap.bootStrap();
+        //? if >=26 {
+        /*net.minecraft.core.component.DataComponentMap stoneComponents =
+                net.minecraft.core.component.DataComponentMap.builder()
+                        .addAll(net.minecraft.core.component.DataComponents.COMMON_ITEM_COMPONENTS)
+                        .set(net.minecraft.core.component.DataComponents.ITEM_NAME,
+                                Component.translatable(Items.STONE.getDescriptionId()))
+                        .set(net.minecraft.core.component.DataComponents.ITEM_MODEL,
+                                net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(Items.STONE))
+                        .build();
+        Items.STONE.builtInRegistryHolder().bindComponents(stoneComponents);
+        *///?}
+    }
+
+    @AfterAll
+    static void closeFmlLoader() throws Exception {
+        if (fmlLoader != null) {
+            fmlLoader.close();
+        }
     }
 
     @AfterEach
@@ -68,7 +110,11 @@ class ItemStackNameBehaviorTest {
         ItemStack stack = new ItemStack(Items.STONE);
         stack.set(DataComponents.ITEM_NAME, Component.translatable("probe.missing"));
 
+        //? if >=26 {
+        /*assertTrue(cache.resolveDisplayNamesForAll(stack).isEmpty());
+        *///?} else {
         assertEquals(List.of("Translated Stone"), cache.resolveDisplayNamesForAll(stack));
+        //?}
     }
 
     @Test

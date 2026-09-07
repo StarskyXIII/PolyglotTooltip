@@ -1,4 +1,5 @@
 package com.starskyxiii.polyglottooltip.integration.productivebees;
+//~ minecraft_identifier
 
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
@@ -120,10 +121,17 @@ public final class ProductiveBeesNameHelper {
     private static Optional<String> findBeeType(ItemStack stack) {
         var entityData = stack.get(DataComponents.ENTITY_DATA);
         if (entityData != null) {
+            //? if >=26 {
+            /*Optional<String> type = entityData.getUnsafe().getString("type");
+            if (type.isPresent() && !type.get().isEmpty()) {
+                return type;
+            }
+            *///?} else {
             String type = entityData.getUnsafe().getString("type");
             if (!type.isEmpty()) {
                 return Optional.of(type);
             }
+            //?}
         }
 
         // Look up the productivebees:bee_type DataComponent through the registry.
@@ -131,6 +139,16 @@ public final class ProductiveBeesNameHelper {
         // the suppressed warning is intentional here.
         ResourceLocation beeTypeKey = ResourceLocation.tryParse(BEE_TYPE_COMPONENT_ID);
         if (beeTypeKey != null) {
+            //? if >=26 {
+            /*Optional<? extends DataComponentType<?>> beeTypeComp =
+                    BuiltInRegistries.DATA_COMPONENT_TYPE.get(beeTypeKey).map(reference -> reference.value());
+            if (beeTypeComp.isPresent()) {
+                Object value = stack.get(beeTypeComp.get());
+                if (value != null) {
+                    return Optional.of(value.toString());
+                }
+            }
+            *///?} else {
             @SuppressWarnings("rawtypes")
             DataComponentType beeTypeComp = BuiltInRegistries.DATA_COMPONENT_TYPE.get(beeTypeKey);
             if (beeTypeComp != null) {
@@ -140,6 +158,7 @@ public final class ProductiveBeesNameHelper {
                     return Optional.of(value.toString());
                 }
             }
+            //?}
         }
 
         return Optional.empty();

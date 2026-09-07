@@ -20,6 +20,9 @@ out
 # gradle
 build
 .gradle
+versions/*/build/
+versions/*/logs/
+.sc_active_version
 
 # other
 eclipse

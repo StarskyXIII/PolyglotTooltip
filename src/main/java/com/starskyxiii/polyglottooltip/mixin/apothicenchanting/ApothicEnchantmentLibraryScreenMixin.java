@@ -1,4 +1,5 @@
 package com.starskyxiii.polyglottooltip.mixin.apothicenchanting;
+//~ gui_graphics_extractor
 
 import com.starskyxiii.polyglottooltip.integration.apothicenchanting.ApothicEnchantmentLibraryUtil;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;

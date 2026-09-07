@@ -66,6 +66,13 @@ class ChineseScriptSearchMatcherTest {
     }
 
     @Test
+    void wrappedMatcherPreservesNullPrimaryNameSemantics() {
+        assertTrue(WrappedSearchMatcher.matches("", (String) null, () -> false, List::of));
+        assertTrue(WrappedSearchMatcher.matches("native", (String) null, () -> true, List::of));
+        assertFalse(WrappedSearchMatcher.matches("missing", (String) null, () -> false, List::of));
+    }
+
+    @Test
     void changingConfigRequiresReloadCacheInvalidation() {
         assertFalse(ChineseScriptSearchMatcher.containsMatch(SIMPLIFIED, TRADITIONAL));
 

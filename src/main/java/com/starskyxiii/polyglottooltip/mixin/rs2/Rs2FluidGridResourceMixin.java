@@ -1,4 +1,5 @@
 package com.starskyxiii.polyglottooltip.mixin.rs2;
+//~ rs_fluid_resource
 
 import com.refinedmods.refinedstorage.common.Platform;
 import com.refinedmods.refinedstorage.common.grid.view.FluidGridResource;
