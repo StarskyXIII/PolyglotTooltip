@@ -81,6 +81,9 @@ neoForge {
 
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
+sourceSets.test.compileClasspath += sourceSets.main.compileClasspath
+sourceSets.test.runtimeClasspath += sourceSets.main.runtimeClasspath
+
 // Keep optional dev-only mods on the local runtime classpath without publishing them as dependencies.
 configurations {
     runtimeClasspath.extendsFrom localRuntime
@@ -90,6 +93,10 @@ dependencies {
     def opencc4jVersion = '1.14.0'
     def heavenVersion = '0.13.0'
     def nlpCommonVersion = '0.0.5'
+
+    testImplementation platform('org.junit:junit-bom:5.11.4')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
     // JEI integration: compile against the API, but only load the full mod in local dev runs.
     compileOnly "mezz.jei:jei-${minecraft_version}-common-api:${jei_version}"
@@ -128,6 +135,10 @@ dependencies {
     additionalRuntimeClasspath "com.github.houbb:opencc4j:${opencc4jVersion}"
     additionalRuntimeClasspath "com.github.houbb:heaven:${heavenVersion}"
     additionalRuntimeClasspath "com.github.houbb:nlp-common:${nlpCommonVersion}"
+}
+
+tasks.named('test', Test).configure {
+    useJUnitPlatform()
 }
 
 // Expand mod metadata templates such as neoforge.mods.toml during the build.
