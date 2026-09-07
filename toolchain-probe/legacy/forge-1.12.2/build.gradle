@@ -1,0 +1,95 @@
+plugins {
+    id 'java'
+    id 'net.minecraftforge.gradle'
+    id 'net.minecraftforge.renamer'
+}
+
+base.archivesName = 'polyglottoolchainprobe-forge-1.12.2'
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(8)
+}
+
+sourceSets.main.java.srcDir rootProject.file('shared/src/main/java')
+sourceSets.main.resources.srcDir rootProject.file('shared/src/main/resources')
+
+minecraft {
+    mappings channel: 'srg', version: '1.12.2'
+
+    runs {
+        register('client') {
+            workingDir.convention layout.projectDirectory.dir('run')
+        }
+    }
+}
+
+repositories {
+    minecraft.mavenizer(it)
+    maven fg.forgeMaven
+    maven fg.minecraftLibsMaven
+    maven { url = 'https://repo.spongepowered.org/repository/maven-public/' }
+    mavenCentral()
+}
+
+configurations {
+    embedMixin
+    embedPolicy
+}
+
+dependencies {
+    implementation minecraft.dependency('net.minecraftforge:forge:1.12.2-14.23.5.2864')
+    implementation 'org.spongepowered:mixin:0.8.7'
+    annotationProcessor 'org.spongepowered:mixin:0.8.7:processor'
+    implementation 'com.github.houbb:opencc4j:1.14.0'
+    implementation 'com.github.houbb:heaven:0.13.0'
+    implementation 'com.github.houbb:nlp-common:0.0.5'
+    embedMixin('org.spongepowered:mixin:0.8.7') {
+        transitive = false
+    }
+    embedPolicy('com.github.houbb:opencc4j:1.14.0') { transitive = false }
+    embedPolicy('com.github.houbb:heaven:0.13.0') { transitive = false }
+    embedPolicy('com.github.houbb:nlp-common:0.0.5') { transitive = false }
+}
+
+renamer.enableMixinRefmaps {
+    config 'polyglottoolchainprobe.mixins.json'
+    refMap = 'polyglottoolchainprobe.refmap.json'
+}
+
+renamer.mappings.from minecraft.dependency.toSrgFile
+
+def productionJar = renamer.classes(tasks.named('jar', Jar)) {
+    mappings renamer.mixin.generatedMappings
+    archiveClassifier = 'production'
+}
+
+tasks.named('jar', Jar) {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from({ configurations.embedMixin.collect { zipTree(it) } }) {
+        exclude 'META-INF/*.SF', 'META-INF/*.RSA', 'META-INF/*.DSA', 'META-INF/versions/**', 'module-info.class', 'LICENSE.txt', 'README.md'
+        exclude 'org/spongepowered/asm/launch/MixinLaunchPlugin.class'
+        exclude 'org/spongepowered/asm/launch/MixinTransformationService.class'
+        exclude 'org/spongepowered/asm/launch/platform/container/ContainerHandleModLauncherEx.class'
+        exclude 'org/spongepowered/asm/launch/platform/container/ContainerHandleModLauncherEx$SecureJarResource.class'
+    }
+    from({ configurations.embedPolicy.collect { zipTree(it) } }) {
+        exclude 'META-INF/*.SF', 'META-INF/*.RSA', 'META-INF/*.DSA', 'META-INF/versions/**', 'module-info.class', 'LICENSE.txt', 'README.md'
+    }
+    manifest {
+        attributes(
+            'Manifest-Version': '1.0',
+            'TweakClass': 'org.spongepowered.asm.launch.MixinTweaker',
+            'TweakOrder': '0',
+            'MixinConfigs': 'polyglottoolchainprobe.mixins.json',
+            'ForceLoadAsMod': 'true'
+        )
+    }
+}
+
+tasks.named('build') {
+    dependsOn productionJar
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}

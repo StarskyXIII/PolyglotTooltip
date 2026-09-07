@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.starskyxiii.polyglottoolchainprobe.forge116.mixin",
+  "refmap": "polyglottoolchainprobe.refmap.json",
+  "compatibilityLevel": "JAVA_8",
+  "client": [
+    "MinecraftMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
+

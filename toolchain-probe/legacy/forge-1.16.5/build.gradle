@@ -1,0 +1,80 @@
+plugins {
+    id 'java'
+    id 'net.minecraftforge.gradle'
+    id 'net.minecraftforge.renamer'
+}
+
+base.archivesName = 'polyglottoolchainprobe-forge-1.16.5'
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(8)
+}
+
+sourceSets.main.java.srcDir rootProject.file('shared/src/main/java')
+sourceSets.main.resources.srcDir rootProject.file('shared/src/main/resources')
+
+minecraft {
+    mappings channel: 'official', version: '1.16.5'
+
+    runs {
+        register('client') {
+            workingDir.convention layout.projectDirectory.dir('run')
+        }
+    }
+}
+
+repositories {
+    minecraft.mavenizer(it)
+    maven fg.forgeMaven
+    maven fg.minecraftLibsMaven
+    maven { url = 'https://repo.spongepowered.org/repository/maven-public/' }
+    mavenCentral()
+}
+
+configurations {
+    embedPolicy
+}
+
+dependencies {
+    implementation minecraft.dependency('net.minecraftforge:forge:1.16.5-36.2.42')
+    annotationProcessor 'org.spongepowered:mixin:0.8.7:processor'
+    implementation 'com.github.houbb:opencc4j:1.14.0'
+    implementation 'com.github.houbb:heaven:0.13.0'
+    implementation 'com.github.houbb:nlp-common:0.0.5'
+    embedPolicy('com.github.houbb:opencc4j:1.14.0') { transitive = false }
+    embedPolicy('com.github.houbb:heaven:0.13.0') { transitive = false }
+    embedPolicy('com.github.houbb:nlp-common:0.0.5') { transitive = false }
+}
+
+renamer.enableMixinRefmaps {
+    config 'polyglottoolchainprobe.mixins.json'
+    refMap = 'polyglottoolchainprobe.refmap.json'
+}
+
+renamer.mappings.from minecraft.dependency.toSrgFile
+
+def productionJar = renamer.classes(tasks.named('jar', Jar)) {
+    mappings renamer.mixin.generatedMappings
+    archiveClassifier = 'production'
+}
+
+tasks.named('jar', Jar) {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from({ configurations.embedPolicy.collect { zipTree(it) } }) {
+        exclude 'META-INF/*.SF', 'META-INF/*.RSA', 'META-INF/*.DSA', 'META-INF/versions/**', 'module-info.class', 'LICENSE.txt', 'README.md'
+    }
+    manifest {
+        attributes(
+            'Manifest-Version': '1.0',
+            'MixinConfigs': 'polyglottoolchainprobe.mixins.json'
+        )
+    }
+}
+
+tasks.named('build') {
+    dependsOn productionJar
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}

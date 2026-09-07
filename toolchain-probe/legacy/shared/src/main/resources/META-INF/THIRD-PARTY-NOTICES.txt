@@ -1,0 +1,21 @@
+Bundled libraries
+
+opencc4j 1.14.0
+Copyright Houbb and contributors
+https://github.com/houbb/opencc4j
+License: Apache License 2.0 (see LICENSE-Apache-2.0.txt)
+
+heaven 0.13.0
+Copyright Houbb and contributors
+https://github.com/houbb/heaven
+License: Apache License 2.0 (see LICENSE-Apache-2.0.txt)
+
+nlp-common 0.0.5
+Copyright Houbb and contributors
+https://github.com/houbb/nlp-common
+License: Apache License 2.0 (see LICENSE-Apache-2.0.txt)
+
+The Forge 1.12.2 artifact also bundles Mixin 0.8.7.
+https://github.com/SpongePowered/Mixin
+License: MIT (see LICENSE-Mixin.txt)
+

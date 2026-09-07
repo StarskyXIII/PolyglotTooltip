@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.starskyxiii.polyglottoolchainprobe.mixin",
+  "compatibilityLevel": "${java_level}",
+${refmap_entry}  "client": [
+    "MinecraftConstructorMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

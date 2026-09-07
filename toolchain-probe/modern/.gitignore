@@ -1,0 +1,4 @@
+.sc_active_version
+.gradle/
+build/
+versions/*/build/
