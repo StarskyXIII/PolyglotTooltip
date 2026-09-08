@@ -9,7 +9,12 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.material.FluidState;
+//? fabric {
+/*import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariantAttributes;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
+*///?} else {
 import net.neoforged.neoforge.fluids.FluidStack;
+//?}
 import snownee.jade.api.BlockAccessor;
 import snownee.jade.api.IBlockComponentProvider;
 import snownee.jade.api.ITooltip;
@@ -21,8 +26,13 @@ import java.util.List;
 public enum JadeBlockNameProvider implements IBlockComponentProvider {
     INSTANCE;
 
-    private static final ResourceLocation UID = ResourceLocation.parse(PolyglotTooltip.MODID + ":jade_block_name");
-    private static final ResourceLocation SECONDARY_NAME_TAG = ResourceLocation.parse(PolyglotTooltip.MODID + ":jade_secondary_name");
+    //? if <=1.20.1 {
+    /*private static final ResourceLocation UID = new ResourceLocation(PolyglotTooltip.MODID, "jade_block_name");
+    private static final ResourceLocation SECONDARY_NAME_TAG = new ResourceLocation(PolyglotTooltip.MODID, "jade_secondary_name");
+    *///?} else {
+    private static final ResourceLocation UID = ResourceLocation.fromNamespaceAndPath(PolyglotTooltip.MODID, "jade_block_name");
+    private static final ResourceLocation SECONDARY_NAME_TAG = ResourceLocation.fromNamespaceAndPath(PolyglotTooltip.MODID, "jade_secondary_name");
+    //?}
 
     @Override
     public void appendTooltip(ITooltip tooltip, BlockAccessor accessor, IPluginConfig config) {
@@ -56,8 +66,13 @@ public enum JadeBlockNameProvider implements IBlockComponentProvider {
         if (accessor.getBlock() instanceof LiquidBlock) {
             FluidState fluidState = accessor.getBlockState().getFluidState();
             if (!fluidState.isEmpty()) {
+                //? fabric {
+                /*FluidVariant fluidVariant = FluidVariant.of(fluidState.getType());
+                Component primary = FluidVariantAttributes.getName(fluidVariant);
+                *///?} else {
                 FluidStack fluidStack = new FluidStack(fluidState.getType(), 1);
                 Component primary = fluidState.getType().getFluidType().getDescription(fluidStack);
+                //?}
                 return new ResolvedNames(primary, LanguageCache.getInstance().resolveComponentsForAll(primary));
             }
         }

@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
 
+//? !fabric {
 //? if <=1.20.1 {
 /*import net.neoforged.api.distmarker.Dist;
 import net.neoforged.fml.DistExecutor;
@@ -16,12 +17,16 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
+//?}
 
+//? !fabric {
 @Mod(PolyglotTooltip.MODID)
+//?}
 public class PolyglotTooltip {
     public static final String MODID = "polyglottooltip";
     public static final Logger LOGGER = LogUtils.getLogger();
 
+    //? !fabric {
     //? if <=1.20.1 {
     /*public PolyglotTooltip() {
         registerConfig(ModConfig.Type.CLIENT, Config.SPEC);
@@ -38,5 +43,6 @@ public class PolyglotTooltip {
     public PolyglotTooltip(IEventBus modEventBus, ModContainer modContainer) {
         modContainer.registerConfig(ModConfig.Type.CLIENT, Config.SPEC);
     }
+    //?}
     //?}
 }

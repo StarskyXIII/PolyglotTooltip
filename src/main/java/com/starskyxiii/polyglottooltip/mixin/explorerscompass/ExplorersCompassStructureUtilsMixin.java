@@ -13,7 +13,13 @@ import org.spongepowered.asm.mixin.injection.At;
 public abstract class ExplorersCompassStructureUtilsMixin {
 
     @ModifyReturnValue(
-            method = "getPrettyStructureName(Lnet/minecraft/resources/ResourceLocation;)Ljava/lang/String;",
+            //? if fabric {
+            /*method = "getStructureName",
+            *///?} else if >=26 {
+            /*method = "getStructureName",
+            *///?} else {
+            method = "getPrettyStructureName",
+            //?}
             at = @At("RETURN")
     )
     private static String polyglottooltip$appendSecondaryStructureNames(String original, ResourceLocation key) {

@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "id": "polyglottooltip",
+  "version": "${mod_version}",
+  "name": "Polyglot Tooltip",
+  "description": "Shows item names in additional languages and extends supported mod searches.",
+  "authors": ["StarskyXIII"],
+  "contact": {
+    "sources": "https://github.com/StarskyXIII/PolyglotTooltip"
+  },
+  "license": "MIT",
+  "icon": "icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "com.starskyxiii.polyglottooltip.FabricPolyglotTooltipClient"
+    ],
+    "jade": [
+      "com.starskyxiii.polyglottooltip.integration.jade.PolyglotTooltipJadePlugin"
+    ],
+    "jei_mod_plugin": [
+      "com.starskyxiii.polyglottooltip.integration.jei.PolyglotJeiRuntimePlugin"
+    ]
+  },
+  "mixins": [
+    "polyglottooltip.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric-api": ">=${fabric_api_version}",
+    "mixinextras": ">=0.5.5",
+    "minecraft": "=${minecraft_version}",
+    "java": ">=${java_version}"
+  }
+}

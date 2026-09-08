@@ -18,8 +18,13 @@ import java.util.List;
 public enum JadeEntityNameProvider implements IEntityComponentProvider {
     INSTANCE;
 
-    private static final ResourceLocation UID = ResourceLocation.parse(PolyglotTooltip.MODID + ":jade_entity_name");
-    private static final ResourceLocation SECONDARY_NAME_TAG = ResourceLocation.parse(PolyglotTooltip.MODID + ":jade_entity_secondary_name");
+    //? if <=1.20.1 {
+    /*private static final ResourceLocation UID = new ResourceLocation(PolyglotTooltip.MODID, "jade_entity_name");
+    private static final ResourceLocation SECONDARY_NAME_TAG = new ResourceLocation(PolyglotTooltip.MODID, "jade_entity_secondary_name");
+    *///?} else {
+    private static final ResourceLocation UID = ResourceLocation.fromNamespaceAndPath(PolyglotTooltip.MODID, "jade_entity_name");
+    private static final ResourceLocation SECONDARY_NAME_TAG = ResourceLocation.fromNamespaceAndPath(PolyglotTooltip.MODID, "jade_entity_secondary_name");
+    //?}
 
     @Override
     public void appendTooltip(ITooltip tooltip, EntityAccessor accessor, IPluginConfig config) {

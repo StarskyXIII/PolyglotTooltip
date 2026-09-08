@@ -13,11 +13,13 @@ class JeiSearchRefreshBridgeTest {
     @BeforeEach
     void startWithoutRefreshActions() {
         JeiSearchRefreshBridge.clearRefreshActions();
+        JeiSearchRefreshBridge.clearEmiRefreshActions();
     }
 
     @AfterEach
     void clearRefreshActions() {
         JeiSearchRefreshBridge.clearRefreshActions();
+        JeiSearchRefreshBridge.clearEmiRefreshActions();
     }
 
     @Test
@@ -70,5 +72,66 @@ class JeiSearchRefreshBridgeTest {
         JeiSearchRefreshBridge.rebuildSearchIndex();
 
         assertEquals(0, calls.get());
+    }
+
+    @Test
+    void dispatchesToEmiWithoutJeiRuntime() {
+        AtomicInteger emiRefreshCalls = new AtomicInteger();
+        AtomicInteger emiRebuildCalls = new AtomicInteger();
+        JeiSearchRefreshBridge.setEmiRefreshActions(
+                emiRefreshCalls::incrementAndGet,
+                emiRebuildCalls::incrementAndGet);
+
+        JeiSearchRefreshBridge.refreshResults();
+        JeiSearchRefreshBridge.rebuildSearchIndex();
+
+        assertEquals(1, emiRefreshCalls.get());
+        assertEquals(1, emiRebuildCalls.get());
+    }
+
+    @Test
+    void dispatchesToJeiAndEmiWhenBothAreIndependent() {
+        AtomicInteger jeiCalls = new AtomicInteger();
+        AtomicInteger emiCalls = new AtomicInteger();
+        JeiSearchRefreshBridge.setRefreshActions(jeiCalls::incrementAndGet, jeiCalls::incrementAndGet);
+        JeiSearchRefreshBridge.setEmiRefreshActions(emiCalls::incrementAndGet, emiCalls::incrementAndGet);
+
+        JeiSearchRefreshBridge.refreshResults();
+        JeiSearchRefreshBridge.rebuildSearchIndex();
+
+        assertEquals(2, jeiCalls.get());
+        assertEquals(2, emiCalls.get());
+    }
+
+    @Test
+    void jemiRuntimeHandlesEmiExactlyOnce() {
+        AtomicInteger jemiCalls = new AtomicInteger();
+        AtomicInteger emiCalls = new AtomicInteger();
+        JeiSearchRefreshBridge.setRefreshActions(
+                jemiCalls::incrementAndGet,
+                jemiCalls::incrementAndGet,
+                true);
+        JeiSearchRefreshBridge.setEmiRefreshActions(emiCalls::incrementAndGet, emiCalls::incrementAndGet);
+
+        JeiSearchRefreshBridge.refreshResults();
+        JeiSearchRefreshBridge.rebuildSearchIndex();
+
+        assertEquals(2, jemiCalls.get());
+        assertEquals(0, emiCalls.get());
+    }
+
+    @Test
+    void clearingRuntimePreservesStandaloneEmiActions() {
+        AtomicInteger runtimeCalls = new AtomicInteger();
+        AtomicInteger emiCalls = new AtomicInteger();
+        JeiSearchRefreshBridge.setRefreshActions(runtimeCalls::incrementAndGet, runtimeCalls::incrementAndGet);
+        JeiSearchRefreshBridge.setEmiRefreshActions(emiCalls::incrementAndGet, emiCalls::incrementAndGet);
+
+        JeiSearchRefreshBridge.clearRefreshActions();
+        JeiSearchRefreshBridge.refreshResults();
+        JeiSearchRefreshBridge.rebuildSearchIndex();
+
+        assertEquals(0, runtimeCalls.get());
+        assertEquals(2, emiCalls.get());
     }
 }

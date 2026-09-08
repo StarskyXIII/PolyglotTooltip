@@ -74,17 +74,18 @@ class LanguageCacheComponentTest {
 
     private static ClientLanguage language(Map<String, String> translations) {
         try {
-            //? if <=1.20.1 {
-            /*Constructor<ClientLanguage> constructor = ClientLanguage.class.getDeclaredConstructor(
+            Constructor<ClientLanguage> constructor;
+            try {
+                constructor = ClientLanguage.class.getDeclaredConstructor(
                     Map.class, boolean.class);
+            } catch (NoSuchMethodException exception) {
+                constructor = ClientLanguage.class.getDeclaredConstructor(
+                        Map.class, boolean.class, Map.class);
+            }
             constructor.setAccessible(true);
-            return constructor.newInstance(translations, false);
-            *///?} else {
-            Constructor<ClientLanguage> constructor = ClientLanguage.class.getDeclaredConstructor(
-                    Map.class, boolean.class, Map.class);
-            constructor.setAccessible(true);
-            return constructor.newInstance(translations, false, Map.of());
-            //?}
+            return constructor.getParameterCount() == 2
+                    ? constructor.newInstance(translations, false)
+                    : constructor.newInstance(translations, false, Map.of());
         } catch (ReflectiveOperationException exception) {
             throw new AssertionError("ClientLanguage could not be constructed", exception);
         }

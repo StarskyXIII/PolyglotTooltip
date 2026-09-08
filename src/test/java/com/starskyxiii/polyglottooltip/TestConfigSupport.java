@@ -1,8 +1,10 @@
 package com.starskyxiii.polyglottooltip;
 
+//? !fabric {
 import com.electronwill.nightconfig.core.CommentedConfig;
+//?}
 import com.starskyxiii.polyglottooltip.search.ChineseScriptSearchMatcher;
-//? if >1.20.1 {
+//? if !fabric && >1.20.1 {
 import net.neoforged.fml.config.IConfigSpec;
 import net.neoforged.fml.config.ModConfig;
 
@@ -20,14 +22,23 @@ public final class TestConfigSupport {
     }
 
     public static void load(boolean chineseScriptMatching, String tooltipFormat, String jadeFormat) {
+        //? fabric {
+        /*Config.ENABLE_CHINESE_SCRIPT_MATCHING.set(chineseScriptMatching);
+        Config.TOOLTIP_SECONDARY_NAME_FORMAT.set(tooltipFormat);
+        Config.JADE_SECONDARY_NAME_FORMAT.set(jadeFormat);
+        *///?} else if <=1.20.1 {
+        /*CommentedConfig config = CommentedConfig.inMemory();
+        config.set("enableChineseScriptMatching", chineseScriptMatching);
+        config.set("tooltipSecondaryNameFormat", tooltipFormat);
+        config.set("jadeSecondaryNameFormat", jadeFormat);
+        Config.SPEC.correct(config);
+        Config.SPEC.acceptConfig(config);
+        *///?} else {
         CommentedConfig config = CommentedConfig.inMemory();
         config.set("enableChineseScriptMatching", chineseScriptMatching);
         config.set("tooltipSecondaryNameFormat", tooltipFormat);
         config.set("jadeSecondaryNameFormat", jadeFormat);
         Config.SPEC.correct(config);
-        //? if <=1.20.1 {
-        /*Config.SPEC.acceptConfig(config);
-        *///?} else {
         Config.SPEC.acceptConfig(createLoadedConfig(config));
         //?}
         ChineseScriptSearchMatcher.clearCaches();
@@ -37,7 +48,7 @@ public final class TestConfigSupport {
         Config.ENABLE_CHINESE_SCRIPT_MATCHING.set(enabled);
     }
 
-    //? if >1.20.1 {
+    //? if !fabric && >1.20.1 {
     private static IConfigSpec.ILoadedConfig createLoadedConfig(CommentedConfig config) {
         try {
             Class<?> loadedConfigClass = Class.forName("net.neoforged.fml.config.LoadedConfig");

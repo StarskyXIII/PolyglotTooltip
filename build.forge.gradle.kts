@@ -118,6 +118,16 @@ renamer.mappings.from(minecraft.dependency.toSrgFile)
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 sourceSets.main {
+    java.exclude(
+        "com/starskyxiii/polyglottooltip/FabricConfigValue.java",
+        "com/starskyxiii/polyglottooltip/FabricConfigStore.java",
+        "com/starskyxiii/polyglottooltip/FabricPolyglotTooltipClient.java",
+        "com/starskyxiii/polyglottooltip/integration/jei/FabricJeiFluidNameHelper.java",
+        "com/starskyxiii/polyglottooltip/mixin/jei/FabricJeiFluidHelperMixin.java",
+        "com/starskyxiii/polyglottooltip/mixin/jei/FabricJeiListElementInfoMixin.java",
+        "com/starskyxiii/polyglottooltip/mixin/ae2/FabricAe2PatternAccessSearchMixin.java",
+        "com/starskyxiii/polyglottooltip/mixin/ae2/ExtendedAePatternTerminalSearchMixin.java"
+    )
     java.exclude("com/starskyxiii/polyglottooltip/integration/rs2/**")
     java.exclude("com/starskyxiii/polyglottooltip/mixin/rs2/**")
     java.exclude("com/starskyxiii/polyglottooltip/mixin/mekanism/MekanismChemicalStackMixin.java")
@@ -125,6 +135,7 @@ sourceSets.main {
     resources.srcDir("src/main/templates")
 }
 sourceSets.test {
+    java.exclude("com/starskyxiii/polyglottooltip/FabricConfigStoreTest.java")
     compileClasspath += sourceSets.main.get().compileClasspath
     runtimeClasspath += sourceSets.main.get().runtimeClasspath
 }

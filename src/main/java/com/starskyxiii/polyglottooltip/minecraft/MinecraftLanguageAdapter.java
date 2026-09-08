@@ -7,6 +7,10 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.language.ClientLanguage;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.minecraft.server.packs.resources.ResourceManager;
+//? if fabric && <26 {
+/*import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;
+import net.minecraft.resources.ResourceLocation;
+*///?}
 //? if <26 {
 import net.minecraft.util.profiling.ProfilerFiller;
 //?}
@@ -18,7 +22,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-public final class MinecraftLanguageAdapter implements PreparableReloadListener {
+public final class MinecraftLanguageAdapter implements PreparableReloadListener
+        //? if fabric && <26
+        //, IdentifiableResourceReloadListener
+{
     private static final MinecraftLanguageAdapter INSTANCE = new MinecraftLanguageAdapter();
 
     private final List<Runnable> dependentCacheInvalidators = new ArrayList<>();
@@ -30,6 +37,17 @@ public final class MinecraftLanguageAdapter implements PreparableReloadListener 
     public static MinecraftLanguageAdapter getInstance() {
         return INSTANCE;
     }
+
+    //? if fabric && <26 {
+    /*@Override
+    public ResourceLocation getFabricId() {
+        //? if <=1.20.1 {
+        /^return new ResourceLocation(PolyglotTooltip.MODID, "language_cache");
+        ^///?} else {
+        return ResourceLocation.fromNamespaceAndPath(PolyglotTooltip.MODID, "language_cache");
+        //?}
+    }
+    *///?}
 
     public void configureLanguages(Supplier<? extends List<? extends String>> configuredLanguages) {
         this.configuredLanguages = Objects.requireNonNull(configuredLanguages);

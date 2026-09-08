@@ -1,11 +1,31 @@
 package com.starskyxiii.polyglottooltip;
 //~ forge_neoforge_package
 
+//? fabric {
+/*import java.nio.file.Path;
+*///?} else {
 import net.neoforged.neoforge.common.ModConfigSpec;
+//?}
 
 import java.util.List;
 
 public class Config {
+    //? fabric {
+    /*public static final FabricConfigValue<List<? extends String>> DISPLAY_LANGUAGE =
+            new FabricConfigValue<>(List.of("en_us"));
+    public static final FabricConfigValue<Boolean> ALWAYS_SHOW = new FabricConfigValue<>(false);
+    public static final FabricConfigValue<Boolean> ENABLE_CHINESE_SCRIPT_MATCHING = new FabricConfigValue<>(true);
+    public static final FabricConfigValue<String> TOOLTIP_SECONDARY_NAME_FORMAT = new FabricConfigValue<>("&7");
+    public static final FabricConfigValue<String> JADE_SECONDARY_NAME_FORMAT = new FabricConfigValue<>("&7");
+
+    public static FabricConfigStore.LoadResult load(Path path) {
+        return FabricConfigStore.load(path);
+    }
+
+    public static void save(Path path) {
+        FabricConfigStore.save(path);
+    }
+    *///?} else {
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
     private static final String CONFIG_TRANSLATION_PREFIX = "polyglottooltip.configuration.";
 
@@ -59,4 +79,5 @@ public class Config {
         return builder.define("enableChineseScriptMatching", false);
         //?}
     }
+    //?}
 }

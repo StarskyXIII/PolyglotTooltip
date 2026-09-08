@@ -3,16 +3,25 @@ package com.starskyxiii.polyglottooltip.integration.emi;
 import net.minecraft.network.chat.Component;
 import net.minecraft.tags.TagKey;
 
+//? fabric {
+/*import dev.emi.emi.runtime.EmiTagKey;
+*///?} else {
 import java.lang.reflect.Method;
+//?}
 
 public final class EmiTagNameHelper {
 
+    //? !fabric {
     private static volatile Method getTagNameMethod;
+    //?}
 
     private EmiTagNameHelper() {
     }
 
     public static Component getTagName(TagKey<?> key) {
+        //? fabric {
+        /*return EmiTagKey.of(key).getTagName();
+        *///?} else {
         try {
             Method method = getTagNameMethod;
             if (method == null) {
@@ -32,5 +41,6 @@ public final class EmiTagNameHelper {
         } catch (ReflectiveOperationException ignored) {
         }
         return Component.literal("#" + key.location());
+        //?}
     }
 }

@@ -16,18 +16,32 @@ import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.injection.At;
 
 @Pseudo
+//? if fabric && <26 {
+/*@Mixin(targets = "com.chaosthedude.naturescompass.utils.BiomeUtils", remap = false)
+*///?} else {
 @Mixin(targets = "com.chaosthedude.naturescompass.util.BiomeUtils", remap = false)
+//?}
 public abstract class NaturesCompassBiomeUtilsMixin {
 
     @ModifyReturnValue(
-            //? if >=26 {
+            //? if fabric && >=1.21.1 && <26 {
+            /*method = "getBiomeNameForDisplay(Lnet/minecraft/world/level/Level;Lnet/minecraft/resources/ResourceLocation;)Ljava/lang/String;",
+            *///?} else if fabric {
+            /*method = "getBiomeNameForDisplay",
+            *///?} else if >=26 {
             /*method = "getBiomeNameForDisplay(Lnet/minecraft/world/level/Level;Lnet/minecraft/resources/ResourceLocation;)Ljava/lang/String;",
             *///?} else {
             method = "getBiomeNameForDisplay(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/level/biome/Biome;)Ljava/lang/String;",
             //?}
             at = @At("RETURN")
     )
-    //? if >=26 {
+    //? if fabric {
+    /*private static String polyglottooltip$appendSecondaryBiomeNames(String original, Level level, ResourceLocation biomeId) {
+        if (level == null || biomeId == null) {
+            return original;
+        }
+        return CompassNameHelper.appendBiomeSecondaryNames(biomeId, original);
+    *///?} else if >=26 {
     /*private static String polyglottooltip$appendSecondaryBiomeNames(String original, Level level, ResourceLocation biomeId) {
         if (level == null || biomeId == null) {
             return original;

@@ -1,6 +1,7 @@
 package com.starskyxiii.polyglottooltip.integration.controlling;
 //~ keybinds_list_package
 
+import com.mojang.blaze3d.platform.InputConstants;
 import com.starskyxiii.polyglottooltip.search.SearchTextCollector;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.gui.screens.options.controls.KeyBindsList;
@@ -23,6 +24,12 @@ public final class ControllingSearchUtil {
     private static final String CATEGORY_ENTRY = "com.blamejared.controlling.api.entries.ICategoryEntry";
     private static final String KEY_ENTRY = "com.blamejared.controlling.api.entries.IKeyEntry";
     private static final String INPUT_ENTRY = "com.blamejared.controlling.api.entries.IInputEntry";
+    private static final String LEGACY_CATEGORY_ENTRY =
+            "com.blamejared.controlling.client.NewKeyBindsList$CategoryEntry";
+    private static final String LEGACY_KEY_ENTRY =
+            "com.blamejared.controlling.client.NewKeyBindsList$KeyEntry";
+    private static final String LEGACY_INPUT_ENTRY =
+            "com.blamejared.controlling.client.FreeKeysList$InputEntry";
 
     private static final Map<String, Method> METHOD_CACHE = new ConcurrentHashMap<>();
 
@@ -30,14 +37,14 @@ public final class ControllingSearchUtil {
     }
 
     public static Optional<String> resolveCategoryText(KeyBindsList.Entry entry) {
-        if (hasType(entry, CATEGORY_ENTRY)) {
+        if (isCategoryEntry(entry)) {
             //? if >=26 {
             /*return categoryComponent(entry).flatMap(ControllingSearchUtil::componentText);
             *///?} else {
             return componentText(invokeMethod(entry, "name").orElse(null));
             //?}
         }
-        if (hasType(entry, KEY_ENTRY)) {
+        if (isKeyEntry(entry)) {
             return componentText(invokeMethod(entry, "categoryName").orElse(null));
         }
         return Optional.empty();
@@ -50,13 +57,16 @@ public final class ControllingSearchUtil {
     }
 
     public static Optional<String> resolveKeyText(KeyBindsList.Entry entry) {
-        if (!hasType(entry, KEY_ENTRY)) {
+        if (!isKeyEntry(entry)) {
             return Optional.empty();
         }
 
         return invokeMethod(entry, "getKey")
                 .filter(KeyMapping.class::isInstance)
                 .map(KeyMapping.class::cast)
+                //? if >=26 {
+                /*.filter(mapping -> !mapping.isUnbound())
+                *///?}
                 .map(mapping -> mapping.getTranslatedKeyMessage().getString());
     }
 
@@ -67,18 +77,15 @@ public final class ControllingSearchUtil {
     }
 
     public static Optional<String> resolveNameText(KeyBindsList.Entry entry) {
-        if (hasType(entry, KEY_ENTRY)) {
+        if (isKeyEntry(entry)) {
             //? if >=26 {
             /*return componentText(invokeMethod(entry, "getName").orElse(null));
             *///?} else {
             return componentText(invokeMethod(entry, "getKeyDesc").orElse(null));
             //?}
         }
-        if (hasType(entry, INPUT_ENTRY)) {
-            return invokeMethod(entry, "getInput")
-                    .flatMap(input -> invokeMethod(input, "getName"))
-                    .filter(String.class::isInstance)
-                    .map(String.class::cast);
+        if (isInputEntry(entry)) {
+            return inputName(entry);
         }
         return Optional.empty();
     }
@@ -90,55 +97,76 @@ public final class ControllingSearchUtil {
     }
 
     private static Optional<String> resolveCategorySearchText(KeyBindsList.Entry entry) {
-        if (hasType(entry, CATEGORY_ENTRY)) {
+        if (isCategoryEntry(entry)) {
             //? if >=26 {
             /*return categoryComponent(entry).flatMap(ControllingSearchUtil::componentSearchText);
             *///?} else {
             return componentSearchText(invokeMethod(entry, "name").orElse(null));
             //?}
         }
-        if (hasType(entry, KEY_ENTRY)) {
+        if (isKeyEntry(entry)) {
             return componentSearchText(invokeMethod(entry, "categoryName").orElse(null));
         }
         return Optional.empty();
     }
 
     private static Optional<String> resolveKeySearchText(KeyBindsList.Entry entry) {
-        if (!hasType(entry, KEY_ENTRY)) {
+        if (!isKeyEntry(entry)) {
             return Optional.empty();
         }
 
         return invokeMethod(entry, "getKey")
                 .filter(KeyMapping.class::isInstance)
                 .map(KeyMapping.class::cast)
+                //? if >=26 {
+                /*.filter(mapping -> !mapping.isUnbound())
+                *///?}
                 .map(KeyMapping::getTranslatedKeyMessage)
                 .flatMap(ControllingSearchUtil::componentSearchText);
     }
 
     private static Optional<String> resolveNameSearchText(KeyBindsList.Entry entry) {
-        if (hasType(entry, KEY_ENTRY)) {
+        if (isKeyEntry(entry)) {
             //? if >=26 {
             /*return componentSearchText(invokeMethod(entry, "getName").orElse(null));
             *///?} else {
             return componentSearchText(invokeMethod(entry, "getKeyDesc").orElse(null));
             //?}
         }
-        if (hasType(entry, INPUT_ENTRY)) {
-            return invokeMethod(entry, "getInput")
-                    .flatMap(input -> invokeMethod(input, "getName"))
-                    .filter(String.class::isInstance)
-                    .map(String.class::cast)
+        if (isInputEntry(entry)) {
+            return inputName(entry)
                     .flatMap(ControllingSearchUtil::stringSearchText);
         }
         return Optional.empty();
     }
 
     //? if >=26 {
-    /*private static Optional<Object> categoryComponent(KeyBindsList.Entry entry) {
+    /*private static Optional<Component> categoryComponent(KeyBindsList.Entry entry) {
         return invokeMethod(entry, "category")
-                .flatMap(category -> invokeMethod(category, "label"));
+                .filter(KeyMapping.Category.class::isInstance)
+                .map(KeyMapping.Category.class::cast)
+                .map(KeyMapping.Category::label);
     }
     *///?}
+
+    private static Optional<String> inputName(KeyBindsList.Entry entry) {
+        return invokeMethod(entry, "getInput")
+                .filter(InputConstants.Key.class::isInstance)
+                .map(InputConstants.Key.class::cast)
+                .map(InputConstants.Key::getName);
+    }
+
+    private static boolean isCategoryEntry(KeyBindsList.Entry entry) {
+        return hasType(entry, CATEGORY_ENTRY) || hasType(entry, LEGACY_CATEGORY_ENTRY);
+    }
+
+    private static boolean isKeyEntry(KeyBindsList.Entry entry) {
+        return hasType(entry, KEY_ENTRY) || hasType(entry, LEGACY_KEY_ENTRY);
+    }
+
+    private static boolean isInputEntry(KeyBindsList.Entry entry) {
+        return hasType(entry, INPUT_ENTRY) || hasType(entry, LEGACY_INPUT_ENTRY);
+    }
 
     private static Optional<String> componentSearchText(Object value) {
         if (!(value instanceof Component component)) {

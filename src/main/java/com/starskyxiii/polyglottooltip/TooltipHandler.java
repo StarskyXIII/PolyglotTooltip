@@ -59,17 +59,7 @@ public class TooltipHandler {
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onItemTooltip(ItemTooltipEvent event) {
-        if (event.getItemStack().isEmpty()) return;
-        if (!SecondaryTooltipUtil.shouldShowSecondaryLanguage()) return;
-
-        LanguageCache cache = LanguageCache.getInstance();
-        List<Component> tooltip = event.getToolTip();
-
-        // Insert secondary item names near the top of the tooltip.
-        SecondaryTooltipUtil.insertSecondaryName(tooltip, event.getItemStack());
-
-        // Append secondary-language names to matching enchantment lines.
-        processEnchantments(event.getItemStack(), tooltip, cache);
+        ItemTooltipAppender.append(event.getItemStack(), event.getToolTip());
     }
 
     //? if >=26 {
@@ -100,84 +90,6 @@ public class TooltipHandler {
         int targetIndex = findInsertionIndexAfterTitleAttachments(elements);
         for (int i = secondaryLines.size() - 1; i >= 0; i--) {
             elements.add(targetIndex, secondaryLines.get(i));
-        }
-    }
-
-    /**
-     * For each enchantment on {@code stack} (including stored enchantments on books),
-     * finds the matching tooltip line and appends the secondary-language names
-     * joined by the tooltip separator.
-     * Lines with no secondary-language translation are left unchanged.
-     */
-    private static void processEnchantments(ItemStack stack, List<Component> tooltip, LanguageCache cache) {
-        //? if <=1.20.1 {
-        /*Map<Enchantment, Integer> enchants = EnchantmentHelper.getEnchantments(stack);
-        if (enchants.isEmpty()) return;
-        *///?} else {
-        ItemEnchantments enchants = stack.getOrDefault(DataComponents.ENCHANTMENTS, ItemEnchantments.EMPTY);
-        ItemEnchantments stored  = stack.getOrDefault(DataComponents.STORED_ENCHANTMENTS, ItemEnchantments.EMPTY);
-        //?}
-
-        // Map current-language enchantment lines to their joined secondary-language text.
-        Map<String, String> nameMap = new HashMap<>();
-        fillEnchantmentNames(enchants, nameMap, cache);
-        //? if >1.20.1 {
-        fillEnchantmentNames(stored, nameMap, cache);
-        //?}
-        if (nameMap.isEmpty()) return;
-
-        for (int i = 0; i < tooltip.size(); i++) {
-            Component originalLine = tooltip.get(i);
-            String lineText = originalLine.getString();
-            String secondary = nameMap.get(lineText);
-            if (secondary != null) {
-                Style originalStyle = originalLine.getStyle();
-                Component appendedPart = Component.empty()
-                        .append(Component.literal("｜").withStyle(ChatFormatting.GRAY))
-                        .append(Component.literal(secondary).withStyle(originalStyle));
-                tooltip.set(i, originalLine.copy().append(appendedPart));
-            }
-        }
-    }
-
-    /**
-     * Populates {@code nameMap} with entries for each enchantment in {@code enchants}.
-     * An entry maps the current-language full name to all secondary-language names
-     * joined by the same separator used in the tooltip.
-     */
-    //? if <=1.20.1 {
-    /*private static void fillEnchantmentNames(Map<Enchantment, Integer> enchants,
-                                             Map<String, String> nameMap,
-                                             LanguageCache cache) {
-        for (var entry : enchants.entrySet()) {
-            Enchantment enchantment = entry.getKey();
-            int level = entry.getValue();
-            Component fullName = enchantment.getFullname(level);
-            addEnchantmentName(fullName, nameMap, cache);
-        }
-    }
-    *///?} else {
-    private static void fillEnchantmentNames(ItemEnchantments enchants,
-                                             Map<String, String> nameMap,
-                                             LanguageCache cache) {
-        for (var entry : enchants.entrySet()) {
-            Holder<Enchantment> holder = entry.getKey();
-            int level = entry.getIntValue();
-            Component fullName = Enchantment.getFullname(holder, level);
-            addEnchantmentName(fullName, nameMap, cache);
-        }
-    }
-    //?}
-
-    private static void addEnchantmentName(Component fullName,
-                                           Map<String, String> nameMap,
-                                           LanguageCache cache) {
-        String current = fullName.getString();
-        String joined = cache.resolveComponentsForAll(fullName).stream()
-                .filter(s -> !s.equals(current))
-                .collect(Collectors.joining("｜"));
-        if (!joined.isEmpty()) {
-            nameMap.put(current, joined);
         }
     }
 

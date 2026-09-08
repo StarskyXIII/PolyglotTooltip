@@ -1,0 +1,29 @@
+{
+  "required": false,
+  "package": "com.starskyxiii.polyglottooltip.mixin",
+  "compatibilityLevel": "${java_level}",
+  "mixins": [],
+  "client": [
+    "controlling.ControllingConstantsMixin",
+    "jei.JeiBakedSubstringIndexBuilderMixin",
+    "jei.JeiGeneralizedSuffixTreeMixin",
+    "jei.JeiGeneralizedSuffixTreeSearchStorageMixin",
+    "jei.FabricJeiListElementInfoMixin",
+    "jei.JeiElementSearchLowMemMixin",
+    "jec.JecFakeTreeMixin",
+    "jec.JecMatchMixin",
+    "jec.JecPinInAcceleratorCacheMixin",
+    "jec.JecSearchStorageMixin",
+    "naturescompass.NaturesCompassBiomeUtilsMixin",
+    "naturescompass.NaturesCompassScreenMixin",
+    "explorerscompass.ExplorersCompassStructureUtilsMixin",
+    "explorerscompass.ExplorersCompassScreenMixin",
+${fabric_mixins}
+  ],
+  "injectors": {
+    "defaultRequire": 0
+  },
+  "overwrites": {
+    "requireAnnotations": true
+  }
+}

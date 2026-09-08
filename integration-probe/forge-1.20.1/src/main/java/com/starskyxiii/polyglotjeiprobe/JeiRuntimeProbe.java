@@ -86,6 +86,7 @@ public final class JeiRuntimeProbe implements IModPlugin {
         Object runtime = observedHandle.runtime();
         Object currentRuntime = RUNTIME.get() == null ? null : RUNTIME.get().runtime();
         String filterText = "unknown";
+        String ingredientFilterApiClass = "unknown";
         String ingredientListCached = "unknown";
         String gridActive = "unknown";
         String gridVisibleSlotCount = "unknown";
@@ -96,14 +97,14 @@ public final class JeiRuntimeProbe implements IModPlugin {
         String jecMatch = "unknown";
         String injectedHandlerPresent = "unknown";
         String matchClassLoader = "unknown";
-        String bridgeRefreshActionClass = "unknown";
-        String bridgeRefreshActionIsNoOp = "unknown";
+        String bridgeRefreshInvocation = "unknown";
         String bridgeClassLoader = "unknown";
         String productRuntimeIdentity = "unknown";
         String productRuntimeSameAsProbe = "unknown";
 
         try {
             IIngredientFilter filterApi = observedHandle.runtime().getIngredientFilter();
+            ingredientFilterApiClass = filterApi.getClass().getName();
             filterText = quote(filterApi.getFilterText());
             Object ingredientFilter = readField(filterApi, "ingredientFilter");
             Object cached = readField(ingredientFilter, "ingredientListCached");
@@ -158,10 +159,9 @@ public final class JeiRuntimeProbe implements IModPlugin {
         try {
             Class<?> bridgeClass = Class.forName(
                     "com.starskyxiii.polyglottooltip.integration.jei.JeiSearchRefreshBridge");
-            Object refreshAction = readStaticField(bridgeClass, "refreshResultsAction");
-            Object noOp = readStaticField(bridgeClass, "NO_OP");
-            bridgeRefreshActionClass = refreshAction == null ? "null" : refreshAction.getClass().getName();
-            bridgeRefreshActionIsNoOp = String.valueOf(refreshAction == noOp);
+            Method refreshResults = bridgeClass.getMethod("refreshResults");
+            refreshResults.invoke(null);
+            bridgeRefreshInvocation = "success";
             bridgeClassLoader = identity(bridgeClass.getClassLoader());
 
             Class<?> pluginClass = Class.forName(
@@ -170,11 +170,11 @@ public final class JeiRuntimeProbe implements IModPlugin {
             productRuntimeIdentity = identity(productRuntime);
             productRuntimeSameAsProbe = String.valueOf(productRuntime == runtime);
         } catch (ReflectiveOperationException | RuntimeException exception) {
-            bridgeRefreshActionClass = diagnosticFailure(exception);
+            bridgeRefreshInvocation = diagnosticFailure(exception);
         }
 
         LOGGER.info(
-                "[PolyglotJeiRuntimeProbe] OBSERVATION id={} phase={} generation={} runtimeIdentity={} currentRuntimeIdentity={} sameActiveRuntime={} screen={} filterText={} ingredientListCached={} screenPropertiesValid={} gridActive={} gridVisibleSlotCount={} gridSlotCount={} gridOccupiedSlotCount={} jecKeyboard={} jecMatchOakXiangmu={} injectedHandlerPresent={} matchClassLoader={} bridgeRefreshActionClass={} bridgeRefreshActionIsNoOp={} bridgeClassLoader={} productRuntimeIdentity={} productRuntimeSameAsProbe={}",
+                "[PolyglotJeiRuntimeProbe] OBSERVATION id={} phase={} generation={} runtimeIdentity={} currentRuntimeIdentity={} sameActiveRuntime={} screen={} filterText={} ingredientFilterApiClass={} ingredientListCached={} screenPropertiesValid={} gridActive={} gridVisibleSlotCount={} gridSlotCount={} gridOccupiedSlotCount={} jecKeyboard={} jecMatchOakXiangmu={} injectedHandlerPresent={} matchClassLoader={} bridgeRefreshInvocation={} bridgeClassLoader={} productRuntimeIdentity={} productRuntimeSameAsProbe={}",
                 observation,
                 phase,
                 observedHandle.generation(),
@@ -183,6 +183,7 @@ public final class JeiRuntimeProbe implements IModPlugin {
                 runtime == currentRuntime,
                 Minecraft.getInstance().screen == null ? "null" : Minecraft.getInstance().screen.getClass().getName(),
                 filterText,
+                ingredientFilterApiClass,
                 ingredientListCached,
                 screenPropertiesValid,
                 gridActive,
@@ -193,8 +194,7 @@ public final class JeiRuntimeProbe implements IModPlugin {
                 jecMatch,
                 injectedHandlerPresent,
                 matchClassLoader,
-                bridgeRefreshActionClass,
-                bridgeRefreshActionIsNoOp,
+                bridgeRefreshInvocation,
                 bridgeClassLoader,
                 productRuntimeIdentity,
                 productRuntimeSameAsProbe);

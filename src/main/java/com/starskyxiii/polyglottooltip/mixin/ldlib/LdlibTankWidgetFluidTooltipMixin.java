@@ -1,5 +1,6 @@
 package com.starskyxiii.polyglottooltip.mixin.ldlib;
 
+import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.starskyxiii.polyglottooltip.integration.FluidTooltipHelper;
 import net.minecraft.network.chat.Component;
 import org.spongepowered.asm.mixin.Mixin;
@@ -13,12 +14,25 @@ import java.util.List;
 @Mixin(targets = "com.lowdragmc.lowdraglib.gui.widget.TankWidget", remap = false)
 public class LdlibTankWidgetFluidTooltipMixin {
 
-    @Inject(method = "getFullTooltipTexts", at = @At("RETURN"), cancellable = true, remap = false)
+    @Inject(method = "getFullTooltipTexts", at = @At("RETURN"), cancellable = true, require = 0, remap = false)
     private void polyglot$appendSecondaryFluidName(CallbackInfoReturnable<List<Component>> cir) {
         List<Component> original = cir.getReturnValue();
         List<Component> updated = FluidTooltipHelper.withSecondaryFluidName(original);
         if (updated != original) {
             cir.setReturnValue(updated);
         }
+    }
+
+    @ModifyExpressionValue(
+            method = "drawInForeground",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lcom/lowdragmc/lowdraglib/gui/widget/TankWidget;getToolTips(Ljava/util/List;)Ljava/util/List;"
+            ),
+            require = 0,
+            remap = false
+    )
+    private List<Component> polyglot$appendLegacySecondaryFluidName(List<Component> original) {
+        return FluidTooltipHelper.withSecondaryFluidName(original);
     }
 }

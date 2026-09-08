@@ -8,9 +8,13 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+//? !fabric {
 import net.neoforged.fml.loading.LoadingModList;
+//?}
 import org.junit.jupiter.api.AfterEach;
+//? !fabric {
 import org.junit.jupiter.api.AfterAll;
+//?}
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -23,12 +27,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ItemStackNameBehaviorTest {
 
+    //? !fabric {
     private static AutoCloseable fmlLoader;
+    //?}
     private final LanguageCache cache = LanguageCache.getInstance();
 
     @BeforeAll
     static void bootstrapMinecraft() throws Exception {
-        //? if >=26 {
+        //? if >=26 && !fabric {
         /*Class<?> loaderClass = Class.forName("net.neoforged.fml.loading.FMLLoader");
         Constructor<?> loaderConstructor = loaderClass.getDeclaredConstructor(
                 ClassLoader.class,
@@ -48,7 +54,7 @@ class ItemStackNameBehaviorTest {
         var loadingModListField = loaderClass.getDeclaredField("loadingModList");
         loadingModListField.setAccessible(true);
         loadingModListField.set(fmlLoader, loadingModList);
-        *///?} else {
+        *///?} else if !fabric {
         LoadingModList.of(List.of(), List.of(), List.of(), List.of(), Map.of());
         //?}
         SharedConstants.tryDetectVersion();
@@ -66,12 +72,14 @@ class ItemStackNameBehaviorTest {
         *///?}
     }
 
+    //? !fabric {
     @AfterAll
     static void closeFmlLoader() throws Exception {
         if (fmlLoader != null) {
             fmlLoader.close();
         }
     }
+    //?}
 
     @AfterEach
     void clearLanguages() {
@@ -141,10 +149,16 @@ class ItemStackNameBehaviorTest {
 
     private static ClientLanguage language(Map<String, String> translations) {
         try {
-            Constructor<ClientLanguage> constructor = ClientLanguage.class.getDeclaredConstructor(
-                    Map.class, boolean.class, Map.class);
+            Constructor<ClientLanguage> constructor;
+            try {
+                constructor = ClientLanguage.class.getDeclaredConstructor(Map.class, boolean.class);
+            } catch (NoSuchMethodException exception) {
+                constructor = ClientLanguage.class.getDeclaredConstructor(Map.class, boolean.class, Map.class);
+            }
             constructor.setAccessible(true);
-            return constructor.newInstance(translations, false, Map.of());
+            return constructor.getParameterCount() == 2
+                    ? constructor.newInstance(translations, false)
+                    : constructor.newInstance(translations, false, Map.of());
         } catch (ReflectiveOperationException exception) {
             throw new AssertionError("ClientLanguage could not be constructed", exception);
         }

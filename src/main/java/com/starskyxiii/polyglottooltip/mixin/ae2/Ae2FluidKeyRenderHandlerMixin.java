@@ -19,7 +19,9 @@ public class Ae2FluidKeyRenderHandlerMixin {
             at = @At("RETURN")
     )
     private void onGetTooltip(AEFluidKey ingredient, CallbackInfoReturnable<List<Component>> cir) {
-        //? if <=1.20.1 {
+        //? fabric {
+        /*SecondaryTooltipUtil.insertSecondaryName(cir.getReturnValue(), ingredient.getDisplayName());
+        *///?} else if <=1.20.1 {
         /*SecondaryTooltipUtil.insertSecondaryName(cir.getReturnValue(), ingredient.toStack(1).getDisplayName());
         *///?} else {
         SecondaryTooltipUtil.insertSecondaryName(cir.getReturnValue(), ingredient.toStack(1).getHoverName());

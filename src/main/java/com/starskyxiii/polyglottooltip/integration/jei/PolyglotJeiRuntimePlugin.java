@@ -18,16 +18,33 @@ public final class PolyglotJeiRuntimePlugin implements IModPlugin {
 
     @Override
     public ResourceLocation getPluginUid() {
+        //? if <=1.20.1 {
+        /*return new ResourceLocation(PolyglotTooltip.MODID, "runtime");
+        *///?} else {
         return ResourceLocation.fromNamespaceAndPath(PolyglotTooltip.MODID, "runtime");
+        //?}
     }
 
     @Override
     public void onRuntimeAvailable(IJeiRuntime jeiRuntime) {
         activeRuntime = jeiRuntime;
+        boolean jemiRuntime = isJemiIngredientFilter(jeiRuntime.getIngredientFilter());
+        if (jemiRuntime) {
+            OptionalEmiSearchRefresh.register();
+        }
         JeiSearchRefreshBridge.setRefreshActions(
                 () -> refreshIngredientFilter(jeiRuntime, false),
-                () -> refreshIngredientFilter(jeiRuntime, true)
+                () -> refreshIngredientFilter(jeiRuntime, true),
+                jemiRuntime
         );
+    }
+
+    private static boolean isJemiIngredientFilter(Object filterApi) {
+        return filterApi.getClass().getName().startsWith("dev.emi.emi.jemi.");
+    }
+
+    private static boolean isDummyIngredientFilter(Object filterApi) {
+        return filterApi.getClass().getName().equals("mezz.jei.library.ingredients.IngredientFilterApiDummy");
     }
 
     private static void refreshIngredientFilter(IJeiRuntime expectedRuntime, boolean rebuildSearchIndex) {
@@ -37,6 +54,13 @@ public final class PolyglotJeiRuntimePlugin implements IModPlugin {
             }
             try {
                 Object filterApi = expectedRuntime.getIngredientFilter();
+                if (isJemiIngredientFilter(filterApi)) {
+                    OptionalEmiSearchRefresh.refreshOnClientThread(rebuildSearchIndex);
+                    return;
+                }
+                if (isDummyIngredientFilter(filterApi)) {
+                    return;
+                }
                 Field filterField = filterApi.getClass().getDeclaredField("ingredientFilter");
                 filterField.setAccessible(true);
                 Object filter = filterField.get(filterApi);

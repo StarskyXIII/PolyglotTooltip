@@ -72,7 +72,11 @@ class LanguageResourceLoadingTest {
     }
 
     private static ResourceLocation languageFile(String languageCode) {
+        //? if <=1.20.1 {
+        /*return new ResourceLocation(NAMESPACE, "lang/" + languageCode + ".json");
+        *///?} else {
         return ResourceLocation.fromNamespaceAndPath(NAMESPACE, "lang/" + languageCode + ".json");
+        //?}
     }
 
     private static Resource resource(String json) {

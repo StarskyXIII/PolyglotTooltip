@@ -14,7 +14,9 @@ class ConfigDefaultsTest {
     void preservesVersionSpecificBaselineDefaults() {
         assertEquals(List.of("en_us"), Config.DISPLAY_LANGUAGE.getDefault());
         assertFalse(Config.ALWAYS_SHOW.getDefault());
-        //? if <=1.20.1 {
+        //? fabric {
+        /*assertTrue(Config.ENABLE_CHINESE_SCRIPT_MATCHING.getDefault());
+        *///?} else if <=1.20.1 {
         /*assertTrue(Config.ENABLE_CHINESE_SCRIPT_MATCHING.getDefault());
         *///?} else {
         assertFalse(Config.ENABLE_CHINESE_SCRIPT_MATCHING.getDefault());
@@ -23,7 +25,7 @@ class ConfigDefaultsTest {
         assertEquals("&7", Config.JADE_SECONDARY_NAME_FORMAT.getDefault());
     }
 
-    //? if <=1.20.1 {
+    //? if <=1.20.1 || fabric {
     /*@Test
     void forgeDefaultCanBeExplicitlyDisabled() {
         TestConfigSupport.load(false);

@@ -115,6 +115,14 @@ java.toolchain.languageVersion = JavaLanguageVersion.of(requiredJava)
 sourceSets.main {
     resources.srcDir("src/main/templates")
     java.exclude(
+        "com/starskyxiii/polyglottooltip/FabricConfigValue.java",
+        "com/starskyxiii/polyglottooltip/FabricConfigStore.java",
+        "com/starskyxiii/polyglottooltip/FabricPolyglotTooltipClient.java",
+        "com/starskyxiii/polyglottooltip/integration/jei/FabricJeiFluidNameHelper.java",
+        "com/starskyxiii/polyglottooltip/mixin/jei/FabricJeiFluidHelperMixin.java",
+        "com/starskyxiii/polyglottooltip/mixin/jei/FabricJeiListElementInfoMixin.java",
+        "com/starskyxiii/polyglottooltip/mixin/ae2/FabricAe2PatternAccessSearchMixin.java",
+        "com/starskyxiii/polyglottooltip/mixin/ae2/ExtendedAePatternTerminalSearchMixin.java",
         "com/starskyxiii/polyglottooltip/integration/FluidTooltipHelper.java",
         "com/starskyxiii/polyglottooltip/integration/ReflectionHelper.java",
         "com/starskyxiii/polyglottooltip/integration/emi/EmiTagNameHelper.java",
@@ -135,6 +143,7 @@ sourceSets.main {
     )
 }
 sourceSets.test {
+    java.exclude("com/starskyxiii/polyglottooltip/FabricConfigStoreTest.java")
     compileClasspath += sourceSets.main.get().compileClasspath
     runtimeClasspath += sourceSets.main.get().runtimeClasspath
 }
