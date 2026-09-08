@@ -2,6 +2,7 @@ package com.starskyxiii.polyglottooltip.mixin.jei;
 
 import com.starskyxiii.polyglottooltip.search.ChineseScriptVariantIndexer;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -19,6 +20,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * so that users can search with either script and get results regardless of which locale
  * the item names were loaded from.
  */
+@Pseudo
 @Mixin(targets = "mezz.jei.core.search.suffixtree.GeneralizedSuffixTree", remap = false)
 public abstract class JeiGeneralizedSuffixTreeMixin {
 

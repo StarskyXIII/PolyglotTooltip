@@ -1,4 +1,5 @@
 package com.starskyxiii.polyglottooltip.mixin.ae2;
+//~ forge_neoforge_package
 
 import appeng.api.stacks.AEKey;
 import appeng.menu.me.common.GridInventoryEntry;

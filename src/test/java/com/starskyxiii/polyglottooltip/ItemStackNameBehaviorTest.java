@@ -1,5 +1,6 @@
 package com.starskyxiii.polyglottooltip;
 
+//? if >1.20.1 {
 import net.minecraft.SharedConstants;
 import net.minecraft.client.resources.language.ClientLanguage;
 import net.minecraft.core.component.DataComponents;
@@ -149,3 +150,4 @@ class ItemStackNameBehaviorTest {
         }
     }
 }
+//?}

@@ -1,8 +1,12 @@
 package com.starskyxiii.polyglottooltip.integration.productivebees;
 //~ minecraft_identifier
 
+//? if <=1.20.1 {
+/*import net.minecraft.nbt.CompoundTag;
+*///?} else {
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
+//?}
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -18,7 +22,11 @@ import java.util.function.Function;
 public final class ProductiveBeesNameHelper {
 
     private static final String MOD_ID = "productivebees";
+    //? if <=1.20.1 {
+    /*private static final String BEE_INGREDIENT = "cy.jdkdigital.productivebees.compat.jei.ingredients.BeeIngredient";
+    *///?} else {
     private static final String BEE_INGREDIENT = "cy.jdkdigital.productivebees.common.crafting.ingredient.BeeIngredient";
+    //?}
     private static final String BEE_TYPE_COMPONENT_ID = "productivebees:bee_type";
     private static final String CONFIGURABLE_HONEYCOMB = "configurable_honeycomb";
     private static final String CONFIGURABLE_COMB_BLOCK = "configurable_comb";
@@ -119,6 +127,14 @@ public final class ProductiveBeesNameHelper {
     }
 
     private static Optional<String> findBeeType(ItemStack stack) {
+        //? if <=1.20.1 {
+        /*CompoundTag entityTag = stack.getTagElement("EntityTag");
+        if (entityTag == null || !entityTag.contains("type")) {
+            return Optional.empty();
+        }
+        String type = entityTag.getString("type");
+        return type.isEmpty() ? Optional.empty() : Optional.of(type);
+        *///?} else {
         var entityData = stack.get(DataComponents.ENTITY_DATA);
         if (entityData != null) {
             //? if >=26 {
@@ -162,6 +178,7 @@ public final class ProductiveBeesNameHelper {
         }
 
         return Optional.empty();
+        //?}
     }
 
     private static Component createBeeNameComponent(String beeType) {

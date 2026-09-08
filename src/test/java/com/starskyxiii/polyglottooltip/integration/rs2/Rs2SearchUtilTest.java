@@ -1,5 +1,6 @@
 package com.starskyxiii.polyglottooltip.integration.rs2;
 
+//? if >1.20.1 {
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -47,3 +48,4 @@ class Rs2SearchUtilTest {
         }
     }
 }
+//?}

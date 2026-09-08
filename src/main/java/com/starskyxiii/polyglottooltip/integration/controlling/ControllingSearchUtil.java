@@ -1,4 +1,5 @@
 package com.starskyxiii.polyglottooltip.integration.controlling;
+//~ keybinds_list_package
 
 import com.starskyxiii.polyglottooltip.search.SearchTextCollector;
 import net.minecraft.client.KeyMapping;

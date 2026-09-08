@@ -10,6 +10,19 @@ val modVersion = "1.6.0"
 val requiredJava = if (sc.current.parsed >= "26") 25 else 21
 
 stonecutter {
+    replacements.string(false, "forge_neoforge_package") {
+        replace("net.neoforged.neoforge", "net.minecraftforge")
+        replace("net.neoforged.bus.api", "net.minecraftforge.eventbus.api")
+        replace("net.neoforged.fml", "net.minecraftforge.fml")
+        replace("net.neoforged.api", "net.minecraftforge.api")
+        replace("ModConfigSpec", "ForgeConfigSpec")
+    }
+    replacements.string(false, "keybinds_list_package") {
+        replace(
+            "net.minecraft.client.gui.screens.options.controls.KeyBindsList",
+            "net.minecraft.client.gui.screens.controls.KeyBindsList"
+        )
+    }
     replacements.string(sc.current.parsed >= "26", "minecraft_identifier") {
         replace("ResourceLocation", "Identifier")
     }
@@ -68,12 +81,21 @@ repositories {
     maven("https://maven.creeperhost.net/") {
         name = "RefinedMods"
     }
+    maven("https://jitpack.io") {
+        content {
+            includeGroup("com.github.Towdium")
+        }
+    }
 }
 
 dependencies {
     testImplementation(platform("org.junit:junit-bom:5.11.4"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testRuntimeOnly("io.github.llamalad7:mixinextras-common:0.5.5")
+    testImplementation("com.github.Towdium:PinIn:1.6.0") {
+        exclude(group = "it.unimi.dsi", module = "fastutil")
+    }
 
     compileOnly("org.appliedenergistics:appliedenergistics2:${property("ae2.version")}")
     compileOnly("com.refinedmods.refinedstorage:refinedstorage-common:${property("refined_storage.version")}")
@@ -92,6 +114,25 @@ dependencies {
 java.toolchain.languageVersion = JavaLanguageVersion.of(requiredJava)
 sourceSets.main {
     resources.srcDir("src/main/templates")
+    java.exclude(
+        "com/starskyxiii/polyglottooltip/integration/FluidTooltipHelper.java",
+        "com/starskyxiii/polyglottooltip/integration/ReflectionHelper.java",
+        "com/starskyxiii/polyglottooltip/integration/emi/EmiTagNameHelper.java",
+        "com/starskyxiii/polyglottooltip/integration/emi/EmiTagPrefixTooltipHelper.java",
+        "com/starskyxiii/polyglottooltip/integration/mekanism/MekanismTooltipHelper.java",
+        "com/starskyxiii/polyglottooltip/integration/jec/JecLegacySearchStoragePlugin.java",
+        "com/starskyxiii/polyglottooltip/integration/rs/**",
+        "com/starskyxiii/polyglottooltip/mixin/gtceu/**",
+        "com/starskyxiii/polyglottooltip/mixin/ldlib/**",
+        "com/starskyxiii/polyglottooltip/mixin/rs/**",
+        "com/starskyxiii/polyglottooltip/mixin/jade/JadeGtoCoreCompatMixin.java",
+        "com/starskyxiii/polyglottooltip/mixin/emi/EmiScreenManagerTooltipMixin.java",
+        "com/starskyxiii/polyglottooltip/mixin/emi/EmiSlotWidgetTooltipMixin.java",
+        "com/starskyxiii/polyglottooltip/mixin/emi/EmiTagEmiIngredientMixin.java",
+        "com/starskyxiii/polyglottooltip/mixin/mekanism/MekanismGuiChemicalBarMixin.java",
+        "com/starskyxiii/polyglottooltip/mixin/mekanism/MekanismGuiChemicalGaugeMixin.java",
+        "com/starskyxiii/polyglottooltip/mixin/mekanism/MekanismStorageUtilsMixin.java"
+    )
 }
 sourceSets.test {
     compileClasspath += sourceSets.main.get().compileClasspath

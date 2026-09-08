@@ -2,6 +2,7 @@ package com.starskyxiii.polyglottooltip.mixin.jec;
 
 import com.starskyxiii.polyglottooltip.search.ChineseScriptVariantIndexer;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -22,6 +23,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  *
  * <p>This mixin is silently skipped when JEC is not installed (defaultRequire=0 in mixin JSON).
  */
+@Pseudo
 @Mixin(targets = "me.towdium.jecharacters.utils.FakeTree", remap = false)
 public abstract class JecFakeTreeMixin {
 

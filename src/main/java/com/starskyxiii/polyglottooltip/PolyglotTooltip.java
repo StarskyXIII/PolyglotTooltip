@@ -1,10 +1,18 @@
 package com.starskyxiii.polyglottooltip;
+//~ forge_neoforge_package
 
 import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
 
+//? if <=1.20.1 {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.fml.DistExecutor;
+import net.neoforged.fml.ModList;
+import net.neoforged.fml.config.IConfigSpec;
+*///?} else {
 import net.neoforged.bus.api.IEventBus;
+//?}
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
@@ -14,7 +22,21 @@ public class PolyglotTooltip {
     public static final String MODID = "polyglottooltip";
     public static final Logger LOGGER = LogUtils.getLogger();
 
+    //? if <=1.20.1 {
+    /*public PolyglotTooltip() {
+        registerConfig(ModConfig.Type.CLIENT, Config.SPEC);
+        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> PolyglotTooltipClient::init);
+    }
+
+    private static void registerConfig(ModConfig.Type type, IConfigSpec<?> spec) {
+        ModContainer modContainer = ModList.get()
+                .getModContainerById(MODID)
+                .orElseThrow(() -> new IllegalStateException("Missing mod container for " + MODID));
+        modContainer.addConfig(new ModConfig(type, spec, modContainer));
+    }
+    *///?} else {
     public PolyglotTooltip(IEventBus modEventBus, ModContainer modContainer) {
         modContainer.registerConfig(ModConfig.Type.CLIENT, Config.SPEC);
     }
+    //?}
 }

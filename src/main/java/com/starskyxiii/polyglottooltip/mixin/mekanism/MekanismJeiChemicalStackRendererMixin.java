@@ -4,6 +4,7 @@ import com.starskyxiii.polyglottooltip.SecondaryTooltipUtil;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.TooltipFlag;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Coerce;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -20,6 +21,7 @@ import java.util.regex.Pattern;
  * may already have inserted secondary names at index 1, so this hook removes
  * and reinserts those names after the amount line when present.
  */
+@Pseudo
 @Mixin(targets = "mekanism.client.recipe_viewer.jei.ChemicalStackRenderer", remap = false)
 public class MekanismJeiChemicalStackRendererMixin {
 

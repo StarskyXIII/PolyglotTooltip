@@ -1,5 +1,5 @@
 package com.starskyxiii.polyglottooltip.integration.jade;
-//~ minecraft_identifier
+//~ minecraft_identifier forge_neoforge_package
 
 import com.starskyxiii.polyglottooltip.LanguageCache;
 import com.starskyxiii.polyglottooltip.PolyglotTooltip;

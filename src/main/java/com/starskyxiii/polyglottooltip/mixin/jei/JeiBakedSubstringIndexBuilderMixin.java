@@ -2,6 +2,7 @@ package com.starskyxiii.polyglottooltip.mixin.jei;
 
 import com.starskyxiii.polyglottooltip.search.ChineseScriptVariantIndexer;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -9,6 +10,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /** Adds simplified/traditional variants to JEI 19.43's initial baked index. */
+@Pseudo
 @Mixin(targets = "mezz.jei.common.search.BakedSubstringIndexBuilder", remap = false)
 public abstract class JeiBakedSubstringIndexBuilderMixin {
 

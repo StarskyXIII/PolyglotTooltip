@@ -3,6 +3,7 @@ package com.starskyxiii.polyglottooltip.mixin.emi;
 import com.starskyxiii.polyglottooltip.SecondaryTooltipUtil;
 import net.minecraft.network.chat.Component;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
@@ -17,6 +18,7 @@ import java.util.List;
  * <p>Injecting into {@code getTooltipText} lets EMI continue building its own
  * client tooltip wrappers while we only adjust the underlying text lines.
  */
+@Pseudo
 @Mixin(targets = "dev.emi.emi.api.stack.FluidEmiStack", remap = false)
 public class EmiFluidEmiStackMixin {
 

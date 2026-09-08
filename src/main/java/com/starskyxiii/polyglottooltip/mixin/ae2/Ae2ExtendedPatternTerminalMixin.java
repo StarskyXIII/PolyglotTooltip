@@ -4,11 +4,13 @@ import appeng.api.stacks.GenericStack;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.starskyxiii.polyglottooltip.integration.ae2.PatternAccessSearchUtil;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
 import java.util.List;
 
+@Pseudo
 @Mixin(targets = "com.glodblock.github.extendedae.client.gui.GuiExPatternTerminal", remap = false)
 public class Ae2ExtendedPatternTerminalMixin {
 

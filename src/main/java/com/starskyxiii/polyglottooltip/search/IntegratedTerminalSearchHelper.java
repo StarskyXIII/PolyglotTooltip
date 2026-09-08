@@ -68,8 +68,10 @@ public final class IntegratedTerminalSearchHelper {
         }
 
         return stack.getTooltipLines(
-                        Item.TooltipContext.of(minecraft.player.registryAccess()),
-                        minecraft.player,
+                //? if >1.20.1 {
+                Item.TooltipContext.of(minecraft.player.registryAccess()),
+                //?}
+                minecraft.player,
                         TooltipFlag.Default.NORMAL
                 ).stream()
                 .map(component -> component.getString().toLowerCase(Locale.ENGLISH))

@@ -87,7 +87,9 @@ public final class OccultismSearchUtil {
                 return "";
             }
             List<Component> tooltip = stack.getTooltipLines(
+                    //? if >1.20.1 {
                     Item.TooltipContext.of(minecraft.level),
+                    //?}
                     minecraft.player,
                     TooltipFlag.Default.NORMAL
             );

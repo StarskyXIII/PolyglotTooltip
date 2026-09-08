@@ -6,6 +6,7 @@ import com.starskyxiii.polyglottooltip.integration.ae2.PatternAccessSearchUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -14,6 +15,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.util.List;
 import java.util.Set;
 
+@Pseudo
 @Mixin(targets = "com.glodblock.github.extendedae.client.gui.GuiAssemblerMatrix", remap = false)
 public class Ae2AssemblerMatrixMixin {
 
@@ -33,7 +35,13 @@ public class Ae2AssemblerMatrixMixin {
         }
 
         var item = itemStack.getItem();
-        if (!(item instanceof EncodedPatternItem<?>)) {
+        boolean encodedPattern;
+        //? if <=1.20.1 {
+        /*encodedPattern = item instanceof EncodedPatternItem;
+        *///?} else {
+        encodedPattern = item instanceof EncodedPatternItem<?>;
+        //?}
+        if (!encodedPattern) {
             cir.setReturnValue(false);
             return;
         }

@@ -2,11 +2,13 @@ package com.starskyxiii.polyglottooltip;
 
 import com.electronwill.nightconfig.core.CommentedConfig;
 import com.starskyxiii.polyglottooltip.search.ChineseScriptSearchMatcher;
+//? if >1.20.1 {
 import net.neoforged.fml.config.IConfigSpec;
 import net.neoforged.fml.config.ModConfig;
 
 import java.lang.reflect.Constructor;
 import java.nio.file.Path;
+//?}
 
 public final class TestConfigSupport {
 
@@ -23,7 +25,11 @@ public final class TestConfigSupport {
         config.set("tooltipSecondaryNameFormat", tooltipFormat);
         config.set("jadeSecondaryNameFormat", jadeFormat);
         Config.SPEC.correct(config);
+        //? if <=1.20.1 {
+        /*Config.SPEC.acceptConfig(config);
+        *///?} else {
         Config.SPEC.acceptConfig(createLoadedConfig(config));
+        //?}
         ChineseScriptSearchMatcher.clearCaches();
     }
 
@@ -31,6 +37,7 @@ public final class TestConfigSupport {
         Config.ENABLE_CHINESE_SCRIPT_MATCHING.set(enabled);
     }
 
+    //? if >1.20.1 {
     private static IConfigSpec.ILoadedConfig createLoadedConfig(CommentedConfig config) {
         try {
             Class<?> loadedConfigClass = Class.forName("net.neoforged.fml.config.LoadedConfig");
@@ -43,4 +50,5 @@ public final class TestConfigSupport {
             throw new AssertionError("NeoForge LoadedConfig could not be constructed", exception);
         }
     }
+    //?}
 }

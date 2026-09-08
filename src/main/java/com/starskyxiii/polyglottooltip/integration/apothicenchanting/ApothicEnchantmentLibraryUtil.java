@@ -5,7 +5,9 @@ import com.starskyxiii.polyglottooltip.SecondaryTooltipUtil;
 import com.starskyxiii.polyglottooltip.search.ChineseScriptSearchMatcher;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+//? if >1.20.1 {
 import net.minecraft.core.Holder;
+//?}
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.world.item.enchantment.Enchantment;
@@ -80,9 +82,20 @@ public final class ApothicEnchantmentLibraryUtil {
             return Optional.empty();
         }
 
+        //? if >1.20.1 {
         return invokeSlotEnchantment(slot)
+                .filter(Holder.class::isInstance)
+                .map(Holder.class::cast)
                 .map(Holder::value)
+                .filter(Enchantment.class::isInstance)
+                .map(Enchantment.class::cast)
                 .map(Enchantment::description);
+        //?} else {
+        /*return invokeSlotEnchantment(slot)
+                .filter(Enchantment.class::isInstance)
+                .map(Enchantment.class::cast)
+                .map(ApothicEnchantmentLibraryUtil::getEnchantmentDisplayName);
+        *///?}
     }
 
     private static Optional<Object> invokeHoveredSlot(Object screen, int mouseX, int mouseY) {
@@ -101,8 +114,7 @@ public final class ApothicEnchantmentLibraryUtil {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private static Optional<Holder<Enchantment>> invokeSlotEnchantment(Object slot) {
+    private static Optional<Object> invokeSlotEnchantment(Object slot) {
         Optional<Method> method = SLOT_ENCHANTMENT_METHOD_CACHE.computeIfAbsent(
                 slot.getClass(),
                 ApothicEnchantmentLibraryUtil::findSlotEnchantmentMethod
@@ -113,9 +125,7 @@ public final class ApothicEnchantmentLibraryUtil {
 
         try {
             Object result = method.get().invoke(slot);
-            if (result instanceof Holder<?> holder && holder.value() instanceof Enchantment) {
-                return Optional.of((Holder<Enchantment>) holder);
-            }
+            return Optional.ofNullable(result);
         } catch (ReflectiveOperationException ignored) {
         }
         return Optional.empty();
@@ -139,6 +149,14 @@ public final class ApothicEnchantmentLibraryUtil {
         } catch (ReflectiveOperationException | SecurityException ignored) {
             return Optional.empty();
         }
+    }
+
+    public static Component getEnchantmentDisplayName(Enchantment enchantment) {
+        //? if <=1.20.1 {
+        /*return Component.translatable(enchantment.getDescriptionId());
+        *///?} else {
+        return enchantment.description();
+        //?}
     }
 
     private static String normalize(String value) {

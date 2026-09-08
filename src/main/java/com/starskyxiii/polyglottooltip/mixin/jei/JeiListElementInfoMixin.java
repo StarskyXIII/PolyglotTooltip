@@ -1,4 +1,5 @@
 package com.starskyxiii.polyglottooltip.mixin.jei;
+//~ forge_neoforge_package
 
 import com.llamalad7.mixinextras.sugar.Local;
 import com.starskyxiii.polyglottooltip.LanguageCache;
@@ -9,6 +10,7 @@ import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.fluids.FluidStack;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.Mutable;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -36,6 +38,7 @@ import java.util.Optional;
  * the {@code value} local variable (type {@code ITypedIngredient<?>}), which IS
  * part of the JEI API and is the first thing assigned in the constructor.
  */
+@Pseudo
 @Mixin(targets = "mezz.jei.gui.ingredients.ListElementInfo", remap = false)
 public class JeiListElementInfoMixin {
 
@@ -74,7 +77,11 @@ public class JeiListElementInfoMixin {
 
     private static List<String> resolveNonItemSearchNames(Object ingredient, LanguageCache cache) {
         if (ingredient instanceof FluidStack fluidStack) {
+            //? if <=1.20.1 {
+            /*return cache.resolveComponentsForAll(fluidStack.getDisplayName());
+            *///?} else {
             return cache.resolveComponentsForAll(fluidStack.getHoverName());
+            //?}
         }
         Optional<Component> chemicalName = resolveMekanismChemicalName(ingredient);
         if (chemicalName.isPresent()) {

@@ -1,0 +1,37 @@
+modLoader="javafml"
+loaderVersion="[47,)"
+license="MIT"
+
+[[mods]]
+modId="polyglotjeiruntimeprobe"
+version="${mod_version}"
+displayName="Polyglot JEI Runtime Probe"
+description='''Test-only in-client JEI runtime assertions.'''
+
+[[dependencies.polyglotjeiruntimeprobe]]
+modId="forge"
+mandatory=true
+versionRange="[47,)"
+ordering="NONE"
+side="CLIENT"
+
+[[dependencies.polyglotjeiruntimeprobe]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.20.1,1.20.2)"
+ordering="NONE"
+side="CLIENT"
+
+[[dependencies.polyglotjeiruntimeprobe]]
+modId="jei"
+mandatory=true
+versionRange="[15,16)"
+ordering="AFTER"
+side="CLIENT"
+
+[[dependencies.polyglotjeiruntimeprobe]]
+modId="polyglottooltip"
+mandatory=true
+versionRange="[1.6.0,)"
+ordering="AFTER"
+side="CLIENT"

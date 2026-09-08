@@ -1,0 +1,50 @@
+plugins {
+    id 'java'
+    id 'net.minecraftforge.gradle' version '7.0.36'
+    id 'net.minecraftforge.renamer' version '1.1.7'
+}
+
+group = 'com.starskyxiii.polyglotjeiprobe'
+version = '1.0.0'
+base.archivesName = 'polyglot-jei-runtime-probe-1.20.1-forge'
+
+minecraft {
+    mappings 'official', '1.20.1'
+}
+
+repositories {
+    minecraft.mavenizer(it)
+    maven(fg.forgeMaven)
+    maven(fg.minecraftLibsMaven)
+    maven { url = 'https://maven.blamejared.com/' }
+    mavenCentral()
+}
+
+dependencies {
+    implementation minecraft.dependency('net.minecraftforge:forge:1.20.1-47.4.23')
+    compileOnly renamer.dependency('mezz.jei:jei-1.20.1-forge:15.27.0.158')
+}
+
+renamer.mappings.from(minecraft.dependency.toSrgFile)
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 17
+}
+
+tasks.processResources {
+    inputs.property 'mod_version', project.version
+    filesMatching('META-INF/mods.toml') {
+        expand mod_version: project.version
+    }
+}
+
+def productionJar = renamer.classes(tasks.named('jar', Jar)) {
+    archiveClassifier = 'production'
+}
+
+tasks.build {
+    dependsOn productionJar
+}

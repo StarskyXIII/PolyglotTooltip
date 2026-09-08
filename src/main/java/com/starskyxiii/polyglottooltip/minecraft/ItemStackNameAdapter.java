@@ -1,16 +1,25 @@
 package com.starskyxiii.polyglottooltip.minecraft;
 
 import com.starskyxiii.polyglottooltip.compat.figura.FiguraEmojiContext;
+//? if >1.20.1 {
 import net.minecraft.core.component.DataComponents;
+//?} else {
+/*import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
+*///?}
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
+//? if >1.20.1 {
 import net.minecraft.world.item.enchantment.ItemEnchantments;
+//?}
 
 import java.util.ArrayList;
 import java.util.List;
+//? if >1.20.1 {
 import java.util.Objects;
+//?}
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -18,6 +27,12 @@ public final class ItemStackNameAdapter {
     public Optional<String> resolveDisplayName(ItemStack stack,
                                                Function<Component, Optional<String>> componentResolver,
                                                Iterable<? extends SpecialItemNameResolver> specialResolvers) {
+        //? if <=1.20.1 {
+        /*Optional<Component> customName = resolveCustomNameComponent(stack);
+        if (customName.isPresent()) {
+            return customName.flatMap(componentResolver);
+        }
+        *///?} else {
         Component customName = stack.get(DataComponents.CUSTOM_NAME);
         if (customName != null) {
             return componentResolver.apply(customName);
@@ -30,6 +45,7 @@ public final class ItemStackNameAdapter {
                 return resolved;
             }
         }
+        //?}
 
         Optional<String> specialName = FiguraEmojiContext.supplyInHoverName(
                 () -> resolveSpecialName(stack, componentResolver, specialResolvers));
@@ -43,6 +59,7 @@ public final class ItemStackNameAdapter {
             return generatedName;
         }
 
+        //? if >1.20.1 {
         Component defaultItemName = stack.get(DataComponents.ITEM_NAME);
         if (defaultItemName != null) {
             Optional<String> resolved = componentResolver.apply(defaultItemName);
@@ -50,6 +67,7 @@ public final class ItemStackNameAdapter {
                 return resolved;
             }
         }
+        //?}
 
         return componentResolver.apply(stack.getHoverName());
     }
@@ -59,18 +77,27 @@ public final class ItemStackNameAdapter {
     }
 
     public List<Component> getCraftingEnchantmentNames(ItemStack stack) {
+        //? if <=1.20.1 {
+        /*var enchantments = EnchantmentHelper.getEnchantments(stack);
+        *///?} else {
         ItemEnchantments enchantments = EnchantmentHelper.getEnchantmentsForCrafting(stack);
+        //?}
         if (enchantments.isEmpty()) {
             return List.of();
         }
 
         List<Component> names = new ArrayList<>();
         for (var entry : enchantments.entrySet()) {
+            //? if <=1.20.1 {
+            /*names.add(entry.getKey().getFullname(entry.getValue()));
+            *///?} else {
             names.add(Enchantment.getFullname(entry.getKey(), entry.getIntValue()));
+            //?}
         }
         return List.copyOf(names);
     }
 
+    //? if >1.20.1 {
     private Optional<Component> resolvePatchedItemName(ItemStack stack) {
         Component itemName = stack.get(DataComponents.ITEM_NAME);
         if (itemName == null) {
@@ -79,6 +106,20 @@ public final class ItemStackNameAdapter {
         Component defaultItemName = stack.getPrototype().get(DataComponents.ITEM_NAME);
         return Objects.equals(itemName, defaultItemName) ? Optional.empty() : Optional.of(itemName);
     }
+    //?} else {
+    /*private Optional<Component> resolveCustomNameComponent(ItemStack stack) {
+        CompoundTag displayTag = stack.getTagElement(ItemStack.TAG_DISPLAY);
+        if (displayTag == null || !displayTag.contains(ItemStack.TAG_DISPLAY_NAME, Tag.TAG_STRING)) {
+            return Optional.empty();
+        }
+        try {
+            return Optional.ofNullable(Component.Serializer.fromJson(
+                    displayTag.getString(ItemStack.TAG_DISPLAY_NAME)));
+        } catch (RuntimeException ignored) {
+            return Optional.empty();
+        }
+    }
+    *///?}
 
     private Optional<String> resolveSpecialName(ItemStack stack,
                                                 Function<Component, Optional<String>> componentResolver,

@@ -27,6 +27,9 @@
     "jei.JeiListElementInfoMixin",
     "jei.JeiSafeIngredientUtilMixin",
     "jec.JecFakeTreeMixin",
+    "jec.JecMatchMixin",
+    "jec.JecPinInAcceleratorCacheMixin",
+    "jec.JecSearchStorageMixin",
     "jei.JeiElementSearchLowMemMixin",
 ${jei_fluid_mixin}
     "mekanism.MekanismChemicalStackMixin",
