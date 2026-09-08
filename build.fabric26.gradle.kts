@@ -131,8 +131,8 @@ tasks {
         val values = mapOf(
             "mod_version" to modVersion,
             "minecraft_version" to sc.current.version,
-            "loader_version" to project.property("loader.version"),
-            "fabric_api_version" to project.property("fabric_api.version"),
+            "loader_version" to project.property("loader.min_version"),
+            "fabric_api_version" to project.property("fabric_api.min_version"),
             "java_version" to "25",
             "java_level" to "JAVA_25",
             "fabric_mixins" to
