@@ -6,7 +6,7 @@ plugins {
 }
 
 val modId = "polyglottooltip"
-val modVersion = "1.6.0"
+val modVersion = "2.0"
 val requiredJava = if (sc.current.parsed > "1.20.1") 21 else 17
 
 stonecutter {

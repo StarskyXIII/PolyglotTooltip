@@ -6,7 +6,7 @@ plugins {
 }
 
 val modId = "polyglottooltip"
-val modVersion = "1.6.0"
+val modVersion = "2.0"
 
 stonecutter {
     replacements.string(false, "forge_neoforge_package") {
