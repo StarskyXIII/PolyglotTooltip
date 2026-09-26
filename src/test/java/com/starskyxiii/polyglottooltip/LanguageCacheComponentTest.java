@@ -38,8 +38,10 @@ class LanguageCacheComponentTest {
     void usesExplicitFallbackAndOmitsUntranslatedComponents() {
         ClientLanguage language = language(Map.of());
 
+        //? if >1.19.2 {
         assertEquals(List.of("Fallback"), resolveAll(
                 Component.translatableWithFallback("missing", "Fallback"), List.of(language)));
+        //?}
         assertTrue(resolveAll(Component.translatable("missing"), List.of(language)).isEmpty());
         assertEquals(List.of("literal"), resolveAll(Component.literal("literal"), List.of(language)));
     }

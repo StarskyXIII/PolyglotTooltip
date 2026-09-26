@@ -10,6 +10,13 @@ val modVersion = "2.0"
 val requiredJava = if (sc.current.parsed >= "26") 25 else 21
 
 stonecutter {
+    replacements.string(false, "ae_key_rendering_legacy") {
+        replace("AEKeyRendering", "AEStackRendering")
+    }
+    replacements.string(false, "minecraft_legacy_registries") {
+        replace("import net.minecraft.core.registries.BuiltInRegistries;", "import net.minecraft.core.Registry;")
+        replace("BuiltInRegistries.ITEM", "Registry.ITEM")
+    }
     replacements.string(false, "forge_neoforge_package") {
         replace("net.neoforged.neoforge", "net.minecraftforge")
         replace("net.neoforged.bus.api", "net.minecraftforge.eventbus.api")
@@ -127,7 +134,6 @@ sourceSets.main {
         "com/starskyxiii/polyglottooltip/integration/ReflectionHelper.java",
         "com/starskyxiii/polyglottooltip/integration/emi/EmiTagNameHelper.java",
         "com/starskyxiii/polyglottooltip/integration/emi/EmiTagPrefixTooltipHelper.java",
-        "com/starskyxiii/polyglottooltip/integration/mekanism/MekanismTooltipHelper.java",
         "com/starskyxiii/polyglottooltip/integration/jec/JecLegacySearchStoragePlugin.java",
         "com/starskyxiii/polyglottooltip/integration/rs/**",
         "com/starskyxiii/polyglottooltip/mixin/gtceu/**",
@@ -139,7 +145,17 @@ sourceSets.main {
         "com/starskyxiii/polyglottooltip/mixin/emi/EmiTagEmiIngredientMixin.java",
         "com/starskyxiii/polyglottooltip/mixin/mekanism/MekanismGuiChemicalBarMixin.java",
         "com/starskyxiii/polyglottooltip/mixin/mekanism/MekanismGuiChemicalGaugeMixin.java",
-        "com/starskyxiii/polyglottooltip/mixin/mekanism/MekanismStorageUtilsMixin.java"
+        "com/starskyxiii/polyglottooltip/mixin/mekanism/MekanismStorageUtilsMixin.java",
+        "com/starskyxiii/polyglottooltip/integration/ae2/LegacyAe2RegexSearch.java",
+        "com/starskyxiii/polyglottooltip/mixin/ae2/LegacyAe2SearchPredicatesMixin.java",
+        "com/starskyxiii/polyglottooltip/mixin/ae2/LegacyAe2RepoSearchCacheMixin.java",
+        "com/starskyxiii/polyglottooltip/integration/controlling/LegacyControllingSearch.java",
+        "com/starskyxiii/polyglottooltip/mixin/controlling/LegacyControllingKeyBindsScreenMixin.java",
+        "com/starskyxiii/polyglottooltip/integration/projecte/LegacyProjectESearch.java",
+        "com/starskyxiii/polyglottooltip/mixin/projecte/LegacyProjectETransmutationInventoryMixin.java",
+        "com/starskyxiii/polyglottooltip/mixin/mekanism/LegacyMekanismJeiChemicalStackRendererMixin.java",
+        "com/starskyxiii/polyglottooltip/mixin/mekanism/LegacyMekanismQioNameQueryMixin.java",
+        "com/starskyxiii/polyglottooltip/mixin/industrialforegoing/LegacyIndustrialForegoing*Mixin.java"
     )
 }
 sourceSets.test {

@@ -1,7 +1,6 @@
-package com.starskyxiii.polyglottooltip;
+package com.starskyxiii.polyglottooltip.minecraft;
 //~ minecraft_identifier
 
-import com.starskyxiii.polyglottooltip.core.LanguageCodePolicy;
 import net.minecraft.client.resources.language.ClientLanguage;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.PackResources;
@@ -54,21 +53,46 @@ class LanguageResourceLoadingTest {
                                 """))
         ));
 
-        ClientLanguage english = ClientLanguage.loadFrom(
-                resources,
-                LanguageCodePolicy.fallbackChain("en_us"),
-                false);
-        ClientLanguage secondary = ClientLanguage.loadFrom(
-                resources,
-                LanguageCodePolicy.fallbackChain("zh_tw"),
-                false);
+        ClientLanguage english = MinecraftLanguageAdapter.loadLanguage(resources, "en_us");
+        ClientLanguage secondary = MinecraftLanguageAdapter.loadLanguage(resources, "zh_tw");
 
-        assertEquals("English High", english.getOrDefault("contract.shared", null));
-        assertEquals("English Low Unique", english.getOrDefault("contract.low_unique", null));
-        assertEquals("Secondary High", secondary.getOrDefault("contract.shared", null));
-        assertEquals("Secondary Low Unique", secondary.getOrDefault("contract.low_unique", null));
-        assertEquals("English One", secondary.getOrDefault("contract.english_one", null));
-        assertEquals("English Two", secondary.getOrDefault("contract.english_two", null));
+        assertEquals("English High", getTranslation(english, "contract.shared"));
+        assertEquals("English Low Unique", getTranslation(english, "contract.low_unique"));
+        assertEquals("Secondary High", getTranslation(secondary, "contract.shared"));
+        assertEquals("Secondary Low Unique", getTranslation(secondary, "contract.low_unique"));
+        assertEquals("English One", getTranslation(secondary, "contract.english_one"));
+        assertEquals("English Two", getTranslation(secondary, "contract.english_two"));
+    }
+
+    //? if <=1.19.2 {
+    /*@Test
+    void loadsStorageDrawersLegacyLanguageWithResourcePackPriority() {
+        ResourceManager resources = new InMemoryResourceManager(Map.of(
+                legacyLanguageFile("zh_cn"), List.of(
+                        resource("\uFEFFtile.storagedrawers.basicDrawers.fulldrawers1.name=基础抽屉\n"),
+                        resource("tile.storagedrawers.basicDrawers.fulldrawers1.name=资源包抽屉\n"
+                                + "tile.storagedrawers.trim.oak.name=橡木桥接方块\n")),
+                legacyLanguageFile("en_us"), List.of(
+                        resource("tile.storagedrawers.basicDrawers.fulldrawers1.name=Basic Drawers\n"))
+        ));
+
+        Map<String, String> translations =
+                MinecraftLanguageAdapter.loadStorageDrawersLegacyLanguage(resources, "ZH_CN");
+
+        assertEquals("资源包抽屉",
+                translations.get("tile.storagedrawers.basicDrawers.fulldrawers1.name"));
+        assertEquals("橡木桥接方块", translations.get("tile.storagedrawers.trim.oak.name"));
+        assertEquals(Map.of(),
+                MinecraftLanguageAdapter.loadStorageDrawersLegacyLanguage(resources, "en_us"));
+    }
+    *///?}
+
+    private static String getTranslation(ClientLanguage language, String key) {
+        //? if <=1.19.2 {
+        /*return language.has(key) ? language.getOrDefault(key) : null;
+        *///?} else {
+        return language.getOrDefault(key, null);
+        //?}
     }
 
     private static ResourceLocation languageFile(String languageCode) {
@@ -79,9 +103,19 @@ class LanguageResourceLoadingTest {
         //?}
     }
 
+    //? if <=1.19.2 {
+    /*private static ResourceLocation legacyLanguageFile(String languageCode) {
+        return new ResourceLocation("storagedrawers", "lang/" + languageCode + ".lang");
+    }
+    *///?}
+
     private static Resource resource(String json) {
         byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
+        //? if <=1.19.2 {
+        /*return new Resource("fixture", () -> new ByteArrayInputStream(bytes));
+        *///?} else {
         return new Resource((PackResources) null, () -> new ByteArrayInputStream(bytes));
+        //?}
     }
 
     private record InMemoryResourceManager(Map<ResourceLocation, List<Resource>> stacks)

@@ -25,6 +25,13 @@ stonecutter {
     replacements.string(false, "ae_key_rendering_package") {
         replace("appeng.api.client.AEKeyRendering", "appeng.client.api.AEKeyRendering")
     }
+    replacements.string(sc.current.parsed <= "1.19.2", "ae_key_rendering_legacy") {
+        replace("AEKeyRendering", "AEStackRendering")
+    }
+    replacements.string(sc.current.parsed <= "1.19.2", "minecraft_legacy_registries") {
+        replace("import net.minecraft.core.registries.BuiltInRegistries;", "import net.minecraft.core.Registry;")
+        replace("BuiltInRegistries.ITEM", "Registry.ITEM")
+    }
     replacements.string(false, "gui_graphics_extractor") {
         replace("GuiGraphics", "GuiGraphicsExtractor")
         replace("method = \"renderTooltip\"", "method = \"extractHoveredTooltip\"")
@@ -137,6 +144,35 @@ sourceSets.main {
     java.exclude("com/starskyxiii/polyglottooltip/mixin/rs2/**")
     java.exclude("com/starskyxiii/polyglottooltip/mixin/mekanism/MekanismChemicalStackMixin.java")
     java.exclude("com/starskyxiii/polyglottooltip/mixin/jei/JeiGeneralizedSuffixTreeSearchStorageMixin.java")
+    if (sc.current.parsed <= "1.19.2") {
+        java.exclude(
+            "com/starskyxiii/polyglottooltip/mixin/ae2/Ae2RepoSearchMixin.java",
+            "com/starskyxiii/polyglottooltip/mixin/controlling/ControllingConstantsMixin.java",
+            "com/starskyxiii/polyglottooltip/mixin/projecte/ProjectENameQueryMixin.java",
+            "com/starskyxiii/polyglottooltip/mixin/sophisticatedcore/SophisticatedCoreStorageScreenMixin.java",
+            "com/starskyxiii/polyglottooltip/mixin/mekanism/MekanismJeiChemicalStackRendererMixin.java",
+            "com/starskyxiii/polyglottooltip/mixin/mekanism/MekanismQioNameQueryMixin.java",
+            "com/starskyxiii/polyglottooltip/mixin/industrialforegoing/IndustrialForegoingLaserLensItemMixin.java",
+            "com/starskyxiii/polyglottooltip/mixin/industrialforegoing/IndustrialForegoingRangeAddonItemMixin.java",
+            "com/starskyxiii/polyglottooltip/mixin/industrialforegoing/IndustrialForegoingSpeedAddonItemMixin.java",
+            "com/starskyxiii/polyglottooltip/mixin/industrialforegoing/IndustrialForegoingEfficiencyAddonItemMixin.java",
+            "com/starskyxiii/polyglottooltip/mixin/industrialforegoing/IndustrialForegoingProcessingAddonItemMixin.java",
+            "com/starskyxiii/polyglottooltip/mixin/ldlib/LdlibTankWidgetFluidTooltipMixin.java"
+        )
+    } else {
+        java.exclude(
+            "com/starskyxiii/polyglottooltip/integration/ae2/LegacyAe2RegexSearch.java",
+            "com/starskyxiii/polyglottooltip/mixin/ae2/LegacyAe2SearchPredicatesMixin.java",
+            "com/starskyxiii/polyglottooltip/mixin/ae2/LegacyAe2RepoSearchCacheMixin.java",
+            "com/starskyxiii/polyglottooltip/integration/controlling/LegacyControllingSearch.java",
+            "com/starskyxiii/polyglottooltip/mixin/controlling/LegacyControllingKeyBindsScreenMixin.java",
+            "com/starskyxiii/polyglottooltip/integration/projecte/LegacyProjectESearch.java",
+            "com/starskyxiii/polyglottooltip/mixin/projecte/LegacyProjectETransmutationInventoryMixin.java",
+            "com/starskyxiii/polyglottooltip/mixin/mekanism/LegacyMekanismJeiChemicalStackRendererMixin.java",
+            "com/starskyxiii/polyglottooltip/mixin/mekanism/LegacyMekanismQioNameQueryMixin.java",
+            "com/starskyxiii/polyglottooltip/mixin/industrialforegoing/LegacyIndustrialForegoing*Mixin.java"
+        )
+    }
     resources.srcDir("src/main/templates")
 }
 sourceSets.test {
@@ -154,22 +190,33 @@ tasks {
         useJUnitPlatform()
     }
     processResources {
+        val mixinConfig = rootProject.file(
+            if (sc.current.parsed <= "1.19.2") {
+                "src/forge1192/resources/polyglottooltip.mixins.json"
+            } else {
+                "src/forge/resources/polyglottooltip.mixins.json"
+            }
+        )
         exclude {
             it.name == "neoforge.mods.toml" ||
                 (it.name == "polyglottooltip.mixins.json" &&
-                    it.file != rootProject.file("src/forge/resources/polyglottooltip.mixins.json"))
+                    it.file != mixinConfig)
         }
         from(rootProject.file("src/forge/resources")) {
+            exclude("polyglottooltip.mixins.json")
             val values = mapOf(
                 "mod_version" to modVersion,
-                "minecraft_version" to sc.current.version,
-                "forge_minimum" to project.property("forge.minimum")
+                "minecraft_range" to project.property("minecraft.range"),
+                "fml_major" to project.property("fml.major"),
+                "forge_minimum" to project.property("forge.minimum"),
+                "resource_pack_format" to project.property("resource_pack_format")
             )
             inputs.properties(values)
-            filesMatching("META-INF/mods.toml") {
+            filesMatching(listOf("META-INF/mods.toml", "pack.mcmeta")) {
                 expand(values)
             }
         }
+        from(mixinConfig)
     }
     withType<Jar>().configureEach {
         manifest.attributes("MixinConfigs" to "polyglottooltip.mixins.json")

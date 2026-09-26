@@ -1,11 +1,11 @@
 package com.starskyxiii.polyglottooltip.mixin.integratedterminals;
 
-import com.llamalad7.mixinextras.sugar.Local;
 import com.starskyxiii.polyglottooltip.search.IntegratedTerminalSearchHelper;
 import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Coerce;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
@@ -21,9 +21,9 @@ public class IntegratedTerminalsItemSearchMixin {
             cancellable = true
     )
     private void polyglot$extendItemSearch(
-            CallbackInfoReturnable<Predicate<ItemStack>> cir,
-            @Local(argsOnly = true) Object searchMode,
-            @Local(argsOnly = true) String query
+            @Coerce Object searchMode,
+            String query,
+            CallbackInfoReturnable<Predicate<ItemStack>> cir
     ) {
         cir.setReturnValue(stack -> IntegratedTerminalSearchHelper.matches(stack, searchMode, query));
     }

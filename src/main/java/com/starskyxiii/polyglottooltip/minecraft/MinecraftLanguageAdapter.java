@@ -5,7 +5,14 @@ import com.starskyxiii.polyglottooltip.PolyglotTooltip;
 import com.starskyxiii.polyglottooltip.core.LanguageCodePolicy;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.language.ClientLanguage;
+//? if <=1.19.2 {
+/*import net.minecraft.client.resources.language.LanguageInfo;
+*///?}
 import net.minecraft.server.packs.resources.PreparableReloadListener;
+//? if <=1.19.2 {
+/*import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.resources.Resource;
+*///?}
 import net.minecraft.server.packs.resources.ResourceManager;
 //? if fabric && <26 {
 /*import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;
@@ -16,6 +23,14 @@ import net.minecraft.util.profiling.ProfilerFiller;
 //?}
 
 import java.util.ArrayList;
+import java.util.Map;
+//? if <=1.19.2 {
+/*import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.LinkedHashMap;
+import java.util.Properties;
+*///?}
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.List;
@@ -57,16 +72,19 @@ public final class MinecraftLanguageAdapter implements PreparableReloadListener
         dependentCacheInvalidators.add(Objects.requireNonNull(invalidator));
     }
 
-    private List<ClientLanguage> loadLanguages(ResourceManager resourceManager) {
+    private LoadedLanguages loadLanguages(ResourceManager resourceManager) {
         List<ClientLanguage> result = new ArrayList<>();
+        List<Map<String, String>> legacyEntries = new ArrayList<>();
         for (String languageCode : configuredLanguages.get()) {
             try {
-                ClientLanguage language = ClientLanguage.loadFrom(
-                        resourceManager,
-                        LanguageCodePolicy.fallbackChain(languageCode),
-                        false);
+                ClientLanguage language = loadLanguage(resourceManager, languageCode);
+                Map<String, String> legacyLanguage = Map.of();
+                //? if <=1.19.2 {
+                /*legacyLanguage = loadStorageDrawersLegacyLanguage(resourceManager, languageCode);
+                *///?}
                 PolyglotTooltip.LOGGER.info("[PolyglotTooltip] Loaded secondary language: {}", languageCode);
                 result.add(language);
+                legacyEntries.add(legacyLanguage);
             } catch (Exception exception) {
                 PolyglotTooltip.LOGGER.error(
                         "[PolyglotTooltip] Failed to load language '{}': {}",
@@ -74,11 +92,65 @@ public final class MinecraftLanguageAdapter implements PreparableReloadListener
                         exception.getMessage());
             }
         }
-        return result;
+        ClientLanguage english = null;
+        //? if <=1.19.2 {
+        /*try {
+            english = loadLanguage(resourceManager, "en_us");
+        } catch (RuntimeException exception) {
+            PolyglotTooltip.LOGGER.error(
+                    "[PolyglotTooltip] Failed to load English fallback: {}",
+                    exception.getMessage());
+        }
+        *///?}
+        return new LoadedLanguages(result, english, legacyEntries);
     }
 
-    private void applyLanguages(List<ClientLanguage> languages) {
-        LanguageCache.getInstance().replaceLanguages(languages);
+    static ClientLanguage loadLanguage(ResourceManager resourceManager, String languageCode) {
+        //? if <=1.19.2 {
+        /*List<LanguageInfo> languageInfos = LanguageCodePolicy.fallbackChain(languageCode).stream()
+                .map(code -> new LanguageInfo(code, "", code, false))
+                .toList();
+        return ClientLanguage.loadFrom(resourceManager, languageInfos);
+        *///?} else {
+        return ClientLanguage.loadFrom(
+                resourceManager,
+                LanguageCodePolicy.fallbackChain(languageCode),
+                false);
+        //?}
+    }
+
+    //? if <=1.19.2 {
+    /*static Map<String, String> loadStorageDrawersLegacyLanguage(ResourceManager resourceManager,
+                                                                 String languageCode) {
+        if ("en_us".equalsIgnoreCase(languageCode)) {
+            return Map.of();
+        }
+        Map<String, String> translations = new LinkedHashMap<>();
+        ResourceLocation location = new ResourceLocation(
+                "storagedrawers", "lang/" + languageCode.toLowerCase(java.util.Locale.ROOT) + ".lang");
+        for (Resource resource : resourceManager.getResourceStack(location)) {
+            Properties properties = new Properties();
+            try (InputStreamReader reader = new InputStreamReader(resource.open(), StandardCharsets.UTF_8)) {
+                properties.load(reader);
+            } catch (IOException | IllegalArgumentException exception) {
+                PolyglotTooltip.LOGGER.warn(
+                        "[PolyglotTooltip] Failed to load Storage Drawers legacy language '{}': {}",
+                        languageCode,
+                        exception.getMessage());
+                continue;
+            }
+            for (String key : properties.stringPropertyNames()) {
+                String normalizedKey = key.startsWith("\uFEFF") ? key.substring(1) : key;
+                translations.put(normalizedKey, properties.getProperty(key));
+            }
+        }
+        return Map.copyOf(translations);
+    }
+    *///?}
+
+    private void applyLanguages(LoadedLanguages languages) {
+        LanguageCache.getInstance().replaceLanguages(
+                languages.secondary(), languages.english(), languages.legacyEntries());
         for (Runnable invalidator : dependentCacheInvalidators) {
             invalidator.run();
         }
@@ -116,5 +188,10 @@ public final class MinecraftLanguageAdapter implements PreparableReloadListener
         }
         ResourceManager resourceManager = minecraft.getResourceManager();
         applyLanguages(loadLanguages(resourceManager));
+    }
+
+    private record LoadedLanguages(List<ClientLanguage> secondary,
+                                   ClientLanguage english,
+                                   List<Map<String, String>> legacyEntries) {
     }
 }

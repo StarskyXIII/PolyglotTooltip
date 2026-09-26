@@ -32,7 +32,11 @@ public class JeiSafeIngredientUtilMixin {
     private static final Map<String, Optional<Method>> METHOD_CACHE = new ConcurrentHashMap<>();
 
     @Inject(
+            //? if <=1.19.2 {
+            /*method = "getRichTooltip(Lmezz/jei/api/gui/builder/ITooltipBuilder;Lmezz/jei/api/runtime/IIngredientManager;Lmezz/jei/api/ingredients/IIngredientRenderer;Lmezz/jei/api/ingredients/ITypedIngredient;Lnet/minecraft/world/item/TooltipFlag$Default;)V",
+            *///?} else {
             method = "getRichTooltip(Lmezz/jei/api/gui/builder/ITooltipBuilder;Lmezz/jei/api/runtime/IIngredientManager;Lmezz/jei/api/ingredients/IIngredientRenderer;Lmezz/jei/api/ingredients/ITypedIngredient;Lnet/minecraft/world/item/TooltipFlag;)V",
+            //?}
             at = @At("RETURN"),
             remap = false
     )
@@ -40,7 +44,11 @@ public class JeiSafeIngredientUtilMixin {
                                              IIngredientManager ingredientManager,
                                              IIngredientRenderer<T> ingredientRenderer,
                                              ITypedIngredient<T> typedIngredient,
+                                             //? if <=1.19.2 {
+                                             /*TooltipFlag.Default tooltipFlag,
+                                             *///?} else {
                                              TooltipFlag tooltipFlag,
+                                             //?}
                                              CallbackInfo ci) {
         ProductiveBeesNameHelper.tryCreateBeeIngredientName(typedIngredient.getIngredient())
                 .ifPresent(name -> insertSecondaryLinesIntoJeiTooltip(tooltip, name));

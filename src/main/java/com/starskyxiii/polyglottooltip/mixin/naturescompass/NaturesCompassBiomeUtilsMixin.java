@@ -4,7 +4,11 @@ package com.starskyxiii.polyglottooltip.mixin.naturescompass;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.starskyxiii.polyglottooltip.integration.compass.CompassNameHelper;
 //? if <26 {
+//? if <=1.19.2 {
+/*import net.minecraft.core.Registry;
+*///?} else {
 import net.minecraft.core.registries.Registries;
+//?}
 //?}
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
@@ -54,7 +58,11 @@ public abstract class NaturesCompassBiomeUtilsMixin {
         }
 
         ResourceLocation biomeKey = level.registryAccess()
+                //? if <=1.19.2 {
+                /*.registry(Registry.BIOME_REGISTRY)
+                *///?} else {
                 .registry(Registries.BIOME)
+                //?}
                 .map(registry -> registry.getKey(biome))
                 .orElse(null);
         return CompassNameHelper.appendBiomeSecondaryNames(biomeKey, original);

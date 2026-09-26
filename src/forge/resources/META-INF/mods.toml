@@ -1,5 +1,5 @@
 modLoader="javafml"
-loaderVersion="[47,)"
+loaderVersion="[${fml_major},)"
 license="MIT"
 issueTrackerURL="https://github.com/StarskyXIII/PolyglotTooltip/issues"
 
@@ -28,6 +28,6 @@ side="CLIENT"
 [[dependencies.polyglottooltip]]
 modId="minecraft"
 mandatory=true
-versionRange="[${minecraft_version},1.20.2)"
+versionRange="${minecraft_range}"
 ordering="NONE"
 side="CLIENT"

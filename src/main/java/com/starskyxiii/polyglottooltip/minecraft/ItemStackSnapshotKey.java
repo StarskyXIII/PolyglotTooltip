@@ -19,7 +19,13 @@ public final class ItemStackSnapshotKey {
     }
 
     public static ItemStackSnapshotKey from(ItemStack stack) {
+        //? if <=1.19.2 {
+        /*ItemStack snapshot = stack.copy();
+        snapshot.setCount(1);
+        return new ItemStackSnapshotKey(snapshot);
+        *///?} else {
         return new ItemStackSnapshotKey(stack.copyWithCount(1));
+        //?}
     }
 
     @Override

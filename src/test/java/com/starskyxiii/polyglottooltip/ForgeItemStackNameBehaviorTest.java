@@ -3,7 +3,9 @@ package com.starskyxiii.polyglottooltip;
 //? if <=1.20.1 {
 /*import net.minecraft.SharedConstants;
 import net.minecraft.client.resources.language.ClientLanguage;
+//? if >1.19.2 {
 import net.minecraft.core.registries.BuiltInRegistries;
+//?}
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.world.item.EnchantedBookItem;
@@ -34,7 +36,9 @@ class ForgeItemStackNameBehaviorTest {
         Field bootstrapped = Bootstrap.class.getDeclaredField("isBootstrapped");
         bootstrapped.setAccessible(true);
         bootstrapped.setBoolean(null, true);
+        //? if >1.19.2 {
         BuiltInRegistries.bootStrap();
+        //?}
     }
 
     @AfterEach

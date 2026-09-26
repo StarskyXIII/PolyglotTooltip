@@ -1,5 +1,6 @@
 package com.starskyxiii.polyglottooltip.integration.storagedrawers;
 
+import com.starskyxiii.polyglottooltip.LanguageCache;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -25,7 +26,21 @@ public final class StorageDrawersNameHelper {
 
     public static Optional<String> tryResolveSpecialName(ItemStack stack,
                                                          Function<Component, Optional<String>> componentResolver) {
+        //? if <=1.19.2 {
+        /*if (stack == null || stack.isEmpty()
+                || !isSupportedBlock(Block.byItem(stack.getItem()))) {
+            return Optional.empty();
+        }
+        Optional<String> currentName = componentResolver.apply(
+                Component.translatable(stack.getItem().getDescriptionId()));
+        String primaryName = stack.getItem().getName(stack).getString();
+        Optional<String> englishName = LanguageCache.getInstance().resolveEnglishComponent(
+                Component.translatable(stack.getItem().getDescriptionId()));
+        Optional<String> legacyName = tryCreateSpecialName(stack).flatMap(componentResolver);
+        return preferTranslatedName(currentName, primaryName, englishName, legacyName);
+        *///?} else {
         return tryCreateSpecialName(stack).flatMap(componentResolver);
+        //?}
     }
 
     public static Optional<Component> tryCreateSpecialName(ItemStack stack) {
@@ -34,14 +49,20 @@ public final class StorageDrawersNameHelper {
         }
 
         Item item = stack.getItem();
+        //? if >1.19.2 {
         if (!isSupportedItem(item)) {
             return Optional.empty();
         }
+        //?}
 
         Block block = Block.byItem(item);
         if (block == null || !isSupportedBlock(block)) {
             return Optional.empty();
         }
+
+        //? if <=1.19.2 {
+        /*return createLegacyName(item.getDescriptionId());
+        *///?} else {
 
         Optional<String> matKey = invokeString(block, "getMatKey");
         Optional<String> matNameKey = invokeString(block, "getNameMatKey");
@@ -51,7 +72,54 @@ public final class StorageDrawersNameHelper {
         }
 
         return Optional.of(Component.translatable(typeNameKey.get(), Component.translatable(matNameKey.get())));
+        //?}
     }
+
+    static Optional<String> preferTranslatedName(Optional<String> currentName,
+                                                  String primaryName,
+                                                  Optional<String> englishName,
+                                                  Optional<String> legacyName) {
+        if (currentName.isPresent()
+                && englishName.map(english -> !currentName.get().equals(english))
+                .orElseGet(() -> !currentName.get().equals(primaryName))) {
+            return currentName;
+        }
+        return legacyName.isPresent() ? legacyName : currentName;
+    }
+
+    //? if <=1.19.2 {
+    /*private static Optional<Component> createLegacyName(String descriptionId) {
+        String prefix = "block.storagedrawers.";
+        if (descriptionId == null || !descriptionId.startsWith(prefix)) {
+            return Optional.empty();
+        }
+
+        String path = descriptionId.substring(prefix.length());
+        if (path.endsWith("_trim")) {
+            String material = path.substring(0, path.length() - "_trim".length());
+            if ("dark_oak".equals(material)) {
+                material = "big_oak";
+            }
+            return Optional.of(Component.translatable("tile.storagedrawers.trim." + material + ".name"));
+        }
+
+        String layout = drawerLayout(path);
+        if (layout == null) {
+            return Optional.empty();
+        }
+        return Optional.of(Component.translatable(
+                "tile.storagedrawers.basicDrawers." + layout + ".name"));
+    }
+
+    private static String drawerLayout(String path) {
+        if (path.endsWith("_full_drawers_1")) return "fulldrawers1";
+        if (path.endsWith("_full_drawers_2")) return "fulldrawers2";
+        if (path.endsWith("_full_drawers_4")) return "fulldrawers4";
+        if (path.endsWith("_half_drawers_2")) return "halfdrawers2";
+        if (path.endsWith("_half_drawers_4")) return "halfdrawers4";
+        return null;
+    }
+    *///?}
 
     private static boolean isSupportedItem(Item item) {
         return isClassOrSuperclass(item, ITEM_DRAWERS) || isClassOrSuperclass(item, ITEM_TRIM);

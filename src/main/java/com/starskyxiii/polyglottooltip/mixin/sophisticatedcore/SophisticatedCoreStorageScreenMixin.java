@@ -1,4 +1,5 @@
 package com.starskyxiii.polyglottooltip.mixin.sophisticatedcore;
+//~ minecraft_legacy_registries
 
 import com.starskyxiii.polyglottooltip.LanguageCache;
 import com.starskyxiii.polyglottooltip.search.WrappedSearchMatcher;
