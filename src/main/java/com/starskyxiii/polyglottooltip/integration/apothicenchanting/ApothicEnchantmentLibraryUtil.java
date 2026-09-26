@@ -13,6 +13,7 @@ import net.minecraft.network.chat.FormattedText;
 import net.minecraft.world.item.enchantment.Enchantment;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -24,6 +25,7 @@ public final class ApothicEnchantmentLibraryUtil {
 
     private static final Map<Class<?>, Optional<Method>> HOVERED_SLOT_METHOD_CACHE = new ConcurrentHashMap<>();
     private static final Map<Class<?>, Optional<Method>> SLOT_ENCHANTMENT_METHOD_CACHE = new ConcurrentHashMap<>();
+    private static final Map<Class<?>, Optional<Field>> SLOT_ENCHANTMENT_FIELD_CACHE = new ConcurrentHashMap<>();
 
     private ApothicEnchantmentLibraryUtil() {
     }
@@ -120,7 +122,18 @@ public final class ApothicEnchantmentLibraryUtil {
                 ApothicEnchantmentLibraryUtil::findSlotEnchantmentMethod
         );
         if (method.isEmpty()) {
-            return Optional.empty();
+            Optional<Field> field = SLOT_ENCHANTMENT_FIELD_CACHE.computeIfAbsent(
+                    slot.getClass(),
+                    ApothicEnchantmentLibraryUtil::findSlotEnchantmentField
+            );
+            if (field.isEmpty()) {
+                return Optional.empty();
+            }
+            try {
+                return Optional.ofNullable(field.get().get(slot));
+            } catch (ReflectiveOperationException ignored) {
+                return Optional.empty();
+            }
         }
 
         try {
@@ -146,6 +159,16 @@ public final class ApothicEnchantmentLibraryUtil {
             Method method = slotClass.getDeclaredMethod("ench");
             method.setAccessible(true);
             return Optional.of(method);
+        } catch (ReflectiveOperationException | SecurityException ignored) {
+            return Optional.empty();
+        }
+    }
+
+    private static Optional<Field> findSlotEnchantmentField(Class<?> slotClass) {
+        try {
+            Field field = slotClass.getDeclaredField("ench");
+            field.setAccessible(true);
+            return Optional.of(field);
         } catch (ReflectiveOperationException | SecurityException ignored) {
             return Optional.empty();
         }

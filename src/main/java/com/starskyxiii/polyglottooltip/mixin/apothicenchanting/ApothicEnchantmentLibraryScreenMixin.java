@@ -9,7 +9,11 @@ import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import net.minecraft.core.Holder;
 //?}
 import net.minecraft.client.gui.components.EditBox;
+//? if <=1.19.2 {
+/*import com.mojang.blaze3d.vertex.PoseStack;
+*///?} else {
 import net.minecraft.client.gui.GuiGraphics;
+//?}
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.world.item.enchantment.Enchantment;
@@ -18,7 +22,9 @@ import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-//? if <=1.20.1 {
+//? if <=1.19.2 {
+/*import org.spongepowered.asm.mixin.injection.Redirect;
+*///?} else if <=1.20.1 {
 /*import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 *///?} else {
@@ -29,7 +35,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.util.List;
 
 @Pseudo
-//? if <=1.20.1 {
+//? if <=1.19.2 {
+/*@Mixin(targets = "shadows.apotheosis.ench.library.EnchLibraryScreen", remap = false)
+*///?} else if <=1.20.1 {
 /*@Mixin(targets = "dev.shadowsoffire.apotheosis.ench.library.EnchLibraryScreen", remap = false)
 *///?} else {
 @Mixin(targets = "dev.shadowsoffire.apothic_enchanting.library.EnchLibraryScreen", remap = false)
@@ -66,7 +74,31 @@ public abstract class ApothicEnchantmentLibraryScreenMixin {
         }
     }
 
-    //? if <=1.20.1 {
+    //? if <=1.19.2 {
+    /*@Redirect(
+            method = {"renderTooltip", "m_7025_"},
+            at = @At(
+                    value = "INVOKE",
+                    target = "Ljava/util/List;add(Ljava/lang/Object;)Z",
+                    ordinal = 0
+            ),
+            remap = false
+    )
+    private boolean polyglottooltip$insertSecondaryNameIntoLegacyTooltip(List<FormattedText> list,
+                                                                         Object element,
+                                                                         PoseStack poseStack,
+                                                                         int mouseX,
+                                                                         int mouseY) {
+        boolean added = list.add((FormattedText) element);
+        ApothicEnchantmentLibraryUtil.getHoveredEnchantmentName(this, mouseX, mouseY)
+                .map(enchantmentName -> ApothicEnchantmentLibraryUtil.insertSecondaryNameLines(list, enchantmentName, 160))
+                .ifPresent(updated -> {
+                    list.clear();
+                    list.addAll(updated);
+                });
+        return added;
+    }
+    *///?} else if <=1.20.1 {
     /*private int polyglottooltip$tooltipMouseX;
     private int polyglottooltip$tooltipMouseY;
 

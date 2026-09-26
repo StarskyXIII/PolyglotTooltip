@@ -61,7 +61,12 @@ public class Config {
                 .comment("List of extra language codes to show in item tooltips (e.g. [\"en_us\", \"zh_cn\"]).",
                         "Each language adds one extra name line to the tooltip.")
                 .translation(translationKey("displayLanguage"));
-        //? if <=1.20.1 {
+        //? if <=1.19.2 {
+        /*return builder.defineListAllowEmpty(
+                List.of("displayLanguage"),
+                () -> List.of("en_us"),
+                String.class::isInstance);
+        *///?} else if <=1.20.1 {
         /*return builder.defineListAllowEmpty("displayLanguage", List.of("en_us"), String.class::isInstance);
         *///?} else {
         return builder.defineListAllowEmpty("displayLanguage", List.of("en_us"), () -> "en_us", String.class::isInstance);

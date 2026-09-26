@@ -1,4 +1,5 @@
 package com.starskyxiii.polyglottooltip.search;
+//~ minecraft_legacy_registries
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.registries.BuiltInRegistries;

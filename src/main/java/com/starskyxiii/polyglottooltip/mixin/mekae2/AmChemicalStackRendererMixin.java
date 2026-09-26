@@ -7,6 +7,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Coerce;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.List;
@@ -25,8 +26,16 @@ import java.util.List;
 @Mixin(targets = "me.ramidzkh.mekae2.ae2.AMChemicalStackRenderer", remap = false)
 public class AmChemicalStackRendererMixin {
 
-    @Inject(method = "getTooltip", at = @At("RETURN"))
-    private void onGetTooltip(Object ingredient,
+    @Inject(
+            //? if <=1.19.2 {
+            /*method = "getTooltip(Lme/ramidzkh/mekae2/ae2/MekanismKey;)Ljava/util/List;",
+            *///?} else {
+            method = "getTooltip",
+            //?}
+            at = @At("RETURN"),
+            remap = false
+    )
+    private void onGetTooltip(@Coerce Object ingredient,
                               CallbackInfoReturnable<List<Component>> cir) {
         if (!(ingredient instanceof AEKey key)) return;
         SecondaryTooltipUtil.insertSecondaryName(cir.getReturnValue(), key.getDisplayName());

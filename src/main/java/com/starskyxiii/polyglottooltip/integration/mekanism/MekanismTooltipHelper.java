@@ -40,7 +40,11 @@ public final class MekanismTooltipHelper {
     }
 
     private static Optional<Component> getChemicalNameFromTypeHolder(Object holder) {
-        return invokeNoArg(holder, "getType").flatMap(MekanismTooltipHelper::toComponent);
+        Optional<Object> chemical = invokeNoArg(holder, "getType");
+        if (chemical.isEmpty()) {
+            chemical = invokeNoArg(holder, "getChemical");
+        }
+        return chemical.flatMap(MekanismTooltipHelper::toComponent);
     }
 
     private static Optional<Component> toComponent(Object chemical) {

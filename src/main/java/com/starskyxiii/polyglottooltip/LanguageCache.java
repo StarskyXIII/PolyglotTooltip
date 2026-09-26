@@ -30,7 +30,7 @@ public final class LanguageCache {
     private final ItemStackNameAdapter itemStackNames = new ItemStackNameAdapter();
     private final Map<ItemStackSnapshotKey, List<String>> displayNameCache = new ConcurrentHashMap<>();
     private final Map<ItemStackSnapshotKey, List<String>> searchNameCache = new ConcurrentHashMap<>();
-    private volatile List<ClientLanguage> loadedLanguages = List.of();
+    private volatile LanguageSnapshot languageSnapshot = new LanguageSnapshot(List.of(), null);
 
     private LanguageCache() {
     }
@@ -44,7 +44,24 @@ public final class LanguageCache {
     }
 
     public void replaceLanguages(List<ClientLanguage> languages) {
-        loadedLanguages = List.copyOf(languages);
+        replaceLanguages(languages, null);
+    }
+
+    public void replaceLanguages(List<ClientLanguage> languages, ClientLanguage englishLanguage) {
+        replaceLanguages(languages, englishLanguage, List.of());
+    }
+
+    public void replaceLanguages(List<ClientLanguage> languages,
+                                 ClientLanguage englishLanguage,
+                                 List<Map<String, String>> legacyLanguageEntries) {
+        List<LanguageEntry> entries = new ArrayList<>(languages.size());
+        for (int index = 0; index < languages.size(); index++) {
+            Map<String, String> legacyEntries = index < legacyLanguageEntries.size()
+                    ? Map.copyOf(legacyLanguageEntries.get(index))
+                    : Map.of();
+            entries.add(new LanguageEntry(languages.get(index), legacyEntries));
+        }
+        languageSnapshot = new LanguageSnapshot(List.copyOf(entries), englishLanguage);
         displayNameCache.clear();
         searchNameCache.clear();
     }
@@ -67,10 +84,16 @@ public final class LanguageCache {
 
     public List<String> resolveComponentsForAll(Component component) {
         LinkedHashSet<String> results = new LinkedHashSet<>();
-        for (ClientLanguage language : loadedLanguages) {
-            ComponentLanguageResolver.resolve(component, language).ifPresent(results::add);
+        LanguageSnapshot snapshot = languageSnapshot;
+        for (LanguageEntry entry : snapshot.entries()) {
+            ComponentLanguageResolver.resolve(component, entry.language()).ifPresent(results::add);
         }
         return List.copyOf(results);
+    }
+
+    public Optional<String> resolveEnglishComponent(Component component) {
+        ClientLanguage english = languageSnapshot.english();
+        return english == null ? Optional.empty() : ComponentLanguageResolver.resolve(component, english);
     }
 
     public void reloadImmediate() {
@@ -79,9 +102,11 @@ public final class LanguageCache {
 
     private List<String> resolveDisplayNamesUncached(ItemStack stack) {
         LinkedHashSet<String> results = new LinkedHashSet<>();
-        for (ClientLanguage language : loadedLanguages) {
+        LanguageSnapshot snapshot = languageSnapshot;
+        for (LanguageEntry entry : snapshot.entries()) {
             Function<Component, Optional<String>> componentResolver =
-                    component -> ComponentLanguageResolver.resolve(component, language);
+                    component -> ComponentLanguageResolver.resolve(component, entry.language())
+                            .or(() -> ComponentLanguageResolver.resolve(component, entry.legacyEntries()::get));
             itemStackNames.resolveDisplayName(stack, componentResolver, SPECIAL_NAME_RESOLVERS)
                     .ifPresent(results::add);
         }
@@ -94,5 +119,11 @@ public final class LanguageCache {
             results.addAll(resolveComponentsForAll(enchantmentName));
         }
         return List.copyOf(results);
+    }
+
+    private record LanguageEntry(ClientLanguage language, Map<String, String> legacyEntries) {
+    }
+
+    private record LanguageSnapshot(List<LanguageEntry> entries, ClientLanguage english) {
     }
 }

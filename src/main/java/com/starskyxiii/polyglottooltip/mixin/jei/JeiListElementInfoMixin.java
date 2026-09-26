@@ -3,6 +3,7 @@ package com.starskyxiii.polyglottooltip.mixin.jei;
 
 import com.llamalad7.mixinextras.sugar.Local;
 import com.starskyxiii.polyglottooltip.LanguageCache;
+import com.starskyxiii.polyglottooltip.integration.mekanism.MekanismTooltipHelper;
 import com.starskyxiii.polyglottooltip.integration.productivebees.ProductiveBeesNameHelper;
 import mezz.jei.api.ingredients.ITypedIngredient;
 import net.minecraft.network.chat.Component;
@@ -17,7 +18,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -46,7 +46,11 @@ public class JeiListElementInfoMixin {
     private List<String> names;
 
     @Inject(
+            //? if <=1.19.2 {
+            /*method = "<init>(Lmezz/jei/gui/ingredients/IListElement;Lmezz/jei/api/runtime/IIngredientManager;Lmezz/jei/common/config/IIngredientFilterConfig;Lmezz/jei/api/helpers/IModIdHelper;)V",
+            *///?} else {
             method = "<init>(Lmezz/jei/gui/ingredients/IListElement;Lmezz/jei/api/runtime/IIngredientManager;Lmezz/jei/api/helpers/IModIdHelper;)V",
+            //?}
             at = @At("RETURN"),
             remap = false
     )
@@ -93,23 +97,21 @@ public class JeiListElementInfoMixin {
     }
 
     private static Optional<Component> resolveMekanismChemicalName(Object ingredient) {
-        if (ingredient == null
-                || !"mekanism.api.chemical.ChemicalStack".equals(ingredient.getClass().getName())) {
+        if (ingredient == null || !isMekanismChemicalStack(ingredient.getClass())) {
             return Optional.empty();
         }
 
-        try {
-            Method getChemical = ingredient.getClass().getMethod("getChemical");
-            Object chemical = getChemical.invoke(ingredient);
-            if (chemical == null) {
-                return Optional.empty();
+        return MekanismTooltipHelper.getChemicalNameFromStack(ingredient);
+    }
+
+    private static boolean isMekanismChemicalStack(Class<?> type) {
+        Class<?> current = type;
+        while (current != null) {
+            if ("mekanism.api.chemical.ChemicalStack".equals(current.getName())) {
+                return true;
             }
-
-            Method getTextComponent = chemical.getClass().getMethod("getTextComponent");
-            Object component = getTextComponent.invoke(chemical);
-            return component instanceof Component c ? Optional.of(c) : Optional.empty();
-        } catch (ReflectiveOperationException e) {
-            return Optional.empty();
+            current = current.getSuperclass();
         }
+        return false;
     }
 }

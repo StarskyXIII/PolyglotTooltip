@@ -1,7 +1,11 @@
 package com.starskyxiii.polyglottooltip.integration.ae2;
-//~ ae_key_rendering_package
+//~ ae_key_rendering_package ae_key_rendering_legacy
 
+//? if <=1.19.2 {
+/*import appeng.api.client.AEStackRendering;
+*///?} else {
 import appeng.api.client.AEKeyRendering;
+//?}
 import appeng.api.stacks.AEKey;
 import appeng.core.AEConfig;
 import appeng.menu.me.common.GridInventoryEntry;

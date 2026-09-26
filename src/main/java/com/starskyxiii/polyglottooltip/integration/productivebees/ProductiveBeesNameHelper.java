@@ -1,5 +1,5 @@
 package com.starskyxiii.polyglottooltip.integration.productivebees;
-//~ minecraft_identifier
+//~ minecraft_identifier minecraft_legacy_registries
 
 //? if <=1.20.1 {
 /*import net.minecraft.nbt.CompoundTag;
@@ -22,7 +22,9 @@ import java.util.function.Function;
 public final class ProductiveBeesNameHelper {
 
     private static final String MOD_ID = "productivebees";
-    //? if <=1.20.1 {
+    //? if <=1.19.2 {
+    /*private static final String BEE_INGREDIENT = "cy.jdkdigital.productivebees.integrations.jei.ingredients.BeeIngredient";
+    *///?} else if <=1.20.1 {
     /*private static final String BEE_INGREDIENT = "cy.jdkdigital.productivebees.compat.jei.ingredients.BeeIngredient";
     *///?} else {
     private static final String BEE_INGREDIENT = "cy.jdkdigital.productivebees.common.crafting.ingredient.BeeIngredient";

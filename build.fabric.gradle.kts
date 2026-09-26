@@ -10,6 +10,13 @@ val modVersion = "2.0"
 val requiredJava = if (sc.current.parsed > "1.20.1") 21 else 17
 
 stonecutter {
+    replacements.string(false, "ae_key_rendering_legacy") {
+        replace("AEKeyRendering", "AEStackRendering")
+    }
+    replacements.string(false, "minecraft_legacy_registries") {
+        replace("import net.minecraft.core.registries.BuiltInRegistries;", "import net.minecraft.core.Registry;")
+        replace("BuiltInRegistries.ITEM", "Registry.ITEM")
+    }
     replacements.string(false, "forge_neoforge_package") {
         replace("net.neoforged.neoforge", "net.minecraftforge")
         replace("net.neoforged.bus.api", "net.minecraftforge.eventbus.api")
@@ -127,6 +134,13 @@ sourceSets.main {
         "com/starskyxiii/polyglottooltip/mixin/jei/JeiFluidHelperMixin.java",
         "com/starskyxiii/polyglottooltip/mixin/jei/JeiListElementInfoMixin.java",
         "com/starskyxiii/polyglottooltip/mixin/jei/JeiSafeIngredientUtilMixin.java",
+        "com/starskyxiii/polyglottooltip/integration/ae2/LegacyAe2RegexSearch.java",
+        "com/starskyxiii/polyglottooltip/mixin/ae2/LegacyAe2SearchPredicatesMixin.java",
+        "com/starskyxiii/polyglottooltip/mixin/ae2/LegacyAe2RepoSearchCacheMixin.java",
+        "com/starskyxiii/polyglottooltip/integration/controlling/LegacyControllingSearch.java",
+        "com/starskyxiii/polyglottooltip/mixin/controlling/LegacyControllingKeyBindsScreenMixin.java",
+        "com/starskyxiii/polyglottooltip/integration/projecte/LegacyProjectESearch.java",
+        "com/starskyxiii/polyglottooltip/mixin/projecte/LegacyProjectETransmutationInventoryMixin.java",
         "com/starskyxiii/polyglottooltip/mixin/jade/JadeGtoCoreCompatMixin.java",
         "com/starskyxiii/polyglottooltip/integration/jec/JecLegacySearchStoragePlugin.java",
         "com/starskyxiii/polyglottooltip/mixin/emi/EmiScreenManagerTooltipMixin.java",
@@ -140,6 +154,7 @@ sourceSets.main {
 }
 
 sourceSets.test {
+    java.exclude("com/starskyxiii/polyglottooltip/integration/mekanism/MekanismTooltipHelperTest.java")
     compileClasspath += sourceSets.main.get().compileClasspath
     runtimeClasspath += sourceSets.main.get().runtimeClasspath
 }

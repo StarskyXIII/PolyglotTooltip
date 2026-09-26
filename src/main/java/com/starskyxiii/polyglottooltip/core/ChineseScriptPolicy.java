@@ -29,6 +29,20 @@ public final class ChineseScriptPolicy {
         return Collections.unmodifiableSet(variants);
     }
 
+    public static Set<String> scriptVariants(String value, boolean enabled) {
+        if (value == null || value.isEmpty()) {
+            return Collections.emptySet();
+        }
+        Set<String> variants = new LinkedHashSet<>();
+        variants.add(value);
+        if (!enabled || !ZhConverterUtil.containsChinese(value)) {
+            return Collections.unmodifiableSet(variants);
+        }
+        addRawConvertedVariant(variants, value, ZhConverterUtil::toSimple);
+        addRawConvertedVariant(variants, value, ZhConverterUtil::toTraditional);
+        return Collections.unmodifiableSet(variants);
+    }
+
     public static String normalize(String value) {
         return value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
     }
@@ -39,6 +53,18 @@ public final class ChineseScriptPolicy {
         try {
             String converted = normalize(converter.apply(source));
             if (!converted.isEmpty()) {
+                variants.add(converted);
+            }
+        } catch (RuntimeException ignored) {
+        }
+    }
+
+    private static void addRawConvertedVariant(Set<String> variants,
+                                               String source,
+                                               UnaryOperator<String> converter) {
+        try {
+            String converted = converter.apply(source);
+            if (converted != null && !converted.isEmpty()) {
                 variants.add(converted);
             }
         } catch (RuntimeException ignored) {
