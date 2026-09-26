@@ -2,7 +2,11 @@ package com.starskyxiii.polyglottooltip.integration;
 
 import com.starskyxiii.polyglottooltip.SecondaryTooltipUtil;
 import net.minecraft.network.chat.Component;
+//? if <=1.18.2 {
+/*import net.minecraft.network.chat.TranslatableComponent;
+*///?} else {
 import net.minecraft.network.chat.contents.TranslatableContents;
+//?}
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,7 +37,11 @@ public final class FluidTooltipHelper {
         if (component == null || component.getString().isBlank()) {
             return true;
         }
+        //? if <=1.18.2 {
+        /*if (component instanceof TranslatableComponent contents) {
+        *///?} else {
         if (component.getContents() instanceof TranslatableContents contents) {
+        //?}
             String key = contents.getKey();
             return LDLIB_EMPTY_FLUID_KEY.equals(key) || GTCEU_EMPTY_FLUID_KEY.equals(key);
         }

@@ -1,4 +1,5 @@
 package com.starskyxiii.polyglottooltip.integration.mekanism;
+//~ minecraft_legacy_components
 
 import net.minecraft.network.chat.Component;
 import org.junit.jupiter.api.Test;

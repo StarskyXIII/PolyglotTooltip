@@ -1,4 +1,5 @@
 package com.starskyxiii.polyglottooltip.integration.occultism;
+//~ occultism_legacy_package
 
 import com.starskyxiii.polyglottooltip.search.SearchTextCollector;
 import net.minecraft.client.Minecraft;

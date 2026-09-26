@@ -1,4 +1,5 @@
 package com.starskyxiii.polyglottooltip.mixin.jei;
+//~ jei10_internal_packages
 
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;

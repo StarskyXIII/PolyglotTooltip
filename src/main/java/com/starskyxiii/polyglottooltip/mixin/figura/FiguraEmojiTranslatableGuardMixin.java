@@ -2,9 +2,13 @@ package com.starskyxiii.polyglottooltip.mixin.figura;
 
 import com.starskyxiii.polyglottooltip.compat.figura.FiguraEmojiContext;
 import net.minecraft.network.chat.Component;
+//? if <=1.18.2 {
+/*import net.minecraft.network.chat.TranslatableComponent;
+*///?} else {
 import net.minecraft.network.chat.ComponentContents;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.contents.TranslatableContents;
+//?}
+import net.minecraft.network.chat.MutableComponent;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.injection.At;
@@ -34,8 +38,12 @@ public abstract class FiguraEmojiTranslatableGuardMixin {
             return true;
         }
 
+        //? if <=1.18.2 {
+        /*if (component instanceof TranslatableComponent tc) {
+        *///?} else {
         ComponentContents contents = component.getContents();
         if (contents instanceof TranslatableContents tc) {
+        //?}
             for (Object arg : tc.getArgs()) {
                 if (arg instanceof Component argComponent
                         && polyglottooltip$containsTranslatable(argComponent, depth + 1)) {

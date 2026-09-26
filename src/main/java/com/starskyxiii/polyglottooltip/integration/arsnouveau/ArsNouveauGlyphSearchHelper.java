@@ -1,4 +1,5 @@
 package com.starskyxiii.polyglottooltip.integration.arsnouveau;
+//~ minecraft_legacy_components
 
 import com.starskyxiii.polyglottooltip.SecondaryTooltipUtil;
 import net.minecraft.ChatFormatting;

@@ -1,5 +1,5 @@
 package com.starskyxiii.polyglottooltip.integration.jade;
-//~ minecraft_identifier forge_neoforge_package
+//~ minecraft_identifier forge_neoforge_package minecraft_legacy_components
 
 import com.starskyxiii.polyglottooltip.LanguageCache;
 import com.starskyxiii.polyglottooltip.PolyglotTooltip;
@@ -15,15 +15,26 @@ import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
 *///?} else {
 import net.neoforged.neoforge.fluids.FluidStack;
 //?}
+//? if <=1.18.2 {
+/*import mcp.mobius.waila.api.BlockAccessor;
+import mcp.mobius.waila.api.IComponentProvider;
+import mcp.mobius.waila.api.ITooltip;
+import mcp.mobius.waila.api.config.IPluginConfig;
+*///?} else {
 import snownee.jade.api.BlockAccessor;
 import snownee.jade.api.IBlockComponentProvider;
 import snownee.jade.api.ITooltip;
 import snownee.jade.api.TooltipPosition;
 import snownee.jade.api.config.IPluginConfig;
+//?}
 
 import java.util.List;
 
+//? if <=1.18.2 {
+/*public enum JadeBlockNameProvider implements IComponentProvider {
+*///?} else {
 public enum JadeBlockNameProvider implements IBlockComponentProvider {
+//?}
     INSTANCE;
 
     //? if <=1.20.1 {
@@ -52,6 +63,7 @@ public enum JadeBlockNameProvider implements IBlockComponentProvider {
         }
     }
 
+    //? if >1.18.2 {
     @Override
     public ResourceLocation getUid() {
         return UID;
@@ -61,6 +73,7 @@ public enum JadeBlockNameProvider implements IBlockComponentProvider {
     public int getDefaultPriority() {
         return TooltipPosition.HEAD - 50;
     }
+    //?}
 
     private ResolvedNames resolveNames(BlockAccessor accessor) {
         if (accessor.getBlock() instanceof LiquidBlock) {
@@ -71,7 +84,11 @@ public enum JadeBlockNameProvider implements IBlockComponentProvider {
                 Component primary = FluidVariantAttributes.getName(fluidVariant);
                 *///?} else {
                 FluidStack fluidStack = new FluidStack(fluidState.getType(), 1);
+                //? if <=1.18.2 {
+                /*Component primary = fluidState.getType().getAttributes().getDisplayName(fluidStack);
+                *///?} else {
                 Component primary = fluidState.getType().getFluidType().getDescription(fluidStack);
+                //?}
                 //?}
                 return new ResolvedNames(primary, LanguageCache.getInstance().resolveComponentsForAll(primary));
             }

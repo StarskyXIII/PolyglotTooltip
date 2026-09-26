@@ -9,6 +9,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - project: 1.18.2-forge
+            loader: forge
+            java: '21'
           - project: 1.19.2-forge
             loader: forge
             java: '21'

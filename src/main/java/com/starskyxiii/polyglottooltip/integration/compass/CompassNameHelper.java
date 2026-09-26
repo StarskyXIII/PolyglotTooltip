@@ -1,5 +1,5 @@
 package com.starskyxiii.polyglottooltip.integration.compass;
-//~ minecraft_identifier minecraft_util_package
+//~ minecraft_identifier minecraft_util_package minecraft_legacy_components
 
 import com.starskyxiii.polyglottooltip.LanguageCache;
 import com.starskyxiii.polyglottooltip.SecondaryTooltipUtil;

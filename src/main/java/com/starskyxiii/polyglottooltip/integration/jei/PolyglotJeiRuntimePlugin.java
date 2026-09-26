@@ -10,7 +10,10 @@ import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.resources.ResourceLocation;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.util.Collection;
+import java.util.List;
 
 @JeiPlugin
 public final class PolyglotJeiRuntimePlugin implements IModPlugin {
@@ -64,9 +67,16 @@ public final class PolyglotJeiRuntimePlugin implements IModPlugin {
                 Field filterField = filterApi.getClass().getDeclaredField("ingredientFilter");
                 filterField.setAccessible(true);
                 Object filter = filterField.get(filterApi);
+                //? if <=1.18.2 {
+                /*if (rebuildSearchIndex) {
+                    rebuildLegacyElementSearch(filter);
+                }
+                Method refreshMethod = filter.getClass().getDeclaredMethod("invalidateCache");
+                *///?} else {
                 Method refreshMethod = filter.getClass().getDeclaredMethod(
                         rebuildSearchIndex ? "rebuildItemFilter" : "invalidateCache"
                 );
+                //?}
                 Method notifyMethod = filter.getClass().getDeclaredMethod("notifyListenersOfChange");
                 refreshMethod.setAccessible(true);
                 notifyMethod.setAccessible(true);
@@ -74,7 +84,11 @@ public final class PolyglotJeiRuntimePlugin implements IModPlugin {
                 notifyMethod.invoke(filter);
 
                 Object ingredientListOverlay = expectedRuntime.getIngredientListOverlay();
+                //? if <=1.18.2 {
+                /*Field searchField = ingredientListOverlay.getClass().getDeclaredField("textFieldFilter");
+                *///?} else {
                 Field searchField = ingredientListOverlay.getClass().getDeclaredField("searchField");
+                //?}
                 searchField.setAccessible(true);
                 EditBox searchBox = (EditBox) searchField.get(ingredientListOverlay);
                 searchBox.setValue(searchBox.getValue());
@@ -84,9 +98,38 @@ public final class PolyglotJeiRuntimePlugin implements IModPlugin {
         });
     }
 
+    //? if <=1.18.2 {
+    /*private static void rebuildLegacyElementSearch(Object filter) throws ReflectiveOperationException {
+        Field searchField = filter.getClass().getDeclaredField("elementSearch");
+        Field parserField = filter.getClass().getDeclaredField("elementPrefixParser");
+        searchField.setAccessible(true);
+        parserField.setAccessible(true);
+        Object oldSearch = searchField.get(filter);
+        Method getAllIngredients = oldSearch.getClass().getMethod("getAllIngredients");
+        Collection<?> elements = List.copyOf((Collection<?>) getAllIngredients.invoke(oldSearch));
+        Object replacement;
+        if (oldSearch.getClass().getName().endsWith("ElementSearchLowMem")) {
+            Constructor<?> constructor = oldSearch.getClass().getConstructor();
+            replacement = constructor.newInstance();
+        } else {
+            Object parser = parserField.get(filter);
+            Constructor<?> constructor = oldSearch.getClass().getConstructor(parser.getClass());
+            replacement = constructor.newInstance(parser);
+        }
+        Method add = replacement.getClass().getMethod(
+                "add", Class.forName("mezz.jei.common.ingredients.IListElementInfo"));
+        for (Object element : elements) {
+            add.invoke(replacement, element);
+        }
+        searchField.set(filter, replacement);
+    }
+    *///?}
+
+    //? if >1.18.2 {
     @Override
     public void onRuntimeUnavailable() {
         activeRuntime = null;
         JeiSearchRefreshBridge.clearRefreshActions();
     }
+    //?}
 }

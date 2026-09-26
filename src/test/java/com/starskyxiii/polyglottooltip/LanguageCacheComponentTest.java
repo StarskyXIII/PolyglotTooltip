@@ -1,4 +1,5 @@
 package com.starskyxiii.polyglottooltip;
+//~ minecraft_legacy_components
 
 import net.minecraft.client.resources.language.ClientLanguage;
 import net.minecraft.network.chat.Component;
