@@ -1,3 +1,8 @@
+import groovy.json.JsonSlurper
+import java.io.OutputStream
+import java.util.jar.JarInputStream
+import java.util.zip.ZipFile
+
 plugins {
     id("java-library")
     id("maven-publish")
@@ -169,6 +174,14 @@ tasks {
     withType<Jar>().configureEach {
         manifest.attributes("MixinConfigs" to "polyglottooltip.mixins.json")
     }
+    named<Jar>("jar") {
+        archiveClassifier = "dev"
+        destinationDirectory = layout.buildDirectory.dir("intermediates/jars")
+    }
+    named<Jar>("jarJar") {
+        archiveClassifier = "bundled-dev"
+        destinationDirectory = layout.buildDirectory.dir("intermediates/jarjar")
+    }
     named("compileJava") {
         dependsOn("stonecutterGenerate")
     }
@@ -176,17 +189,105 @@ tasks {
 
 val productionJar = renamer.classes(tasks.named<Jar>("jarJar")) {
     mappings(renamer.mixin.generatedMappings)
-    archiveClassifier = "production"
+    output.set(layout.buildDirectory.file(base.archivesName.map { "libs/$it-${project.version}.jar" }))
+}
+
+val productionArchive = productionJar.flatMap { it.output }
+val requiredBundledLibraries = setOf(
+    "com.github.houbb:opencc4j",
+    "com.github.houbb:heaven",
+    "com.github.houbb:nlp-common",
+    "io.github.llamalad7:mixinextras-forge"
+)
+
+val verifyProductionJar = tasks.register("verifyProductionJar") {
+    group = "verification"
+    dependsOn(productionJar)
+    inputs.file(productionArchive)
+    doLast {
+        val archive = productionArchive.get().asFile
+        if (!archive.isFile) {
+            throw GradleException("Production jar does not exist: $archive")
+        }
+        ZipFile(archive).use { productionZip ->
+            val metadataEntry = productionZip.getEntry("META-INF/jarjar/metadata.json")
+                ?: throw GradleException("Production jar is missing META-INF/jarjar/metadata.json")
+            val metadata = productionZip.getInputStream(metadataEntry).use {
+                JsonSlurper().parse(it) as? Map<*, *>
+            } ?: throw GradleException("JarJar metadata root is not an object")
+            val jars = metadata["jars"] as? List<*>
+                ?: throw GradleException("JarJar metadata does not contain a jars array")
+            val declaredLibraries = jars.map { item ->
+                val jar = item as? Map<*, *>
+                    ?: throw GradleException("JarJar metadata contains a non-object entry")
+                val identifier = jar["identifier"] as? Map<*, *>
+                    ?: throw GradleException("JarJar metadata entry has no identifier")
+                val group = identifier["group"] as? String
+                    ?: throw GradleException("JarJar metadata identifier has no group")
+                val artifact = identifier["artifact"] as? String
+                    ?: throw GradleException("JarJar metadata identifier has no artifact")
+                "$group:$artifact" to jar
+            }
+            val missingLibraries = requiredBundledLibraries - declaredLibraries.map { it.first }.toSet()
+            if (missingLibraries.isNotEmpty()) {
+                throw GradleException("Production jar is missing bundled libraries: ${missingLibraries.sorted().joinToString()}")
+            }
+            declaredLibraries.forEach { (coordinate, jar) ->
+                val path = jar["path"] as? String
+                    ?: throw GradleException("Bundled library $coordinate has no path")
+                if (!path.startsWith("META-INF/jarjar/") || path.contains("..") || !path.endsWith(".jar")) {
+                    throw GradleException("Bundled library $coordinate has an invalid path: $path")
+                }
+                val nestedEntry = productionZip.getEntry(path)
+                    ?: throw GradleException("Bundled library $coordinate is missing at $path")
+                if (nestedEntry.isDirectory) {
+                    throw GradleException("Bundled library $coordinate points to a directory: $path")
+                }
+                productionZip.getInputStream(nestedEntry).use { input ->
+                    JarInputStream(input).use { nestedJar ->
+                        var entry = nestedJar.nextJarEntry
+                        if (nestedJar.manifest == null && entry == null) {
+                            throw GradleException("Bundled library $coordinate is not a valid non-empty jar: $path")
+                        }
+                        val sink = OutputStream.nullOutputStream()
+                        while (entry != null) {
+                            nestedJar.transferTo(sink)
+                            entry = nestedJar.nextJarEntry
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+val exportProductionJarPath = tasks.register("exportProductionJarPath") {
+    dependsOn(verifyProductionJar)
+    inputs.file(productionArchive)
+    doLast {
+        val archive = productionArchive.get().asFile.absoluteFile
+        val githubOutput = System.getenv("GITHUB_OUTPUT")
+        if (!githubOutput.isNullOrBlank()) {
+            file(githubOutput).appendText("path=${archive.path}${System.lineSeparator()}")
+        }
+        logger.lifecycle(archive.path)
+    }
+}
+
+tasks.check {
+    dependsOn(verifyProductionJar)
 }
 
 tasks.build {
-    dependsOn(productionJar)
+    dependsOn(verifyProductionJar)
 }
 
 publishing {
     publications {
         register<MavenPublication>("mavenJava") {
-            artifact(productionJar)
+            artifact(productionJar) {
+                builtBy(verifyProductionJar)
+            }
         }
     }
 }
