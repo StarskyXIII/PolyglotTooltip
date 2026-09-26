@@ -1,4 +1,5 @@
 package com.starskyxiii.polyglottooltip.integration.storagedrawers;
+//~ minecraft_legacy_components
 
 import com.starskyxiii.polyglottooltip.LanguageCache;
 import net.minecraft.network.chat.Component;

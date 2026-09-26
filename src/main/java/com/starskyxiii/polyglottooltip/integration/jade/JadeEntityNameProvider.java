@@ -7,11 +7,18 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
+//? if <=1.18.2 {
+/*import mcp.mobius.waila.api.EntityAccessor;
+import mcp.mobius.waila.api.IEntityComponentProvider;
+import mcp.mobius.waila.api.ITooltip;
+import mcp.mobius.waila.api.config.IPluginConfig;
+*///?} else {
 import snownee.jade.api.EntityAccessor;
 import snownee.jade.api.IEntityComponentProvider;
 import snownee.jade.api.ITooltip;
 import snownee.jade.api.TooltipPosition;
 import snownee.jade.api.config.IPluginConfig;
+//?}
 
 import java.util.List;
 
@@ -42,6 +49,7 @@ public enum JadeEntityNameProvider implements IEntityComponentProvider {
         }
     }
 
+    //? if >1.18.2 {
     @Override
     public ResourceLocation getUid() {
         return UID;
@@ -51,4 +59,5 @@ public enum JadeEntityNameProvider implements IEntityComponentProvider {
     public int getDefaultPriority() {
         return TooltipPosition.HEAD - 50;
     }
+    //?}
 }

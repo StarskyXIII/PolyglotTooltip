@@ -1,4 +1,5 @@
 package com.starskyxiii.polyglottooltip.integration.industrialforegoing;
+//~ minecraft_legacy_components
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.DyeColor;

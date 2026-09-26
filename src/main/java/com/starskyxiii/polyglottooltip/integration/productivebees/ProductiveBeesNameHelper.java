@@ -1,5 +1,5 @@
 package com.starskyxiii.polyglottooltip.integration.productivebees;
-//~ minecraft_identifier minecraft_legacy_registries
+//~ minecraft_identifier minecraft_legacy_registries minecraft_legacy_components
 
 //? if <=1.20.1 {
 /*import net.minecraft.nbt.CompoundTag;

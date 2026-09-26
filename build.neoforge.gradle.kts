@@ -10,6 +10,18 @@ val modVersion = "2.0"
 val requiredJava = if (sc.current.parsed >= "26") 25 else 21
 
 stonecutter {
+    replacements.string(false, "minecraft_legacy_components") {
+        replace("Component.empty()", "new net.minecraft.network.chat.TextComponent(\"\")")
+        replace("Component.literal(", "new net.minecraft.network.chat.TextComponent(")
+        replace("Component.translatable(", "new net.minecraft.network.chat.TranslatableComponent(")
+        replace("Component::translatable", "net.minecraft.network.chat.TranslatableComponent::new")
+    }
+    replacements.string(false, "jei10_internal_packages") {
+        replace("mezz.jei.gui.search.ElementSearchLowMem", "mezz.jei.common.search.ElementSearchLowMem")
+    }
+    replacements.string(false, "occultism_legacy_package") {
+        replace("com.klikli_dev.occultism", "com.github.klikli_dev.occultism")
+    }
     replacements.string(false, "ae_key_rendering_legacy") {
         replace("AEKeyRendering", "AEStackRendering")
     }
@@ -149,6 +161,11 @@ sourceSets.main {
         "com/starskyxiii/polyglottooltip/integration/ae2/LegacyAe2RegexSearch.java",
         "com/starskyxiii/polyglottooltip/mixin/ae2/LegacyAe2SearchPredicatesMixin.java",
         "com/starskyxiii/polyglottooltip/mixin/ae2/LegacyAe2RepoSearchCacheMixin.java",
+        "com/starskyxiii/polyglottooltip/mixin/ae2/LegacyAe2InterfaceTerminalScreenMixin.java",
+        "com/starskyxiii/polyglottooltip/mixin/ae2/LegacyAe2InterfaceRecordMixin.java",
+        "com/starskyxiii/polyglottooltip/mixin/jei/LegacyJei10ElementPrefixParserMixin.java",
+        "com/starskyxiii/polyglottooltip/mixin/jei/LegacyJei10FluidTankRendererMixin.java",
+        "com/starskyxiii/polyglottooltip/mixin/jei/LegacyProductiveBeesBeeIngredientRendererMixin.java",
         "com/starskyxiii/polyglottooltip/integration/controlling/LegacyControllingSearch.java",
         "com/starskyxiii/polyglottooltip/mixin/controlling/LegacyControllingKeyBindsScreenMixin.java",
         "com/starskyxiii/polyglottooltip/integration/projecte/LegacyProjectESearch.java",

@@ -1,4 +1,5 @@
 package com.starskyxiii.polyglottooltip;
+//~ minecraft_legacy_components
 
 //? if >1.20.1 {
 import net.minecraft.SharedConstants;

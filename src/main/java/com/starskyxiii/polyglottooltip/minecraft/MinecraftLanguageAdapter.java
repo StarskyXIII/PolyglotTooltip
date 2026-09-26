@@ -25,7 +25,8 @@ import net.minecraft.util.profiling.ProfilerFiller;
 import java.util.ArrayList;
 import java.util.Map;
 //? if <=1.19.2 {
-/*import java.io.IOException;
+/*import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
@@ -119,7 +120,46 @@ public final class MinecraftLanguageAdapter implements PreparableReloadListener
         //?}
     }
 
-    //? if <=1.19.2 {
+    //? if <=1.18.2 {
+    /*static Map<String, String> loadStorageDrawersLegacyLanguage(ResourceManager resourceManager,
+                                                                 String languageCode) {
+        if ("en_us".equalsIgnoreCase(languageCode)) {
+            return Map.of();
+        }
+        Map<String, String> translations = new LinkedHashMap<>();
+        ResourceLocation location = new ResourceLocation(
+                "storagedrawers", "lang/" + languageCode.toLowerCase(java.util.Locale.ROOT) + ".lang");
+        List<Resource> resources;
+        try {
+            resources = resourceManager.getResources(location);
+        } catch (FileNotFoundException exception) {
+            return Map.of();
+        } catch (IOException exception) {
+            PolyglotTooltip.LOGGER.warn(
+                    "[PolyglotTooltip] Failed to list Storage Drawers legacy language '{}': {}",
+                    languageCode,
+                    exception.getMessage());
+            return Map.of();
+        }
+        for (Resource resource : resources) {
+            Properties properties = new Properties();
+            try (InputStreamReader reader = new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8)) {
+                properties.load(reader);
+            } catch (IOException | IllegalArgumentException exception) {
+                PolyglotTooltip.LOGGER.warn(
+                        "[PolyglotTooltip] Failed to load Storage Drawers legacy language '{}': {}",
+                        languageCode,
+                        exception.getMessage());
+                continue;
+            }
+            for (String key : properties.stringPropertyNames()) {
+                String normalizedKey = key.startsWith("\uFEFF") ? key.substring(1) : key;
+                translations.put(normalizedKey, properties.getProperty(key));
+            }
+        }
+        return Map.copyOf(translations);
+    }
+    *///?} else if <=1.19.2 {
     /*static Map<String, String> loadStorageDrawersLegacyLanguage(ResourceManager resourceManager,
                                                                  String languageCode) {
         if ("en_us".equalsIgnoreCase(languageCode)) {

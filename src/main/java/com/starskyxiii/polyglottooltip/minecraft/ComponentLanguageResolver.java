@@ -2,8 +2,12 @@ package com.starskyxiii.polyglottooltip.minecraft;
 
 import net.minecraft.client.resources.language.ClientLanguage;
 import net.minecraft.network.chat.Component;
+//? if <=1.18.2 {
+/*import net.minecraft.network.chat.TranslatableComponent;
+*///?} else {
 import net.minecraft.network.chat.ComponentContents;
 import net.minecraft.network.chat.contents.TranslatableContents;
+//?}
 
 import java.util.Optional;
 import java.util.function.Function;
@@ -48,10 +52,16 @@ public final class ComponentLanguageResolver {
 
     private static Optional<String> resolveContents(Component component,
                                                     Function<String, String> translationLookup) {
+        //? if <=1.18.2 {
+        /*if (!(component instanceof TranslatableComponent translatable)) {
+            return Optional.of(component.getContents());
+        }
+        *///?} else {
         ComponentContents contents = component.getContents();
         if (!(contents instanceof TranslatableContents translatable)) {
             return Optional.of(resolvePlainContents(contents));
         }
+        //?}
 
         String template = translationLookup.apply(translatable.getKey());
         if (template == null) {
@@ -85,6 +95,7 @@ public final class ComponentLanguageResolver {
         }
     }
 
+    //? if >1.18.2 {
     private static String resolvePlainContents(ComponentContents contents) {
         StringBuilder result = new StringBuilder();
         contents.visit(text -> {
@@ -93,4 +104,5 @@ public final class ComponentLanguageResolver {
         });
         return result.toString();
     }
+    //?}
 }

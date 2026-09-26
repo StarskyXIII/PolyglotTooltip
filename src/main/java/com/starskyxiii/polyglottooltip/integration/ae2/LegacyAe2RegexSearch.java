@@ -1,4 +1,5 @@
 package com.starskyxiii.polyglottooltip.integration.ae2;
+//~ minecraft_legacy_components
 
 import appeng.api.client.AEStackRendering;
 import appeng.api.stacks.AEItemKey;

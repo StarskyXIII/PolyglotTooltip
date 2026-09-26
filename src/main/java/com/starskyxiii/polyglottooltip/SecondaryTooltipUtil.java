@@ -1,4 +1,5 @@
 package com.starskyxiii.polyglottooltip;
+//~ minecraft_legacy_components
 
 import com.starskyxiii.polyglottooltip.core.SecondaryLanguagePolicy;
 import net.minecraft.client.Minecraft;

@@ -32,6 +32,18 @@ stonecutter {
         replace("import net.minecraft.core.registries.BuiltInRegistries;", "import net.minecraft.core.Registry;")
         replace("BuiltInRegistries.ITEM", "Registry.ITEM")
     }
+    replacements.string(sc.current.version == "1.18.2", "minecraft_legacy_components") {
+        replace("Component.empty()", "new net.minecraft.network.chat.TextComponent(\"\")")
+        replace("Component.literal(", "new net.minecraft.network.chat.TextComponent(")
+        replace("Component.translatable(", "new net.minecraft.network.chat.TranslatableComponent(")
+        replace("Component::translatable", "net.minecraft.network.chat.TranslatableComponent::new")
+    }
+    replacements.string(sc.current.version == "1.18.2", "jei10_internal_packages") {
+        replace("mezz.jei.gui.search.ElementSearchLowMem", "mezz.jei.common.search.ElementSearchLowMem")
+    }
+    replacements.string(sc.current.version == "1.18.2", "occultism_legacy_package") {
+        replace("com.klikli_dev.occultism", "com.github.klikli_dev.occultism")
+    }
     replacements.string(false, "gui_graphics_extractor") {
         replace("GuiGraphics", "GuiGraphicsExtractor")
         replace("method = \"renderTooltip\"", "method = \"extractHoveredTooltip\"")
@@ -110,6 +122,9 @@ dependencies {
     compileOnly(renamer.dependency("appeng:appliedenergistics2-forge:${property("ae2.version")}"))
     compileOnly(renamer.dependency("mezz.jei:jei-${sc.current.version}-common-api:${property("jei.version")}"))
     compileOnly(renamer.dependency("mezz.jei:jei-${sc.current.version}-forge-api:${property("jei.version")}"))
+    if (sc.current.parsed <= "1.18.2") {
+        compileOnly(renamer.dependency("mezz.jei:jei-${sc.current.version}-forge:${property("jei.version")}"))
+    }
     compileOnly(renamer.dependency("com.blamejared.searchables:Searchables-common-${sc.current.version}:${property("searchables.version")}"))
     compileOnly(renamer.dependency("maven.modrinth:jade:${property("jade.version")}"))
 
@@ -144,6 +159,25 @@ sourceSets.main {
     java.exclude("com/starskyxiii/polyglottooltip/mixin/rs2/**")
     java.exclude("com/starskyxiii/polyglottooltip/mixin/mekanism/MekanismChemicalStackMixin.java")
     java.exclude("com/starskyxiii/polyglottooltip/mixin/jei/JeiGeneralizedSuffixTreeSearchStorageMixin.java")
+    if (sc.current.parsed <= "1.18.2") {
+        java.exclude(
+            "com/starskyxiii/polyglottooltip/mixin/ae2/Ae2PatternAccessTermScreenMixin.java",
+            "com/starskyxiii/polyglottooltip/mixin/ae2/Ae2PatternContainerRecordMixin.java",
+            "com/starskyxiii/polyglottooltip/mixin/jei/JeiListElementInfoMixin.java",
+            "com/starskyxiii/polyglottooltip/mixin/jei/JeiFluidHelperMixin.java",
+            "com/starskyxiii/polyglottooltip/mixin/jei/JeiSafeIngredientUtilMixin.java",
+            "com/starskyxiii/polyglottooltip/integration/jec/JecLegacySearchStoragePlugin.java",
+            "com/starskyxiii/polyglottooltip/mixin/jade/JadeGtoCoreCompatMixin.java"
+        )
+    } else {
+        java.exclude(
+            "com/starskyxiii/polyglottooltip/mixin/ae2/LegacyAe2InterfaceTerminalScreenMixin.java",
+            "com/starskyxiii/polyglottooltip/mixin/ae2/LegacyAe2InterfaceRecordMixin.java",
+            "com/starskyxiii/polyglottooltip/mixin/jei/LegacyJei10ElementPrefixParserMixin.java",
+            "com/starskyxiii/polyglottooltip/mixin/jei/LegacyJei10FluidTankRendererMixin.java",
+            "com/starskyxiii/polyglottooltip/mixin/jei/LegacyProductiveBeesBeeIngredientRendererMixin.java"
+        )
+    }
     if (sc.current.parsed <= "1.19.2") {
         java.exclude(
             "com/starskyxiii/polyglottooltip/mixin/ae2/Ae2RepoSearchMixin.java",
@@ -191,7 +225,9 @@ tasks {
     }
     processResources {
         val mixinConfig = rootProject.file(
-            if (sc.current.parsed <= "1.19.2") {
+            if (sc.current.version == "1.18.2") {
+                "src/forge1182/resources/polyglottooltip.mixins.json"
+            } else if (sc.current.parsed <= "1.19.2") {
                 "src/forge1192/resources/polyglottooltip.mixins.json"
             } else {
                 "src/forge/resources/polyglottooltip.mixins.json"

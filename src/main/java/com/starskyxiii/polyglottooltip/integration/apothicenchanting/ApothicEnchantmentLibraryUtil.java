@@ -1,4 +1,5 @@
 package com.starskyxiii.polyglottooltip.integration.apothicenchanting;
+//~ minecraft_legacy_components
 
 import com.starskyxiii.polyglottooltip.LanguageCache;
 import com.starskyxiii.polyglottooltip.SecondaryTooltipUtil;

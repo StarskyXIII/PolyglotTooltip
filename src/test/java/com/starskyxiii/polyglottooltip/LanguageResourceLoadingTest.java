@@ -85,6 +85,14 @@ class LanguageResourceLoadingTest {
         assertEquals(Map.of(),
                 MinecraftLanguageAdapter.loadStorageDrawersLegacyLanguage(resources, "en_us"));
     }
+
+    @Test
+    void allowsStorageDrawersLanguageResourcesToBeAbsent() {
+        ResourceManager resources = new InMemoryResourceManager(Map.of());
+
+        assertEquals(Map.of(),
+                MinecraftLanguageAdapter.loadStorageDrawersLegacyLanguage(resources, "zh_cn"));
+    }
     *///?}
 
     private static String getTranslation(ClientLanguage language, String key) {
@@ -111,7 +119,38 @@ class LanguageResourceLoadingTest {
 
     private static Resource resource(String json) {
         byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
-        //? if <=1.19.2 {
+        //? if <=1.18.2 {
+        /*return new Resource() {
+            @Override
+            public ResourceLocation getLocation() {
+                return languageFile("fixture");
+            }
+
+            @Override
+            public java.io.InputStream getInputStream() {
+                return new ByteArrayInputStream(bytes);
+            }
+
+            @Override
+            public boolean hasMetadata() {
+                return false;
+            }
+
+            @Override
+            public <T> T getMetadata(net.minecraft.server.packs.metadata.MetadataSectionSerializer<T> serializer) {
+                return null;
+            }
+
+            @Override
+            public String getSourceName() {
+                return "fixture";
+            }
+
+            @Override
+            public void close() {
+            }
+        };
+        *///?} else if <=1.19.2 {
         /*return new Resource("fixture", () -> new ByteArrayInputStream(bytes));
         *///?} else {
         return new Resource((PackResources) null, () -> new ByteArrayInputStream(bytes));
@@ -125,6 +164,32 @@ class LanguageResourceLoadingTest {
             return Set.of(NAMESPACE);
         }
 
+        //? if <=1.18.2 {
+        /*@Override
+        public Resource getResource(ResourceLocation location) throws java.io.IOException {
+            List<Resource> resources = getResources(location);
+            return resources.get(resources.size() - 1);
+        }
+
+        @Override
+        public boolean hasResource(ResourceLocation location) {
+            return !stacks.getOrDefault(location, List.of()).isEmpty();
+        }
+
+        @Override
+        public List<Resource> getResources(ResourceLocation location) throws java.io.IOException {
+            List<Resource> resources = stacks.getOrDefault(location, List.of());
+            if (resources.isEmpty()) {
+                throw new java.io.FileNotFoundException(location.toString());
+            }
+            return resources;
+        }
+
+        @Override
+        public java.util.Collection<ResourceLocation> listResources(String path, Predicate<String> filter) {
+            return List.of();
+        }
+        *///?} else {
         @Override
         public Optional<Resource> getResource(ResourceLocation location) {
             List<Resource> resources = getResourceStack(location);
@@ -151,6 +216,7 @@ class LanguageResourceLoadingTest {
                 Predicate<ResourceLocation> filter) {
             return Map.of();
         }
+        //?}
 
         @Override
         public Stream<PackResources> listPacks() {
