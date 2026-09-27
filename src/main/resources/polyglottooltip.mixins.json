@@ -1,6 +1,7 @@
 {
   "required": false,
   "package": "com.starskyxiii.polyglottooltip.mixin",
+  "plugin": "com.starskyxiii.polyglottooltip.mixin.OptionalIntegrationMixinPlugin",
   "compatibilityLevel": "${java_level}",
   "mixins": [],
   "client": [
@@ -12,6 +13,7 @@
     "arsnouveau.ArsNouveauGlyphUnlockMenuMixin",
     "arsnouveau.ArsNouveauUnlockGlyphButtonMixin",
     "ae2.Ae2RepoSearchMixin",
+    "ae2.Ae2RepoMixin",
     "ae2.Ae2ExtendedPatternTerminalMixin",
     "ae2.Ae2AssemblerMatrixMixin",
     "ae2.Ae2PatternAccessTermScreenMixin",

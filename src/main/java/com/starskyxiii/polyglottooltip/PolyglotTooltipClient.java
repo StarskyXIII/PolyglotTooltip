@@ -4,6 +4,9 @@ package com.starskyxiii.polyglottooltip;
 import com.starskyxiii.polyglottooltip.integration.arsnouveau.ArsNouveauNameHelper;
 import com.starskyxiii.polyglottooltip.integration.industrialforegoing.IndustrialForegoingNameHelper;
 import com.starskyxiii.polyglottooltip.integration.jei.JeiSearchRefreshBridge;
+//? if >1.16.5 {
+import com.starskyxiii.polyglottooltip.integration.jei.OptionalEmiSearchRefresh;
+//?}
 import com.starskyxiii.polyglottooltip.integration.occultism.OccultismSearchUtil;
 import com.starskyxiii.polyglottooltip.integration.productivebees.ProductiveBeesNameHelper;
 import com.starskyxiii.polyglottooltip.integration.storagedrawers.StorageDrawersNameHelper;
@@ -14,6 +17,9 @@ import net.minecraft.client.Minecraft;
 /*import net.minecraft.resources.IReloadableResourceManager;
 *///?}
 import net.neoforged.api.distmarker.Dist;
+//? if >1.16.5 {
+import net.neoforged.fml.ModList;
+//?}
 //? if >=26 {
 /*import net.minecraft.resources.Identifier;
 import net.neoforged.neoforge.client.event.AddClientReloadListenersEvent;
@@ -57,6 +63,11 @@ public class PolyglotTooltipClient {
     //?}
 
     private static void initializeLanguageSupport() {
+        //? if >1.16.5 {
+        if (ModList.get().isLoaded("emi")) {
+            OptionalEmiSearchRefresh.register();
+        }
+        //?}
         LanguageCache.registerSpecialNameResolver(ArsNouveauNameHelper::tryResolveSpecialName);
         LanguageCache.registerSpecialNameResolver(IndustrialForegoingNameHelper::tryResolveSpecialName);
         LanguageCache.registerSpecialNameResolver(ProductiveBeesNameHelper::tryResolveSpecialName);

@@ -1,6 +1,7 @@
 {
   "required": false,
   "package": "com.starskyxiii.polyglottooltip.mixin",
+  "plugin": "com.starskyxiii.polyglottooltip.mixin.OptionalIntegrationMixinPlugin",
   "compatibilityLevel": "${java_level}",
   "mixins": [],
   "client": [

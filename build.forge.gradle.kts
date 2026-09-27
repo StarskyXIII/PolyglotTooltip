@@ -210,6 +210,9 @@ repositories {
     maven("https://modmaven.dev/")
     maven("https://maven.terraformersmc.com/releases/")
     maven("https://api.modrinth.com/maven")
+    maven("https://maven.bawnorton.com/releases") {
+        content { includeGroup("com.github.bawnorton.mixinsquared") }
+    }
     maven("https://jitpack.io") {
         content {
             includeGroup("com.github.Towdium")
@@ -220,6 +223,10 @@ repositories {
 dependencies {
     implementation(minecraft.dependency("net.minecraftforge:forge:${sc.current.version}-${property("loader.version")}"))
     annotationProcessor("org.spongepowered:mixin:0.8.7:processor")
+    if (sc.current.version == "1.20.1") {
+        compileOnly("com.github.bawnorton.mixinsquared:mixinsquared-common:0.3.7-beta.3")
+        annotationProcessor("com.github.bawnorton.mixinsquared:mixinsquared-common:0.3.7-beta.3")
+    }
 
     testImplementation(platform("org.junit:junit-bom:5.11.4"))
     testImplementation("org.junit.jupiter:junit-jupiter")
@@ -354,7 +361,13 @@ sourceSets.main {
     }
     if (sc.current.parsed <= "1.19.2") {
         java.exclude(
+            "com/starskyxiii/polyglottooltip/integration/ae2/Ae2SearchRefresh.java",
+            "com/starskyxiii/polyglottooltip/mixin/ae2/Ae2RepoMixin.java",
             "com/starskyxiii/polyglottooltip/mixin/ae2/Ae2RepoSearchMixin.java",
+            "com/starskyxiii/polyglottooltip/mixin/ae2/GtoAe2RepoSearchMixin.java",
+            "com/starskyxiii/polyglottooltip/mixin/emi/GtoEmiSearchMixin.java",
+            "com/starskyxiii/polyglottooltip/mixin/ldlib/GtoModularUiFluidTooltipMixin.java",
+            "com/starskyxiii/polyglottooltip/integration/gto/**",
             "com/starskyxiii/polyglottooltip/mixin/controlling/ControllingConstantsMixin.java",
             "com/starskyxiii/polyglottooltip/mixin/projecte/ProjectENameQueryMixin.java",
             "com/starskyxiii/polyglottooltip/mixin/sophisticatedcore/SophisticatedCoreStorageScreenMixin.java",
@@ -373,13 +386,28 @@ sourceSets.main {
             "com/starskyxiii/polyglottooltip/mixin/ae2/LegacyAe2SearchPredicatesMixin.java",
             "com/starskyxiii/polyglottooltip/mixin/ae2/LegacyAe2RepoSearchCacheMixin.java",
             "com/starskyxiii/polyglottooltip/integration/controlling/LegacyControllingSearch.java",
-            "com/starskyxiii/polyglottooltip/mixin/controlling/LegacyControllingKeyBindsScreenMixin.java",
-            "com/starskyxiii/polyglottooltip/integration/projecte/LegacyProjectESearch.java",
-            "com/starskyxiii/polyglottooltip/mixin/projecte/LegacyProjectETransmutationInventoryMixin.java",
-            "com/starskyxiii/polyglottooltip/mixin/mekanism/LegacyMekanismJeiChemicalStackRendererMixin.java",
-            "com/starskyxiii/polyglottooltip/mixin/mekanism/LegacyMekanismQioNameQueryMixin.java",
-            "com/starskyxiii/polyglottooltip/mixin/industrialforegoing/LegacyIndustrialForegoing*Mixin.java"
+            "com/starskyxiii/polyglottooltip/mixin/controlling/LegacyControllingKeyBindsScreenMixin.java"
         )
+        if (sc.current.version == "1.20.1") {
+            java.exclude(
+                "com/starskyxiii/polyglottooltip/mixin/projecte/ProjectENameQueryMixin.java",
+                "com/starskyxiii/polyglottooltip/mixin/mekanism/MekanismJeiChemicalStackRendererMixin.java",
+                "com/starskyxiii/polyglottooltip/mixin/mekanism/MekanismQioNameQueryMixin.java",
+                "com/starskyxiii/polyglottooltip/mixin/industrialforegoing/IndustrialForegoingLaserLensItemMixin.java",
+                "com/starskyxiii/polyglottooltip/mixin/industrialforegoing/IndustrialForegoingRangeAddonItemMixin.java",
+                "com/starskyxiii/polyglottooltip/mixin/industrialforegoing/IndustrialForegoingSpeedAddonItemMixin.java",
+                "com/starskyxiii/polyglottooltip/mixin/industrialforegoing/IndustrialForegoingEfficiencyAddonItemMixin.java",
+                "com/starskyxiii/polyglottooltip/mixin/industrialforegoing/IndustrialForegoingProcessingAddonItemMixin.java"
+            )
+        } else {
+            java.exclude(
+                "com/starskyxiii/polyglottooltip/integration/projecte/LegacyProjectESearch.java",
+                "com/starskyxiii/polyglottooltip/mixin/projecte/LegacyProjectETransmutationInventoryMixin.java",
+                "com/starskyxiii/polyglottooltip/mixin/mekanism/LegacyMekanismJeiChemicalStackRendererMixin.java",
+                "com/starskyxiii/polyglottooltip/mixin/mekanism/LegacyMekanismQioNameQueryMixin.java",
+                "com/starskyxiii/polyglottooltip/mixin/industrialforegoing/LegacyIndustrialForegoing*Mixin.java"
+            )
+        }
     }
     resources.srcDir("src/main/templates")
 }

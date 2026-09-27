@@ -2,6 +2,7 @@
   "required": false,
   "minVersion": "0.8",
   "package": "com.starskyxiii.polyglottooltip.mixin",
+  "plugin": "com.starskyxiii.polyglottooltip.mixin.OptionalIntegrationMixinPlugin",
   "compatibilityLevel": "JAVA_17",
   "refmap": "polyglottooltip.refmap.json",
   "mixins": [],

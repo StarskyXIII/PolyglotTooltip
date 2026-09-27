@@ -32,7 +32,7 @@ public abstract class NaturesCompassBiomeUtilsMixin {
             /*method = "getBiomeNameForDisplay(Lnet/minecraft/world/level/Level;Lnet/minecraft/resources/ResourceLocation;)Ljava/lang/String;",
             *///?} else if fabric {
             /*method = "getBiomeNameForDisplay",
-            *///?} else if >=26 {
+            *///?} else if >=26 || (forge && >1.19.2 && <=1.20.1) {
             /*method = "getBiomeNameForDisplay(Lnet/minecraft/world/level/Level;Lnet/minecraft/resources/ResourceLocation;)Ljava/lang/String;",
             *///?} else {
             method = "getBiomeNameForDisplay(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/level/biome/Biome;)Ljava/lang/String;",
@@ -45,7 +45,7 @@ public abstract class NaturesCompassBiomeUtilsMixin {
             return original;
         }
         return CompassNameHelper.appendBiomeSecondaryNames(biomeId, original);
-    *///?} else if >=26 {
+    *///?} else if >=26 || (forge && >1.19.2 && <=1.20.1) {
     /*private static String polyglottooltip$appendSecondaryBiomeNames(String original, Level level, ResourceLocation biomeId) {
         if (level == null || biomeId == null) {
             return original;

@@ -2,6 +2,7 @@ package com.starskyxiii.polyglottooltip.integration.controlling;
 //~ keybinds_list_package minecraft_116_packages
 
 import com.mojang.blaze3d.platform.InputConstants;
+import com.starskyxiii.polyglottooltip.integration.jec.JecMatchBridge;
 import com.starskyxiii.polyglottooltip.search.SearchTextCollector;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.gui.screens.options.controls.KeyBindsList;
@@ -52,7 +53,7 @@ public final class ControllingSearchUtil {
 
     public static boolean matchesCategoryText(KeyBindsList.Entry entry, String query) {
         return resolveCategorySearchText(entry)
-                .map(text -> StringUtils.containsIgnoreCase(text, query))
+                .map(text -> matchesText(text, query))
                 .orElse(false);
     }
 
@@ -72,7 +73,7 @@ public final class ControllingSearchUtil {
 
     public static boolean matchesKeyText(KeyBindsList.Entry entry, String query) {
         return resolveKeySearchText(entry)
-                .map(text -> StringUtils.containsIgnoreCase(text, query))
+                .map(text -> matchesText(text, query))
                 .orElse(false);
     }
 
@@ -92,8 +93,21 @@ public final class ControllingSearchUtil {
 
     public static boolean matchesNameText(KeyBindsList.Entry entry, String query) {
         return resolveNameSearchText(entry)
-                .map(text -> StringUtils.containsIgnoreCase(text, query))
+                .map(text -> matchesText(text, query))
                 .orElse(false);
+    }
+
+    static boolean matchesText(String text, String query) {
+        if (StringUtils.containsIgnoreCase(text, query)) {
+            return true;
+        }
+        for (String candidate : text.split("\\R")) {
+            if (!candidate.isEmpty()
+                    && JecMatchBridge.contains(candidate, query) == JecMatchBridge.Result.MATCH) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static Optional<String> resolveCategorySearchText(KeyBindsList.Entry entry) {

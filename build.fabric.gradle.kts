@@ -165,6 +165,10 @@ sourceSets.main {
         "com/starskyxiii/polyglottooltip/mixin/rs/**",
         "com/starskyxiii/polyglottooltip/mixin/sophisticatedcore/**",
         "com/starskyxiii/polyglottooltip/mixin/ae2/Ae2AssemblerMatrixMixin.java",
+        "com/starskyxiii/polyglottooltip/mixin/ae2/GtoAe2RepoSearchMixin.java",
+        "com/starskyxiii/polyglottooltip/mixin/emi/GtoEmiSearchMixin.java",
+        "com/starskyxiii/polyglottooltip/mixin/ldlib/GtoModularUiFluidTooltipMixin.java",
+        "com/starskyxiii/polyglottooltip/integration/gto/**",
         "com/starskyxiii/polyglottooltip/mixin/ae2/Ae2ExtendedPatternTerminalMixin.java",
         "com/starskyxiii/polyglottooltip/mixin/ae2/Ae2PatternAccessTermScreenMixin.java",
         "com/starskyxiii/polyglottooltip/mixin/jei/JeiFluidHelperMixin.java",
@@ -231,6 +235,7 @@ tasks {
             "java_version" to requiredJava.toString(),
             "java_level" to "JAVA_$requiredJava",
             "fabric_mixins" to if (sc.current.parsed <= "1.20.1")
+                "    \"ae2.Ae2RepoMixin\",\n" +
                 "    \"ae2.Ae2RepoSearchMixin\",\n" +
                 "    \"ae2.Ae2PatternContainerRecordMixin\",\n" +
                 "    \"ae2.FabricAe2PatternAccessSearchMixin\",\n" +

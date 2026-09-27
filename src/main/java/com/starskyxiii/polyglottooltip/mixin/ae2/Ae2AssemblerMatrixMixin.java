@@ -4,6 +4,10 @@ package com.starskyxiii.polyglottooltip.mixin.ae2;
 import appeng.api.crafting.PatternDetailsHelper;
 import appeng.crafting.pattern.EncodedPatternItem;
 import com.starskyxiii.polyglottooltip.integration.ae2.PatternAccessSearchUtil;
+//? if forge && >1.19.2 && <=1.20.1 {
+/*import com.starskyxiii.polyglottooltip.integration.ae2.Ae2SearchRefresh;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+*///?}
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
@@ -18,7 +22,29 @@ import java.util.Set;
 
 @Pseudo
 @Mixin(targets = "com.glodblock.github.extendedae.client.gui.GuiAssemblerMatrix", remap = false)
-public class Ae2AssemblerMatrixMixin {
+public class Ae2AssemblerMatrixMixin
+        //? if forge && >1.19.2 && <=1.20.1
+        //implements Ae2SearchRefresh.Refreshable
+{
+
+    //? if forge && >1.19.2 && <=1.20.1 {
+    /*@Shadow
+    private void refreshList() {
+        throw new AssertionError();
+    }
+
+    @Inject(method = "<init>", at = @At("RETURN"), remap = false)
+    private void polyglot$registerSearchRefresh(CallbackInfo ci) {
+        Ae2SearchRefresh.registerScreen(this);
+    }
+
+    @Override
+    public void polyglot$refreshSearch() {
+        if ((Object) this == Minecraft.getInstance().screen) {
+            refreshList();
+        }
+    }
+    *///?}
 
     @Shadow
     private Set<ItemStack> matchedStack;

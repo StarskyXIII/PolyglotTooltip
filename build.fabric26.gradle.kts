@@ -126,6 +126,7 @@ sourceSets.main {
         "com/starskyxiii/polyglottooltip/PolyglotTooltipClient.java",
         "com/starskyxiii/polyglottooltip/TooltipHandler.java",
         "com/starskyxiii/polyglottooltip/integration/ae2/**",
+        "com/starskyxiii/polyglottooltip/integration/gto/**",
         "com/starskyxiii/polyglottooltip/integration/apothicenchanting/**",
         "com/starskyxiii/polyglottooltip/integration/arsnouveau/**",
         "com/starskyxiii/polyglottooltip/integration/emi/**",

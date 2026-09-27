@@ -10,12 +10,16 @@ import appeng.api.stacks.AEKey;
 import appeng.core.AEConfig;
 import appeng.menu.me.common.GridInventoryEntry;
 import appeng.util.Platform;
+import com.starskyxiii.polyglottooltip.LanguageCache;
+import com.starskyxiii.polyglottooltip.SecondaryTooltipUtil;
 import com.starskyxiii.polyglottooltip.search.ChineseScriptSearchMatcher;
 import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 public class Ae2TooltipSearchPredicate implements Predicate<GridInventoryEntry> {
@@ -37,40 +41,41 @@ public class Ae2TooltipSearchPredicate implements Predicate<GridInventoryEntry> 
     private String getTooltipText(AEKey what) {
         return tooltipCache.computeIfAbsent(what, key -> {
             var lines = AEKeyRendering.getTooltip(key);
+            return buildTooltipText(lines, Platform.getModName(key.getModId()),
+                    AEConfig.instance().isSearchModNameInTooltips(),
+                    SecondaryTooltipUtil.shouldShowSecondaryLanguage()
+                            ? LanguageCache.getInstance()::resolveComponentsForAll : line -> List.of());
+        });
+    }
 
-            StringBuilder tooltipText = new StringBuilder();
-            for (int i = 0; i < lines.size(); i++) {
-                var line = lines.get(i);
-
-                if (i > 0 && i >= lines.size() - 1 && !AEConfig.instance().isSearchModNameInTooltips()) {
-                    String text = line.getString();
-                    boolean hadFormatting;
-                    if (text.indexOf(ChatFormatting.PREFIX_CODE) != -1) {
-                        text = ChatFormatting.stripFormatting(text);
-                        hadFormatting = true;
-                    } else {
-                        hadFormatting = !line.getStyle().isEmpty();
-                    }
-
-                    if (!hadFormatting || !Objects.equals(text, Platform.getModName(what.getModId()))) {
-                        tooltipText.append('\n').append(text);
-                    }
-                } else {
-                    if (i > 0) {
-                        tooltipText.append('\n');
-                    }
-                    line.visit(text -> {
-                        if (text.indexOf(ChatFormatting.PREFIX_CODE) != -1) {
-                            text = ChatFormatting.stripFormatting(text);
-                        }
-                        tooltipText.append(text);
-                        return Optional.empty();
-                    });
+    static String buildTooltipText(List<Component> lines, String modName, boolean searchModName,
+                                   Function<Component, List<String>> secondaryResolver) {
+        StringBuilder tooltipText = new StringBuilder();
+        for (int i = 0; i < lines.size(); i++) {
+            Component line = lines.get(i);
+            String text = line.getString();
+            String primary = ChatFormatting.stripFormatting(text);
+            if (i > 0 && i == lines.size() - 1 && !searchModName
+                    && (text.indexOf(ChatFormatting.PREFIX_CODE) != -1 || !line.getStyle().isEmpty())
+                    && Objects.equals(primary, modName)) {
+                continue;
+            }
+            appendLine(tooltipText, primary);
+            for (String secondary : secondaryResolver.apply(line)) {
+                String translated = ChatFormatting.stripFormatting(secondary);
+                if (translated != null && !translated.isEmpty() && !Objects.equals(primary, translated)) {
+                    appendLine(tooltipText, translated);
                 }
             }
+        }
+        return normalize(tooltipText.toString());
+    }
 
-            return normalize(tooltipText.toString());
-        });
+    private static void appendLine(StringBuilder target, String line) {
+        if (!target.isEmpty()) {
+            target.append('\n');
+        }
+        target.append(line);
     }
 
     private static String normalize(String input) {
