@@ -40,7 +40,7 @@ public final class IndustrialForegoingNameHelper {
     public static Optional<String> tryResolveSpecialName(ItemStack stack, Function<Component, Optional<String>> componentResolver) {
         Item item = stack.getItem();
         if (isClassOrSuperclass(item, LASER_LENS_ITEM)) {
-            //? if <=1.19.2 {
+            //? if forge && <=1.20.1 {
             /*return readIntField(item, "color")
                     .flatMap(color -> componentResolver.apply(createLaserLensName(DyeColor.byId(color))));
             *///?} else {
@@ -56,7 +56,7 @@ public final class IndustrialForegoingNameHelper {
 
     public static Optional<Component> tryCreateSpecialName(Item item) {
         if (isClassOrSuperclass(item, LASER_LENS_ITEM)) {
-            //? if <=1.19.2 {
+            //? if forge && <=1.20.1 {
             /*return readIntField(item, "color")
                     .map(color -> createLaserLensName(DyeColor.byId(color)));
             *///?} else {
@@ -71,7 +71,7 @@ public final class IndustrialForegoingNameHelper {
     }
 
     public static Component createLaserLensName(DyeColor color) {
-        //? if <=1.19.2 {
+        //? if forge && <=1.20.1 {
         /*return ComponentFactory.empty()
                 .append(ComponentFactory.translatable("color.minecraft." + color.getName()))
                 .append(ComponentFactory.literal(" "))
@@ -90,10 +90,16 @@ public final class IndustrialForegoingNameHelper {
                 .append(ComponentFactory.translatable(addonTypeKey))
                 //? if <=1.19.2 {
                 /*.append(ComponentFactory.literal(" "))
+                *///?} else if forge && <=1.20.1 {
+                /*.append(ComponentFactory.literal("Tier "))
                 *///?} else {
                 .append(ComponentFactory.translatable("item.industrialforegoing.tier"))
                 //?}
-                .append(ComponentFactory.literal(Integer.toString(tier)));
+                .append(ComponentFactory.literal(Integer.toString(tier)))
+                //? if forge && >1.19.2 {
+                /*.append(ComponentFactory.literal(" "))
+                *///?}
+                ;
     }
 
     private static Optional<String> resolveAddonName(
@@ -108,6 +114,11 @@ public final class IndustrialForegoingNameHelper {
             return Optional.empty();
         }
         return Optional.of(addon.get() + type.get() + " " + tier);
+        *///?} else if forge && <=1.20.1 {
+        /*if (!addon.isPresent() || !type.isPresent()) {
+            return Optional.empty();
+        }
+        return Optional.of(addon.get() + type.get() + "Tier " + tier + " ");
         *///?} else {
         Optional<String> tierLabel = componentResolver.apply(ComponentFactory.translatable("item.industrialforegoing.tier"));
         if (!addon.isPresent() || !type.isPresent() || !tierLabel.isPresent()) {

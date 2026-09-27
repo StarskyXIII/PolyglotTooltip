@@ -67,7 +67,7 @@ public final class OptionalEmiSearchRefresh {
             Method search = emiSearch.getMethod("search", String.class);
             String query = (String) getSearchText.invoke(null);
             if (claimed == RefreshKind.REBUILD) {
-                emiSearch.getMethod("bake").invoke(null);
+                EmiSearchRefreshScope.run(() -> emiSearch.getMethod("bake").invoke(null));
                 if (!isEmiLoaded(loader)) {
                     PENDING.restore(registration);
                     scheduleRetry(registration);

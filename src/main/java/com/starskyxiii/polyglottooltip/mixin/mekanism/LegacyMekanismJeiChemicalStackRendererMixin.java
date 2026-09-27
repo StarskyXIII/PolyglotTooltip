@@ -21,7 +21,13 @@ public class LegacyMekanismJeiChemicalStackRendererMixin {
 
     private static final Pattern MILLIBUCKET_AMOUNT = Pattern.compile("(^|\\s)([\\d,]+)\\s*mB$");
 
-    @Inject(method = "getTooltip", at = @At("RETURN"), cancellable = true, remap = false)
+    @Inject(
+            //? if forge && >1.19.2 {
+            /*method = "getTooltip(Lmekanism/api/chemical/ChemicalStack;Lnet/minecraft/world/item/TooltipFlag;)Ljava/util/List;",
+            *///?} else {
+            method = "getTooltip",
+            //?}
+            at = @At("RETURN"), cancellable = true, remap = false)
     private void polyglottooltip$moveSecondaryNameAfterAmount(@Coerce Object stack,
                                                               TooltipFlag tooltipFlag,
                                                               CallbackInfoReturnable<List<Component>> cir) {

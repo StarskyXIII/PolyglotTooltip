@@ -4,6 +4,8 @@ import appeng.api.stacks.AEItemKey;
 import appeng.api.stacks.AEKey;
 import appeng.menu.me.common.GridInventoryEntry;
 import com.starskyxiii.polyglottooltip.LanguageCache;
+import com.starskyxiii.polyglottooltip.SecondaryTooltipUtil;
+import com.starskyxiii.polyglottooltip.integration.jec.JecMatchBridge;
 import com.starskyxiii.polyglottooltip.search.WrappedSearchMatcher;
 
 import java.util.List;
@@ -36,7 +38,19 @@ public class Ae2SearchPredicate implements Predicate<GridInventoryEntry> {
                 key.getDisplayName().getString(),
                 () -> delegate.test(entry),
                 () -> resolveSecondaryNames(key)
-        );
+        ) || matchesSecondaryWithJec(key);
+    }
+
+    private boolean matchesSecondaryWithJec(AEKey key) {
+        if (!SecondaryTooltipUtil.shouldShowSecondaryLanguage()) {
+            return false;
+        }
+        for (String name : resolveSecondaryNames(key)) {
+            if (JecMatchBridge.contains(name, term) == JecMatchBridge.Result.MATCH) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private List<String> resolveSecondaryNames(AEKey key) {

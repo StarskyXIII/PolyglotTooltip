@@ -14,6 +14,8 @@ import java.lang.reflect.Method;
 public final class EmiTagNameHelper {
 
     //? !fabric {
+    private static volatile Method tagKeyOfMethod;
+    private static volatile Method tagKeyGetNameMethod;
     private static volatile Method getTagNameMethod;
     //?}
 
@@ -24,6 +26,26 @@ public final class EmiTagNameHelper {
         //? fabric {
         /*return EmiTagKey.of(key).getTagName();
         *///?} else {
+        try {
+            Method method = tagKeyGetNameMethod;
+            if (method == null) {
+                synchronized (EmiTagNameHelper.class) {
+                    method = tagKeyGetNameMethod;
+                    if (method == null) {
+                        Class<?> tagKeyClass = Class.forName("dev.emi.emi.runtime.EmiTagKey");
+                        Method factory = tagKeyClass.getMethod("of", TagKey.class);
+                        method = tagKeyClass.getMethod("getTagName");
+                        tagKeyOfMethod = factory;
+                        tagKeyGetNameMethod = method;
+                    }
+                }
+            }
+            Object result = method.invoke(tagKeyOfMethod.invoke(null, key));
+            if (result instanceof Component component) {
+                return component;
+            }
+        } catch (ReflectiveOperationException ignored) {
+        }
         try {
             Method method = getTagNameMethod;
             if (method == null) {

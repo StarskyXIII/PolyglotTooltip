@@ -21,7 +21,7 @@ import java.util.List;
 @Mixin(targets = "mekanism.common.util.StorageUtils", remap = false)
 public class MekanismStorageUtilsMixin {
 
-    //? if <=1.19.2 {
+    //? if forge && <=1.20.1 {
     /*@ModifyArg(
             method = "addStoredChemical(Lnet/minecraft/world/item/ItemStack;Ljava/util/List;ZZLmekanism/api/text/ILangEntry;Ljava/util/function/Function;Lnet/minecraftforge/common/capabilities/Capability;)V",
             at = @At(value = "INVOKE", target = "Ljava/util/function/Function;apply(Ljava/lang/Object;)Ljava/lang/Object;"),
@@ -36,7 +36,7 @@ public class MekanismStorageUtilsMixin {
     *///?}
 
     @Inject(
-            //? if <=1.19.2 {
+            //? if forge && <=1.20.1 {
             /*method = "addStoredChemical(Lnet/minecraft/world/item/ItemStack;Ljava/util/List;ZZLmekanism/api/text/ILangEntry;Ljava/util/function/Function;Lnet/minecraftforge/common/capabilities/Capability;)V",
             at = @At(value = "INVOKE", target = "Ljava/util/List;add(Ljava/lang/Object;)Z", ordinal = 0, shift = At.Shift.AFTER)
             *///?} else {
@@ -46,7 +46,7 @@ public class MekanismStorageUtilsMixin {
     )
     private static void onAddStoredChemical(ItemStack stack,
                                             List<Component> tooltip,
-                                            //? if <=1.19.2 {
+                                            //? if forge && <=1.20.1 {
                                             /*boolean includeAttribute,
                                             boolean includeAmount,
                                             @org.spongepowered.asm.mixin.injection.Coerce Object langEntry,
@@ -54,12 +54,12 @@ public class MekanismStorageUtilsMixin {
                                             @org.spongepowered.asm.mixin.injection.Coerce Object capability,
                                             *///?}
                                             CallbackInfo ci,
-                                            //? if <=1.19.2 {
+                                            //? if forge && <=1.20.1 {
                                             /*@Share("chemicalInTank") LocalRef<Object> chemicalRef) {
                                             *///?} else {
                                             @Local(name = "chemicalInTank") Object chemicalInTank) {
                                             //?}
-        //? if <=1.19.2 {
+        //? if forge && <=1.20.1 {
         /*Object chemicalInTank = chemicalRef.get();
         *///?}
         MekanismTooltipHelper.getChemicalNameFromStack(chemicalInTank)
