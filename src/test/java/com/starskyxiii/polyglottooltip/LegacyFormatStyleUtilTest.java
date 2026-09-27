@@ -1,4 +1,5 @@
 package com.starskyxiii.polyglottooltip;
+//~ minecraft_116_packages
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Style;

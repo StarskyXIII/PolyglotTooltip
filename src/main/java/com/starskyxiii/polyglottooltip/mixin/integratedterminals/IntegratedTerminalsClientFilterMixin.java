@@ -1,4 +1,5 @@
 package com.starskyxiii.polyglottooltip.mixin.integratedterminals;
+//~ minecraft_116_packages minecraft_116_compound_names
 
 import com.starskyxiii.polyglottooltip.PolyglotTooltip;
 import com.starskyxiii.polyglottooltip.search.IntegratedTerminalSearchHelper;
@@ -42,8 +43,13 @@ public abstract class IntegratedTerminalsClientFilterMixin {
     @Shadow
     public abstract String getInstanceFilter(int channel);
 
+    //? if <=1.16.5 {
+    /*@Shadow
+    public abstract List<?> getUnfilteredIngredientsView(int channel);
+    *///?} else {
     @Shadow
     public abstract List<?> createUnfilteredIngredientsView(int channel);
+    //?}
 
     @Shadow
     public abstract Predicate<Object> getInstanceFilterMetadata();
@@ -60,7 +66,7 @@ public abstract class IntegratedTerminalsClientFilterMixin {
     @Inject(method = "getFilteredIngredientsView(I)Ljava/util/List;", at = @At("RETURN"), cancellable = true)
     private void polyglot$filterVisibleList(int channel, CallbackInfoReturnable<List<?>> cir) {
         String query = getInstanceFilter(channel);
-        if (query == null || query.isBlank()) {
+        if (query == null || query.codePoints().allMatch(Character::isWhitespace)) {
             return;
         }
 
@@ -69,7 +75,11 @@ public abstract class IntegratedTerminalsClientFilterMixin {
             return;
         }
 
+        //? if <=1.16.5 {
+        /*List<?> rebuilt = getUnfilteredIngredientsView(channel);
+        *///?} else {
         List<?> rebuilt = createUnfilteredIngredientsView(channel);
+        //?}
         if (rebuilt == null || rebuilt.isEmpty()) {
             return;
         }
@@ -188,7 +198,8 @@ public abstract class IntegratedTerminalsClientFilterMixin {
         }
 
         Object craftingOption = craftingOptionMethod.invoke(wrapper);
-        if (craftingOption instanceof Comparable<?> comparable) {
+        if (craftingOption instanceof Comparable<?>) {
+            Comparable<Object> comparable = (Comparable<Object>) craftingOption;
             return comparable;
         }
         return null;
@@ -197,7 +208,8 @@ public abstract class IntegratedTerminalsClientFilterMixin {
     @Unique
     private static boolean polyglot$matchesElement(Object element, String query) {
         Object instance = getInstanceReflective(element);
-        if (instance instanceof ItemStack stack) {
+        if (instance instanceof ItemStack) {
+            ItemStack stack = (ItemStack) instance;
             return IntegratedTerminalSearchHelper.matches(stack, query);
         }
         return true;

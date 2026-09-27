@@ -1,5 +1,5 @@
 package com.starskyxiii.polyglottooltip.mixin.naturescompass;
-//~ minecraft_identifier
+//~ minecraft_identifier minecraft_116_packages
 
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.starskyxiii.polyglottooltip.integration.compass.CompassNameHelper;

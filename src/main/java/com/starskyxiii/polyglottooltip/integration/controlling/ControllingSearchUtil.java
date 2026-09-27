@@ -1,5 +1,5 @@
 package com.starskyxiii.polyglottooltip.integration.controlling;
-//~ keybinds_list_package
+//~ keybinds_list_package minecraft_116_packages
 
 import com.mojang.blaze3d.platform.InputConstants;
 import com.starskyxiii.polyglottooltip.search.SearchTextCollector;
@@ -169,9 +169,10 @@ public final class ControllingSearchUtil {
     }
 
     private static Optional<String> componentSearchText(Object value) {
-        if (!(value instanceof Component component)) {
+        if (!(value instanceof Component)) {
             return Optional.empty();
         }
+        Component component = (Component) value;
 
         String built = new SearchTextCollector().addComponent(component).build();
         return built.isBlank() ? Optional.empty() : Optional.of(built);
@@ -183,7 +184,7 @@ public final class ControllingSearchUtil {
     }
 
     private static Optional<String> componentText(Object value) {
-        return value instanceof Component component ? Optional.of(component.getString()) : Optional.empty();
+        return value instanceof Component ? Optional.of(((Component) value).getString()) : Optional.empty();
     }
 
     private static Optional<Object> invokeMethod(Object target, String methodName) {

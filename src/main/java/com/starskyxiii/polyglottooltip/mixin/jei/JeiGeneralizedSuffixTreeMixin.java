@@ -1,4 +1,5 @@
 package com.starskyxiii.polyglottooltip.mixin.jei;
+//~ jei7_internal_packages
 
 import com.starskyxiii.polyglottooltip.search.ChineseScriptVariantIndexer;
 import org.spongepowered.asm.mixin.Mixin;

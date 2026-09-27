@@ -1,6 +1,7 @@
 package com.starskyxiii.polyglottooltip.integration.ae2;
-//~ minecraft_legacy_components
+//~ minecraft_116_packages minecraft_legacy_components minecraft_118_factories
 
+import com.starskyxiii.polyglottooltip.minecraft.ComponentFactory;
 import appeng.api.client.AEStackRendering;
 import appeng.api.stacks.AEItemKey;
 import appeng.api.stacks.AEKey;
@@ -95,7 +96,7 @@ public final class LegacyAe2RegexSearch {
 
     private static MutableComponent buildSearchableTooltip(AEKey key) {
         List<Component> lines = AEStackRendering.getTooltip(key);
-        MutableComponent composite = Component.empty();
+        MutableComponent composite = ComponentFactory.empty();
         for (int index = 0; index < lines.size(); index++) {
             Component line = lines.get(index);
             if (index > 0 && index >= lines.size() - 1

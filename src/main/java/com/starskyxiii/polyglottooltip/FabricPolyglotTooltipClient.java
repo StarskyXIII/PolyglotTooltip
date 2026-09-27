@@ -1,4 +1,5 @@
 package com.starskyxiii.polyglottooltip;
+//~ minecraft_116_packages
 
 import com.starskyxiii.polyglottooltip.integration.jei.JeiSearchRefreshBridge;
 import com.starskyxiii.polyglottooltip.integration.jei.OptionalEmiSearchRefresh;

@@ -2,6 +2,7 @@ package com.starskyxiii.polyglottooltip.core;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.Collections;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -18,13 +19,13 @@ class ChineseScriptPolicyTest {
 
     @Test
     void disabledRawVariantsRetainOnlyTheExactInput() {
-        assertEquals(Set.of("  鐵錠 AbC  "),
+        assertEquals(Collections.singleton("  鐵錠 AbC  "),
                 ChineseScriptPolicy.scriptVariants("  鐵錠 AbC  ", false));
     }
 
     @Test
     void rawVariantsKeepWhitespaceOnlyValuesButRejectNullAndEmpty() {
-        assertEquals(Set.of("  "), ChineseScriptPolicy.scriptVariants("  ", true));
+        assertEquals(Collections.singleton("  "), ChineseScriptPolicy.scriptVariants("  ", true));
         assertTrue(ChineseScriptPolicy.scriptVariants(null, true).isEmpty());
         assertTrue(ChineseScriptPolicy.scriptVariants("", true).isEmpty());
     }

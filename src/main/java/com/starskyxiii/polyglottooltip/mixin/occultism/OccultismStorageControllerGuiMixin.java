@@ -1,5 +1,5 @@
 package com.starskyxiii.polyglottooltip.mixin.occultism;
-//~ occultism_legacy_package
+//~ occultism_legacy_package minecraft_116_packages
 
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.starskyxiii.polyglottooltip.integration.occultism.OccultismSearchUtil;

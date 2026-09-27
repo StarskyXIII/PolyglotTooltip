@@ -1,5 +1,5 @@
 package com.starskyxiii.polyglottooltip.mixin.explorerscompass;
-//~ minecraft_identifier
+//~ minecraft_identifier minecraft_116_packages
 
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.starskyxiii.polyglottooltip.integration.compass.CompassNameHelper;
@@ -13,7 +13,9 @@ import org.spongepowered.asm.mixin.injection.At;
 public abstract class ExplorersCompassStructureUtilsMixin {
 
     @ModifyReturnValue(
-            //? if fabric {
+            //? if <=1.16.5 {
+            /*method = "getStructureName(Lnet/minecraft/util/ResourceLocation;)Ljava/lang/String;",
+            *///?} else if fabric {
             /*method = "getStructureName",
             *///?} else if >=26 {
             /*method = "getStructureName",

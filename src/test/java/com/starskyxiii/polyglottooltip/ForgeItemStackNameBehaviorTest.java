@@ -1,19 +1,27 @@
 package com.starskyxiii.polyglottooltip;
-//~ minecraft_legacy_components
+//~ minecraft_116_packages minecraft_116_language_map minecraft_legacy_components minecraft_118_factories
 
+import com.starskyxiii.polyglottooltip.minecraft.ComponentFactory;
 //? if <=1.20.1 {
-/*import net.minecraft.SharedConstants;
+/*//? if <=1.16.5 {
+import net.minecraft.util.SharedConstants;
+import net.minecraft.util.registry.Bootstrap;
+import net.minecraft.item.EnchantedBookItem;
+import net.minecraft.enchantment.EnchantmentData;
+//?} else {
+import net.minecraft.SharedConstants;
+import net.minecraft.server.Bootstrap;
+import net.minecraft.world.item.EnchantedBookItem;
+import net.minecraft.world.item.enchantment.EnchantmentInstance;
+//?}
 import net.minecraft.client.resources.language.ClientLanguage;
 //? if >1.19.2 {
 import net.minecraft.core.registries.BuiltInRegistries;
 //?}
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.Bootstrap;
-import net.minecraft.world.item.EnchantedBookItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
-import net.minecraft.world.item.enchantment.EnchantmentInstance;
 import net.minecraft.world.item.enchantment.Enchantments;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -33,7 +41,11 @@ class ForgeItemStackNameBehaviorTest {
 
     @BeforeAll
     static void bootstrapMinecraft() throws ReflectiveOperationException {
+        //? if <=1.16.5 {
+        SharedConstants.getCurrentVersion();
+        //?} else {
         SharedConstants.tryDetectVersion();
+        //?}
         Field bootstrapped = Bootstrap.class.getDeclaredField("isBootstrapped");
         bootstrapped.setAccessible(true);
         bootstrapped.setBoolean(null, true);
@@ -54,7 +66,7 @@ class ForgeItemStackNameBehaviorTest {
                 "block.minecraft.stone", "Translated Stone"
         ))));
         ItemStack stack = new ItemStack(Items.STONE);
-        setRawCustomName(stack, Component.Serializer.toJson(Component.translatable("probe.custom")));
+        setRawCustomName(stack, Component.Serializer.toJson(ComponentFactory.translatable("probe.custom")));
 
         assertEquals(List.of("Translated Custom"), cache.resolveDisplayNamesForAll(stack));
     }
@@ -65,7 +77,7 @@ class ForgeItemStackNameBehaviorTest {
                 "block.minecraft.stone", "Translated Stone"
         ))));
         ItemStack stack = new ItemStack(Items.STONE);
-        setRawCustomName(stack, Component.Serializer.toJson(Component.literal("Literal Custom")));
+        setRawCustomName(stack, Component.Serializer.toJson(ComponentFactory.literal("Literal Custom")));
 
         assertEquals(List.of("Literal Custom"), cache.resolveDisplayNamesForAll(stack));
     }
@@ -76,7 +88,7 @@ class ForgeItemStackNameBehaviorTest {
                 "block.minecraft.stone", "Translated Stone"
         ))));
         ItemStack stack = new ItemStack(Items.STONE);
-        setRawCustomName(stack, Component.Serializer.toJson(Component.translatable("probe.missing")));
+        setRawCustomName(stack, Component.Serializer.toJson(ComponentFactory.translatable("probe.missing")));
 
         assertTrue(cache.resolveDisplayNamesForAll(stack).isEmpty());
     }
@@ -104,7 +116,11 @@ class ForgeItemStackNameBehaviorTest {
     void storedEnchantmentContributesItsTranslatedFullName() {
         cache.replaceLanguages(List.of(enchantmentLanguage()));
         ItemStack stack = new ItemStack(Items.ENCHANTED_BOOK);
+        //? if <=1.16.5 {
+        EnchantedBookItem.addEnchantment(stack, new EnchantmentData(Enchantments.SHARPNESS, 3));
+        //?} else {
         EnchantedBookItem.addEnchantment(stack, new EnchantmentInstance(Enchantments.SHARPNESS, 3));
+        //?}
 
         assertTrue(cache.resolveSearchNamesForAll(stack).contains("Translated Sharpness Translated III"));
     }
@@ -130,11 +146,19 @@ class ForgeItemStackNameBehaviorTest {
     }
 
     private static void setRawCustomName(ItemStack stack, String json) {
+        //? if <=1.16.5 {
+        stack.getOrCreateTagElement("display").putString("Name", json);
+        //?} else {
         stack.getOrCreateTagElement(ItemStack.TAG_DISPLAY).putString(ItemStack.TAG_DISPLAY_NAME, json);
+        //?}
     }
 
     private static String rawCustomName(ItemStack stack) {
+        //? if <=1.16.5 {
+        return stack.getTagElement("display").getString("Name");
+        //?} else {
         return stack.getTagElement(ItemStack.TAG_DISPLAY).getString(ItemStack.TAG_DISPLAY_NAME);
+        //?}
     }
 
     private static ClientLanguage language(Map<String, String> translations) {

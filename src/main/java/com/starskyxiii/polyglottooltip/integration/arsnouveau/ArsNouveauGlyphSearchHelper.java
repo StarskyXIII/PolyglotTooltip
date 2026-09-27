@@ -1,12 +1,14 @@
 package com.starskyxiii.polyglottooltip.integration.arsnouveau;
-//~ minecraft_legacy_components
+//~ minecraft_116_packages minecraft_legacy_components minecraft_118_factories
 
+import com.starskyxiii.polyglottooltip.minecraft.ComponentFactory;
 import com.starskyxiii.polyglottooltip.SecondaryTooltipUtil;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import com.starskyxiii.polyglottooltip.search.SearchTextCollector;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -26,7 +28,7 @@ public final class ArsNouveauGlyphSearchHelper {
 
         return createGlyphNameComponent(spellPart)
                 .map(component -> new SearchTextCollector().addComponent(component).build())
-                .filter(text -> !text.isBlank())
+                .filter(text -> !text.codePoints().allMatch(Character::isWhitespace))
                 .orElseGet(() -> invokeString(spellPart, "getLocaleName").orElse(""));
     }
 
@@ -37,16 +39,36 @@ public final class ArsNouveauGlyphSearchHelper {
 
         List<String> secondaryNames = createGlyphNameComponent(spellPart)
                 .map(SecondaryTooltipUtil::getSecondaryNames)
-                .orElse(List.of());
+                .orElse(java.util.Collections.emptyList());
         if (secondaryNames.isEmpty()) {
             return;
         }
 
-        tooltip.add(1, Component.literal(String.join(", ", secondaryNames)).withStyle(ChatFormatting.YELLOW));
+        tooltip.add(1, ComponentFactory.literal(String.join(", ", secondaryNames)).withStyle(ChatFormatting.YELLOW));
+    }
+
+    public static Object resolveLegacySpellPart(Object button) {
+        if (button == null) {
+            return null;
+        }
+        Optional<Object> parent = readField(button, "parent");
+        Optional<Object> spellId = readField(button, "spell_id");
+        if (!parent.isPresent() || !spellId.isPresent()) {
+            return null;
+        }
+        Optional<Object> api = readField(parent.get(), "api");
+        if (!api.isPresent()) {
+            return null;
+        }
+        Optional<Object> spellMap = invokeMethod(api.get(), "getSpell_map");
+        if (!spellMap.isPresent() || !(spellMap.get() instanceof Map)) {
+            return null;
+        }
+        return ((Map<?, ?>) spellMap.get()).get(spellId.get());
     }
 
     private static Optional<Component> createGlyphNameComponent(Object spellPart) {
-        return invokeString(spellPart, "getLocalizationKey").map(Component::translatable);
+        return invokeString(spellPart, "getLocalizationKey").map(ComponentFactory::translatable);
     }
 
     private static Optional<String> invokeString(Object target, String methodName) {
@@ -66,6 +88,22 @@ public final class ArsNouveauGlyphSearchHelper {
                 return Optional.empty();
             }
         });
+    }
+
+    private static Optional<Object> readField(Object target, String fieldName) {
+        Class<?> current = target.getClass();
+        while (current != null) {
+            try {
+                Field field = current.getDeclaredField(fieldName);
+                field.setAccessible(true);
+                return Optional.ofNullable(field.get(target));
+            } catch (NoSuchFieldException ignored) {
+                current = current.getSuperclass();
+            } catch (ReflectiveOperationException | SecurityException ignored) {
+                return Optional.empty();
+            }
+        }
+        return Optional.empty();
     }
 
     private static Optional<Method> findMethod(Class<?> startClass, String methodName) {

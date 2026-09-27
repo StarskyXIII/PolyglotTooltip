@@ -1,4 +1,5 @@
 package com.starskyxiii.polyglottooltip;
+//~ minecraft_116_packages
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Style;
@@ -13,9 +14,10 @@ public final class LegacyFormatStyleUtil {
     }
 
     public static boolean isValidLegacyFormatString(Object value) {
-        if (!(value instanceof String text)) {
+        if (!(value instanceof String)) {
             return false;
         }
+        String text = (String) value;
         return LEGACY_FORMAT_PATTERN.matcher(text.trim()).matches();
     }
 
@@ -41,19 +43,6 @@ public final class LegacyFormatStyleUtil {
     }
 
     private static Style apply(Style style, ChatFormatting formatting) {
-        if (formatting == ChatFormatting.RESET) {
-            return Style.EMPTY;
-        }
-        if (formatting.isColor()) {
-            return Style.EMPTY.withColor(formatting);
-        }
-        return switch (formatting) {
-            case BOLD -> style.withBold(true);
-            case ITALIC -> style.withItalic(true);
-            case UNDERLINE -> style.withUnderlined(true);
-            case STRIKETHROUGH -> style.withStrikethrough(true);
-            case OBFUSCATED -> style.withObfuscated(true);
-            default -> style;
-        };
+        return style.applyLegacyFormat(formatting);
     }
 }

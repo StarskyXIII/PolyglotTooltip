@@ -9,6 +9,30 @@ val modId = "polyglottooltip"
 val modVersion = "2.0"
 
 stonecutter {
+    for (marker in listOf(
+        "minecraft_118_factories",
+        "minecraft_116_compound_names",
+        "minecraft_116_language_map",
+        "minecraft_116_registries",
+        "minecraft_116_pack_resource",
+        "forge_config_set",
+        "jei7_internal_packages",
+        "jei_lowmem_internal_package"
+    )) {
+        replacements.string(true, marker) {
+            replace("__polyglot_inactive_replacement__", "__polyglot_inactive_replacement_target__")
+        }
+    }
+    replacements.string(false, "minecraft_116_packages") {
+        replace("net.minecraft.network.chat.ITextComponent", "net.minecraft.util.text.ITextComponent")
+    }
+    replacements.string(true, "minecraft_modern_component_types") {
+        replace("IFormattableTextComponent", "MutableComponent")
+        replace("TranslationTextComponent", "TranslatableComponent")
+        replace("ITextProperties", "FormattedText")
+        replace("ITextComponent", "Component")
+        replace("TextFormatting", "ChatFormatting")
+    }
     replacements.string(false, "minecraft_legacy_components") {
         replace("Component.empty()", "new net.minecraft.network.chat.TextComponent(\"\")")
         replace("Component.literal(", "new net.minecraft.network.chat.TextComponent(")
@@ -144,7 +168,23 @@ sourceSets.main {
         "com/starskyxiii/polyglottooltip/mixin/emi/EmiSlotWidgetTooltipMixin.java",
         "com/starskyxiii/polyglottooltip/mixin/emi/EmiTagEmiIngredientMixin.java",
         "com/starskyxiii/polyglottooltip/mixin/rs2/Rs2MekanismChemicalGridResourceMixin.java",
-        "com/starskyxiii/polyglottooltip/mixin/rs2/Rs2MekanismChemicalResourceRenderingMixin.java"
+        "com/starskyxiii/polyglottooltip/mixin/rs2/Rs2MekanismChemicalResourceRenderingMixin.java",
+        "com/starskyxiii/polyglottooltip/integration/ae2/LegacyAe2InterfaceSearch.java",
+        "com/starskyxiii/polyglottooltip/integration/ae2/LegacyAe2RepoRefresh.java",
+        "com/starskyxiii/polyglottooltip/integration/jade/LegacyJadeTooltipHelper.java",
+        "com/starskyxiii/polyglottooltip/mixin/LegacyMixinExtrasBootstrapPlugin.java",
+        "com/starskyxiii/polyglottooltip/mixin/LegacyLanguageManagerMixin.java",
+        "com/starskyxiii/polyglottooltip/mixin/ae2/LegacyAe2EightInterfaceRecordMixin.java",
+        "com/starskyxiii/polyglottooltip/mixin/ae2/LegacyAe2EightInterfaceTerminalMixin.java",
+        "com/starskyxiii/polyglottooltip/mixin/ae2/LegacyAe2FluidRepoMixin.java",
+        "com/starskyxiii/polyglottooltip/mixin/ae2/LegacyAe2ItemRepoMixin.java",
+        "com/starskyxiii/polyglottooltip/mixin/ae2/LegacyAe2ItemStackCacheMixin.java",
+        "com/starskyxiii/polyglottooltip/mixin/controlling/LegacyControlling7ScreenMixin.java",
+        "com/starskyxiii/polyglottooltip/mixin/jade/LegacyJadeBlockNameMixin.java",
+        "com/starskyxiii/polyglottooltip/mixin/jade/LegacyJadeEntityNameMixin.java",
+        "com/starskyxiii/polyglottooltip/mixin/jei/LegacyJei7BeeIngredientRendererMixin.java",
+        "com/starskyxiii/polyglottooltip/mixin/jei/LegacyJei7ElementPrefixParserMixin.java",
+        "com/starskyxiii/polyglottooltip/mixin/jei/LegacyJei7FluidStackRendererMixin.java"
     )
 }
 

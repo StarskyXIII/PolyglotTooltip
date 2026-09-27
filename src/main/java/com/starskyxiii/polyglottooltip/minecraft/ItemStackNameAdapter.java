@@ -1,11 +1,16 @@
 package com.starskyxiii.polyglottooltip.minecraft;
+//~ minecraft_116_packages
 
 import com.starskyxiii.polyglottooltip.compat.figura.FiguraEmojiContext;
 //? if >1.20.1 {
 import net.minecraft.core.component.DataComponents;
 //?} else {
-/*import net.minecraft.nbt.CompoundTag;
+/*//? if <=1.16.5 {
+import net.minecraft.nbt.CompoundNBT;
+//?} else {
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
+//?}
 *///?}
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
@@ -16,6 +21,8 @@ import net.minecraft.world.item.enchantment.ItemEnchantments;
 //?}
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Map;
 import java.util.List;
 //? if >1.20.1 {
 import java.util.Objects;
@@ -78,23 +85,25 @@ public final class ItemStackNameAdapter {
 
     public List<Component> getCraftingEnchantmentNames(ItemStack stack) {
         //? if <=1.20.1 {
-        /*var enchantments = EnchantmentHelper.getEnchantments(stack);
+        /*Map<Enchantment, Integer> enchantments = EnchantmentHelper.getEnchantments(stack);
         *///?} else {
         ItemEnchantments enchantments = EnchantmentHelper.getEnchantmentsForCrafting(stack);
         //?}
         if (enchantments.isEmpty()) {
-            return List.of();
+            return Collections.emptyList();
         }
 
         List<Component> names = new ArrayList<>();
-        for (var entry : enchantments.entrySet()) {
-            //? if <=1.20.1 {
-            /*names.add(entry.getKey().getFullname(entry.getValue()));
-            *///?} else {
-            names.add(Enchantment.getFullname(entry.getKey(), entry.getIntValue()));
-            //?}
+        //? if <=1.20.1 {
+        /*for (Map.Entry<Enchantment, Integer> entry : enchantments.entrySet()) {
+            names.add(entry.getKey().getFullname(entry.getValue()));
         }
-        return List.copyOf(names);
+        *///?} else {
+        for (var entry : enchantments.entrySet()) {
+            names.add(Enchantment.getFullname(entry.getKey(), entry.getIntValue()));
+        }
+        //?}
+        return Collections.unmodifiableList(names);
     }
 
     //? if >1.20.1 {
@@ -108,13 +117,22 @@ public final class ItemStackNameAdapter {
     }
     //?} else {
     /*private Optional<Component> resolveCustomNameComponent(ItemStack stack) {
+        //? if <=1.16.5 {
+        CompoundNBT displayTag = stack.getTagElement("display");
+        if (displayTag == null || !displayTag.contains("Name", 8)) {
+        //?} else {
         CompoundTag displayTag = stack.getTagElement(ItemStack.TAG_DISPLAY);
         if (displayTag == null || !displayTag.contains(ItemStack.TAG_DISPLAY_NAME, Tag.TAG_STRING)) {
+        //?}
             return Optional.empty();
         }
         try {
             return Optional.ofNullable(Component.Serializer.fromJson(
+                    //? if <=1.16.5 {
+                    displayTag.getString("Name")));
+                    //?} else {
                     displayTag.getString(ItemStack.TAG_DISPLAY_NAME)));
+                    //?}
         } catch (RuntimeException ignored) {
             return Optional.empty();
         }

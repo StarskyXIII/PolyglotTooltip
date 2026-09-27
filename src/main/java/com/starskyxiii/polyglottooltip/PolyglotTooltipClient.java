@@ -1,5 +1,5 @@
 package com.starskyxiii.polyglottooltip;
-//~ forge_neoforge_package
+//~ forge_neoforge_package minecraft_116_packages
 
 import com.starskyxiii.polyglottooltip.integration.arsnouveau.ArsNouveauNameHelper;
 import com.starskyxiii.polyglottooltip.integration.industrialforegoing.IndustrialForegoingNameHelper;
@@ -10,11 +10,14 @@ import com.starskyxiii.polyglottooltip.integration.storagedrawers.StorageDrawers
 import com.starskyxiii.polyglottooltip.minecraft.MinecraftLanguageAdapter;
 import com.starskyxiii.polyglottooltip.search.ChineseScriptSearchMatcher;
 import net.minecraft.client.Minecraft;
+//? if <=1.16.5 {
+/*import net.minecraft.resources.IReloadableResourceManager;
+*///?}
 import net.neoforged.api.distmarker.Dist;
 //? if >=26 {
 /*import net.minecraft.resources.Identifier;
 import net.neoforged.neoforge.client.event.AddClientReloadListenersEvent;
-*///?} else {
+*///?} else if >1.16.5 {
 import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
 //?}
 import net.neoforged.bus.api.SubscribeEvent;
@@ -27,6 +30,7 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 //?}
+//? if >1.16.5
 import net.neoforged.fml.event.config.ModConfigEvent;
 
 //? if <=1.20.1 {
@@ -40,6 +44,10 @@ public class PolyglotTooltipClient {
     //? if <=1.20.1 {
     /*public static void init() {
         initializeLanguageSupport();
+        //? if <=1.16.5 {
+        ((IReloadableResourceManager) Minecraft.getInstance().getResourceManager())
+                .registerReloadListener(MinecraftLanguageAdapter.getInstance());
+        //?}
     }
     *///?} else {
     public PolyglotTooltipClient(ModContainer container) {
@@ -60,6 +68,7 @@ public class PolyglotTooltipClient {
         languageAdapter.registerDependentCacheInvalidator(ChineseScriptSearchMatcher::clearCaches);
     }
 
+    //? if >1.16.5 {
     @SubscribeEvent
     //? if >=26 {
     /*static void onRegisterReloadListeners(AddClientReloadListenersEvent event) {
@@ -71,14 +80,32 @@ public class PolyglotTooltipClient {
         event.registerReloadListener(MinecraftLanguageAdapter.getInstance());
     //?}
     }
+    //?}
 
     @SubscribeEvent
+    //? if <=1.16.5 {
+    /*public static void onConfigReloading(net.neoforged.fml.config.ModConfig.Reloading event) {
+    *///?} else {
     public static void onConfigReloading(ModConfigEvent.Reloading event) {
+    //?}
         if (event.getConfig().getSpec() == Config.SPEC) {
-            Minecraft.getInstance().execute(() -> {
-                LanguageCache.getInstance().reloadImmediate();
-                JeiSearchRefreshBridge.rebuildSearchIndex();
-            });
+            refreshLanguageState();
         }
+    }
+
+    //? if <=1.16.5 {
+    /*@SubscribeEvent
+    public static void onConfigLoading(net.neoforged.fml.config.ModConfig.Loading event) {
+        if (event.getConfig().getSpec() == Config.SPEC) {
+            refreshLanguageState();
+        }
+    }
+    *///?}
+
+    private static void refreshLanguageState() {
+        Minecraft.getInstance().execute(() -> {
+            LanguageCache.getInstance().reloadImmediate();
+            JeiSearchRefreshBridge.rebuildSearchIndex();
+        });
     }
 }

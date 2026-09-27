@@ -1,4 +1,5 @@
 package com.starskyxiii.polyglottooltip;
+//~ forge_config_set
 
 //? !fabric {
 import com.electronwill.nightconfig.core.CommentedConfig;

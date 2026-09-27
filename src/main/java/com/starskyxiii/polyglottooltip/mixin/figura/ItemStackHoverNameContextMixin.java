@@ -1,4 +1,5 @@
 package com.starskyxiii.polyglottooltip.mixin.figura;
+//~ minecraft_116_packages
 
 //? if <=1.19.2 {
 /*import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;

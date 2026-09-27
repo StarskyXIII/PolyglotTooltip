@@ -1,4 +1,5 @@
 package com.starskyxiii.polyglottooltip.mixin.rs2;
+//~ minecraft_116_packages
 
 import com.refinedmods.refinedstorage.api.resource.ResourceKey;
 import com.refinedmods.refinedstorage.common.Platform;

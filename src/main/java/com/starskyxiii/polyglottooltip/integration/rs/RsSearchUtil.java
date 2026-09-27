@@ -1,4 +1,5 @@
 package com.starskyxiii.polyglottooltip.integration.rs;
+//~ minecraft_116_packages
 
 import com.starskyxiii.polyglottooltip.LanguageCache;
 import com.starskyxiii.polyglottooltip.search.ChineseScriptSearchMatcher;
@@ -18,7 +19,7 @@ public final class RsSearchUtil {
     private RsSearchUtil() {
     }
     public static boolean matchesNameSearch(String query, Object gridStack) {
-        if (query == null || query.isBlank()) {
+        if (query == null || query.codePoints().allMatch(Character::isWhitespace)) {
             return true;
         }
 
@@ -30,7 +31,7 @@ public final class RsSearchUtil {
         );
     }
     public static boolean matchesTooltipSearch(String query, Object gridStack) {
-        if (query == null || query.isBlank()) {
+        if (query == null || query.codePoints().allMatch(Character::isWhitespace)) {
             return true;
         }
 
@@ -39,22 +40,24 @@ public final class RsSearchUtil {
 
     public static Component getIngredientDisplayName(Object gridStack) {
         Object ingredient = invoke(gridStack, "getIngredient");
-        if (ingredient instanceof ItemStack itemStack) {
+        if (ingredient instanceof ItemStack) {
+            ItemStack itemStack = (ItemStack) ingredient;
             return itemStack.getHoverName();
         }
 
         Object displayName = invoke(ingredient, "getDisplayName");
-        return displayName instanceof Component component ? component : null;
+        return displayName instanceof Component ? (Component) displayName : null;
     }
 
     private static List<String> resolveSecondaryNames(Object gridStack) {
         Component displayName = getIngredientDisplayName(gridStack);
         if (displayName == null) {
-            return List.of();
+            return java.util.Collections.emptyList();
         }
 
         Object ingredient = invoke(gridStack, "getIngredient");
-        if (ingredient instanceof ItemStack itemStack) {
+        if (ingredient instanceof ItemStack) {
+            ItemStack itemStack = (ItemStack) ingredient;
             return LanguageCache.getInstance().resolveSearchNamesForAll(itemStack);
         }
         return LanguageCache.getInstance().resolveComponentsForAll(displayName);
@@ -62,14 +65,17 @@ public final class RsSearchUtil {
 
     private static List<String> resolveTooltipLines(Object gridStack) {
         Object tooltip = invoke(gridStack, "getTooltip", false);
-        if (!(tooltip instanceof List<?> lines) || lines.size() <= 1) {
-            return List.of();
+        if (!(tooltip instanceof List<?>)) {
+            return java.util.Collections.emptyList();
         }
+        List<?> lines = (List<?>) tooltip;
+        if (lines.size() <= 1) return java.util.Collections.emptyList();
 
         List<String> resolved = new ArrayList<>(lines.size() - 1);
         for (int i = 1; i < lines.size(); i++) {
             Object line = lines.get(i);
-            if (line instanceof Component component) {
+            if (line instanceof Component) {
+                Component component = (Component) line;
                 resolved.add(component.getString());
             }
         }
@@ -91,7 +97,7 @@ public final class RsSearchUtil {
 
     private static String invokeString(Object target, String methodName, Object... args) {
         Object value = invoke(target, methodName, args);
-        return value instanceof String string ? string : "";
+        return value instanceof String ? (String) value : "";
     }
 
     private static Method findMethod(Class<?> owner, String methodName, Object... args) {

@@ -1,4 +1,5 @@
 package com.starskyxiii.polyglottooltip.minecraft;
+//~ minecraft_116_packages
 
 import net.minecraft.world.item.ItemStack;
 //? if <=1.20.1 {
@@ -33,9 +34,10 @@ public final class ItemStackSnapshotKey {
         if (this == object) {
             return true;
         }
-        if (!(object instanceof ItemStackSnapshotKey other)) {
+        if (!(object instanceof ItemStackSnapshotKey)) {
             return false;
         }
+        ItemStackSnapshotKey other = (ItemStackSnapshotKey) object;
         //? if <=1.20.1 {
         /*return ItemStack.matches(stackSnapshot, other.stackSnapshot);
         *///?} else {

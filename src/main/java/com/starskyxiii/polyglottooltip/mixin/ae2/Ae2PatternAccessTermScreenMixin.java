@@ -1,4 +1,5 @@
 package com.starskyxiii.polyglottooltip.mixin.ae2;
+//~ minecraft_116_packages
 
 //? if <=1.19.2 {
 /*import appeng.api.crafting.IPatternDetails;

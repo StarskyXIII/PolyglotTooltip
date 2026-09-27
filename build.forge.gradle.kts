@@ -1,4 +1,5 @@
 import groovy.json.JsonSlurper
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import java.io.OutputStream
 import java.util.jar.JarInputStream
 import java.util.zip.ZipFile
@@ -9,8 +10,11 @@ plugins {
     id("net.minecraftforge.gradle") version "7.0.36"
     id("net.minecraftforge.renamer") version "1.1.7"
     id("net.minecraftforge.jarjar") version "0.2.3"
+    id("com.gradleup.shadow") version "9.4.0"
     id("idea")
 }
+
+val legacyShade = configurations.create("legacyShade")
 
 val modId = "polyglottooltip"
 val modVersion = "2.0"
@@ -19,7 +23,7 @@ stonecutter {
     replacements.string(false, "minecraft_identifier") {
         replace("ResourceLocation", "Identifier")
     }
-    replacements.string(false, "minecraft_util_package") {
+    replacements.string(sc.current.version == "1.16.5", "minecraft_util_package") {
         replace("import net.minecraft.Util;", "import net.minecraft.util.Util;")
     }
     replacements.string(false, "ae_key_rendering_package") {
@@ -28,7 +32,7 @@ stonecutter {
     replacements.string(sc.current.parsed <= "1.19.2", "ae_key_rendering_legacy") {
         replace("AEKeyRendering", "AEStackRendering")
     }
-    replacements.string(sc.current.parsed <= "1.19.2", "minecraft_legacy_registries") {
+    replacements.string(sc.current.version == "1.18.2" || sc.current.version == "1.19.2", "minecraft_legacy_registries") {
         replace("import net.minecraft.core.registries.BuiltInRegistries;", "import net.minecraft.core.Registry;")
         replace("BuiltInRegistries.ITEM", "Registry.ITEM")
     }
@@ -38,11 +42,116 @@ stonecutter {
         replace("Component.translatable(", "new net.minecraft.network.chat.TranslatableComponent(")
         replace("Component::translatable", "net.minecraft.network.chat.TranslatableComponent::new")
     }
-    replacements.string(sc.current.version == "1.18.2", "jei10_internal_packages") {
+    replacements.string(sc.current.version == "1.18.2", "minecraft_118_factories") {
+        replace("Component.empty()", "new net.minecraft.network.chat.TextComponent(\"\")")
+        replace("Component.literal(", "new net.minecraft.network.chat.TextComponent(")
+        replace("Component.translatable(", "new net.minecraft.network.chat.TranslatableComponent(")
+        replace("Component::translatable", "net.minecraft.network.chat.TranslatableComponent::new")
+    }
+    replacements.string(sc.current.version == "1.16.5", "minecraft_116_packages") {
+        replace("Component.empty()", "new net.minecraft.util.text.StringTextComponent(\"\")")
+        replace("Component.literal(", "new net.minecraft.util.text.StringTextComponent(")
+        replace("Component.translatable(", "new net.minecraft.util.text.TranslationTextComponent(")
+        replace("Component::translatable", "net.minecraft.util.text.TranslationTextComponent::new")
+        replace("net.minecraft.network.chat.TranslatableComponent", "net.minecraft.util.text.TranslationTextComponent")
+        replace("net.minecraft.network.chat.MutableComponent", "net.minecraft.util.text.IFormattableTextComponent")
+        replace("net.minecraft.network.chat.FormattedText", "net.minecraft.util.text.ITextProperties")
+        replace("net.minecraft.network.chat.Component", "net.minecraft.util.text.ITextComponent")
+        replace("net/minecraft/network/chat/Component", "net/minecraft/util/text/ITextComponent")
+        replace("net.minecraft.network.chat.Style", "net.minecraft.util.text.Style")
+        replace("net.minecraft.ChatFormatting", "net.minecraft.util.text.TextFormatting")
+        replace("net.minecraft.resources.ResourceLocation", "net.minecraft.util.ResourceLocation")
+        replace("net.minecraft.world.item.enchantment", "net.minecraft.enchantment")
+        replace("net.minecraft.world.item.ItemStack", "net.minecraft.item.ItemStack")
+        replace("net/minecraft/world/item/ItemStack", "net/minecraft/item/ItemStack")
+        replace("net.minecraft.world.item.TooltipFlag", "net.minecraft.client.util.ITooltipFlag")
+        replace("net.minecraft.world.item.DyeColor", "net.minecraft.item.DyeColor")
+        replace("net.minecraft.world.item.Item", "net.minecraft.item.Item")
+        replace("net.minecraft.world.entity.player.Player", "net.minecraft.entity.player.PlayerEntity")
+        replace("net.minecraft.world.entity.item.ItemEntity", "net.minecraft.entity.item.ItemEntity")
+        replace("net.minecraft.world.entity.EntityType", "net.minecraft.entity.EntityType")
+        replace("net.minecraft.world.entity.Entity", "net.minecraft.entity.Entity")
+        replace("net.minecraft.world.level.block.LiquidBlock", "net.minecraft.block.FlowingFluidBlock")
+        replace("net.minecraft.world.level.block.Block", "net.minecraft.block.Block")
+        replace("net.minecraft.world.level.material.FluidState", "net.minecraft.fluid.FluidState")
+        replace("net.minecraft.world.level.material.Fluid", "net.minecraft.fluid.Fluid")
+        replace("net.minecraft.world.level.Level", "net.minecraft.world.World")
+        replace("net/minecraft/world/level/Level", "net/minecraft/world/World")
+        replace("net/minecraft/world/level/biome/Biome", "net/minecraft/world/biome/Biome")
+        replace("net.minecraft.client.gui.screens.options.controls.KeyBindsList", "net.minecraft.client.gui.widget.list.KeyBindingList")
+        replace("net.minecraft.client.gui.components.EditBox", "net.minecraft.client.gui.widget.TextFieldWidget")
+        replace("net.minecraft.client.gui.screens.Screen", "net.minecraft.client.gui.screen.Screen")
+        replace("net.minecraft.client.gui.Font", "net.minecraft.client.gui.FontRenderer")
+        replace("net.minecraft.client.KeyMapping", "net.minecraft.client.settings.KeyBinding")
+        replace("net.minecraft.core.Registry", "net.minecraft.util.registry.Registry")
+        replace("net.minecraft.nbt.CompoundTag", "net.minecraft.nbt.CompoundNBT")
+        replace("net.minecraft.nbt.Tag", "net.minecraft.nbt.INBT")
+        replace("net.minecraft.server.packs.resources.PreparableReloadListener", "net.minecraft.resources.IFutureReloadListener")
+        replace("net.minecraft.server.packs.resources.ResourceManager", "net.minecraft.resources.IResourceManager")
+        replace("net.minecraft.server.packs.resources.Resource", "net.minecraft.resources.IResource")
+        replace("net.minecraft.server.packs.PackResources", "net.minecraft.resources.IResourcePack")
+        replace("net.minecraft.server.packs.metadata.MetadataSectionSerializer", "net.minecraft.resources.data.IMetadataSectionSerializer")
+        replace("net.minecraft.util.profiling.ProfilerFiller", "net.minecraft.profiler.IProfiler")
+        replace("net.minecraft.world.level.biome.Biome", "net.minecraft.world.biome.Biome")
+        replace("com.mojang.blaze3d.vertex.PoseStack", "com.mojang.blaze3d.matrix.MatrixStack")
+    }
+    replacements.regex(sc.current.version == "1.16.5", "minecraft_116_packages") {
+        replace("""(?<![.\w])Component\b""", "ITextComponent", """(?<![.\w])ITextComponent\b""", "Component")
+        replace("""(?<![.\w])MutableComponent\b""", "IFormattableTextComponent", """(?<![.\w])IFormattableTextComponent\b""", "MutableComponent")
+        replace("""(?<![.\w])TranslatableComponent\b""", "TranslationTextComponent", """(?<![.\w])TranslationTextComponent\b""", "TranslatableComponent")
+        replace("""(?<![.\w])FormattedText\b""", "ITextProperties", """(?<![.\w])ITextProperties\b""", "FormattedText")
+        replace("""(?<![.\w])ChatFormatting\b""", "TextFormatting", """(?<![.\w])TextFormatting\b""", "ChatFormatting")
+        replace("""(?<![.\w])KeyMapping\b""", "KeyBinding", """(?<![.\w])KeyBinding\b""", "KeyMapping")
+        replace("""(?<![.\w])KeyBindsList\b""", "KeyBindingList", """(?<![.\w])KeyBindingList\b""", "KeyBindsList")
+        replace("""(?<![.\w])EditBox\b""", "TextFieldWidget", """(?<![.\w])TextFieldWidget\b""", "EditBox")
+        replace("""(?<![.\w])TooltipFlag\b""", "ITooltipFlag", """(?<![.\w])ITooltipFlag\b""", "TooltipFlag")
+        replace("""(?<![.\w])PoseStack\b""", "MatrixStack", """(?<![.\w])MatrixStack\b""", "PoseStack")
+        replace("""(?<![.\w])Level\b""", "World", """(?<![.\w])World\b""", "Level")
+        replace("""(?<![.\w])PreparableReloadListener\b""", "IFutureReloadListener", """(?<![.\w])IFutureReloadListener\b""", "PreparableReloadListener")
+        replace("""(?<![.\w])ResourceManager\b""", "IResourceManager", """(?<![.\w])IResourceManager\b""", "ResourceManager")
+        replace("""(?<![.\w])Resource\b""", "IResource", """(?<![.\w])IResource\b""", "Resource")
+        replace("""(?<![.\w])ProfilerFiller\b""", "IProfiler", """(?<![.\w])IProfiler\b""", "ProfilerFiller")
+        replace("""(?<![.\w])PreparationBarrier\b""", "IStage", """(?<![.\w])IStage\b""", "PreparationBarrier")
+    }
+    replacements.string(sc.current.version == "1.16.5", "minecraft_116_registries") {
+        replace("import net.minecraft.core.registries.BuiltInRegistries;", "import net.minecraft.util.registry.Registry;")
+        replace("BuiltInRegistries.ITEM", "Registry.ITEM")
+    }
+    replacements.string(sc.current.version == "1.16.5", "jei_lowmem_internal_package") {
+        replace("mezz.jei.gui.search.ElementSearchLowMem", "mezz.jei.search.ElementSearchLowMem")
+    }
+    replacements.string(sc.current.version == "1.16.5", "jei7_internal_packages") {
+        replace("mezz.jei.core.search.suffixtree.GeneralizedSuffixTree", "mezz.jei.search.suffixtree.GeneralizedSuffixTree")
+    }
+    replacements.string(true, "minecraft_116_compound_names") {
+        replace("ITextComponentLanguageResolver", "ComponentLanguageResolver")
+        replace("ITooltipFlags", "TooltipFlags")
+        replace("InMemoryIResourceManager", "InMemoryResourceManager")
+        replace("getIResource", "getResource")
+        replace("getIResources", "getResources")
+        replace("hasIResource", "hasResource")
+        replace("listIResources", "listResources")
+        replace("TerminalStorageTabIngredientITextComponentClient", "TerminalStorageTabIngredientComponentClient")
+        replace("getTextITextComponent", "getTextComponent")
+    }
+    replacements.regex(sc.current.version == "1.16.5", "minecraft_116_pack_resource") {
+        replace("""\bPackResources\b""", "IResourcePack", """\bIResourcePack\b""", "PackResources")
+    }
+    replacements.string(sc.current.version == "1.16.5", "minecraft_116_language_map") {
+        replace("net.minecraft.client.resources.language.ClientLanguage", "net.minecraft.client.resources.ClientLanguageMap")
+    }
+    replacements.regex(sc.current.version == "1.16.5", "minecraft_116_language_map") {
+        replace("""(?<![.\w])ClientLanguage\b""", "ClientLanguageMap", """(?<![.\w])ClientLanguageMap\b""", "ClientLanguage")
+    }
+    replacements.string(sc.current.version == "1.16.5", "forge_config_set") {
+        replace("Config.SPEC.acceptConfig(config);", "Config.SPEC.setConfig(config);")
+    }
+    replacements.string(sc.current.version == "1.18.2", "jei_lowmem_internal_package") {
         replace("mezz.jei.gui.search.ElementSearchLowMem", "mezz.jei.common.search.ElementSearchLowMem")
     }
-    replacements.string(sc.current.version == "1.18.2", "occultism_legacy_package") {
+    replacements.string(sc.current.parsed <= "1.18.2", "occultism_legacy_package") {
         replace("com.klikli_dev.occultism", "com.github.klikli_dev.occultism")
+        replace("com/klikli_dev/occultism", "com/github/klikli_dev/occultism")
     }
     replacements.string(false, "gui_graphics_extractor") {
         replace("GuiGraphics", "GuiGraphicsExtractor")
@@ -119,26 +228,43 @@ dependencies {
         exclude(group = "it.unimi.dsi", module = "fastutil")
     }
 
-    compileOnly(renamer.dependency("appeng:appliedenergistics2-forge:${property("ae2.version")}"))
-    compileOnly(renamer.dependency("mezz.jei:jei-${sc.current.version}-common-api:${property("jei.version")}"))
-    compileOnly(renamer.dependency("mezz.jei:jei-${sc.current.version}-forge-api:${property("jei.version")}"))
-    if (sc.current.parsed <= "1.18.2") {
+    if (sc.current.version == "1.16.5") {
+        compileOnly(renamer.dependency("appeng:appliedenergistics2:${property("ae2.version")}"))
+        compileOnly(renamer.dependency("mezz.jei:jei-${sc.current.version}:${property("jei.version")}"))
+    } else {
+        compileOnly(renamer.dependency("appeng:appliedenergistics2-forge:${property("ae2.version")}"))
+        compileOnly(renamer.dependency("mezz.jei:jei-${sc.current.version}-common-api:${property("jei.version")}"))
+        compileOnly(renamer.dependency("mezz.jei:jei-${sc.current.version}-forge-api:${property("jei.version")}"))
+    }
+    if (sc.current.version == "1.18.2") {
         compileOnly(renamer.dependency("mezz.jei:jei-${sc.current.version}-forge:${property("jei.version")}"))
     }
-    compileOnly(renamer.dependency("com.blamejared.searchables:Searchables-common-${sc.current.version}:${property("searchables.version")}"))
+    if (sc.current.parsed >= "1.18.2") {
+        compileOnly(renamer.dependency("com.blamejared.searchables:Searchables-common-${sc.current.version}:${property("searchables.version")}"))
+    }
     compileOnly(renamer.dependency("maven.modrinth:jade:${property("jade.version")}"))
 
     val opencc4jVersion = "1.14.0"
     implementation("com.github.houbb:opencc4j:$opencc4jVersion")
-    add("jarJar", "com.github.houbb:opencc4j:$opencc4jVersion")
-    add("jarJar", "com.github.houbb:heaven:0.13.0")
-    add("jarJar", "com.github.houbb:nlp-common:0.0.5")
+    if (sc.current.version == "1.16.5") {
+        legacyShade("com.github.houbb:opencc4j:$opencc4jVersion") { isTransitive = false }
+        legacyShade("com.github.houbb:heaven:0.13.0") { isTransitive = false }
+        legacyShade("com.github.houbb:nlp-common:0.0.5") { isTransitive = false }
+    } else {
+        add("jarJar", "com.github.houbb:opencc4j:$opencc4jVersion")
+        add("jarJar", "com.github.houbb:heaven:0.13.0")
+        add("jarJar", "com.github.houbb:nlp-common:0.0.5")
+    }
 
     val mixinExtrasVersion = "0.5.5"
     compileOnly("io.github.llamalad7:mixinextras-common:$mixinExtrasVersion")
     annotationProcessor("io.github.llamalad7:mixinextras-common:$mixinExtrasVersion")
     testRuntimeOnly("io.github.llamalad7:mixinextras-common:$mixinExtrasVersion")
-    add("jarJar", "io.github.llamalad7:mixinextras-forge:$mixinExtrasVersion")
+    if (sc.current.version == "1.16.5") {
+        legacyShade("io.github.llamalad7:mixinextras-common:$mixinExtrasVersion") { isTransitive = false }
+    } else {
+        add("jarJar", "io.github.llamalad7:mixinextras-forge:$mixinExtrasVersion")
+    }
 }
 
 renamer.mappings.from(minecraft.dependency.toSrgFile)
@@ -159,6 +285,54 @@ sourceSets.main {
     java.exclude("com/starskyxiii/polyglottooltip/mixin/rs2/**")
     java.exclude("com/starskyxiii/polyglottooltip/mixin/mekanism/MekanismChemicalStackMixin.java")
     java.exclude("com/starskyxiii/polyglottooltip/mixin/jei/JeiGeneralizedSuffixTreeSearchStorageMixin.java")
+    if (sc.current.version == "1.16.5") {
+        java.exclude(
+            "com/starskyxiii/polyglottooltip/integration/ae2/Ae2SearchPredicate.java",
+            "com/starskyxiii/polyglottooltip/integration/ae2/Ae2TooltipSearchPredicate.java",
+            "com/starskyxiii/polyglottooltip/integration/ae2/LegacyAe2RegexSearch.java",
+            "com/starskyxiii/polyglottooltip/integration/ae2/PatternAccessSearchUtil.java",
+            "com/starskyxiii/polyglottooltip/integration/emi/**",
+            "com/starskyxiii/polyglottooltip/integration/apothicenchanting/**",
+            "com/starskyxiii/polyglottooltip/integration/controlling/ControllingSearchUtil.java",
+            "com/starskyxiii/polyglottooltip/integration/jade/JadeBlockNameProvider.java",
+            "com/starskyxiii/polyglottooltip/integration/jade/JadeEntityNameProvider.java",
+            "com/starskyxiii/polyglottooltip/integration/jade/PolyglotTooltipJadePlugin.java",
+            "com/starskyxiii/polyglottooltip/integration/jei/OptionalEmiSearchRefresh.java",
+            "com/starskyxiii/polyglottooltip/mixin/ae2/Ae2AssemblerMatrixMixin.java",
+            "com/starskyxiii/polyglottooltip/mixin/ae2/Ae2ExtendedPatternTerminalMixin.java",
+            "com/starskyxiii/polyglottooltip/mixin/ae2/Ae2FluidKeyRenderHandlerMixin.java",
+            "com/starskyxiii/polyglottooltip/mixin/ae2/LegacyAe2InterfaceRecordMixin.java",
+            "com/starskyxiii/polyglottooltip/mixin/ae2/LegacyAe2InterfaceTerminalScreenMixin.java",
+            "com/starskyxiii/polyglottooltip/mixin/ae2/LegacyAe2RepoSearchCacheMixin.java",
+            "com/starskyxiii/polyglottooltip/mixin/ae2/LegacyAe2SearchPredicatesMixin.java",
+            "com/starskyxiii/polyglottooltip/mixin/emi/**",
+            "com/starskyxiii/polyglottooltip/mixin/apothicenchanting/**",
+            "com/starskyxiii/polyglottooltip/mixin/jei/JeiBakedSubstringIndexBuilderMixin.java",
+            "com/starskyxiii/polyglottooltip/mixin/jei/LegacyJei10ElementPrefixParserMixin.java",
+            "com/starskyxiii/polyglottooltip/mixin/jei/LegacyJei10FluidTankRendererMixin.java",
+            "com/starskyxiii/polyglottooltip/mixin/jei/LegacyProductiveBeesBeeIngredientRendererMixin.java",
+            "com/starskyxiii/polyglottooltip/mixin/mekae2/AmChemicalStackRendererMixin.java"
+        )
+    } else {
+        java.exclude(
+            "com/starskyxiii/polyglottooltip/integration/ae2/LegacyAe2InterfaceSearch.java",
+            "com/starskyxiii/polyglottooltip/integration/ae2/LegacyAe2RepoRefresh.java",
+            "com/starskyxiii/polyglottooltip/integration/jade/LegacyJadeTooltipHelper.java",
+            "com/starskyxiii/polyglottooltip/mixin/LegacyMixinExtrasBootstrapPlugin.java",
+            "com/starskyxiii/polyglottooltip/mixin/LegacyLanguageManagerMixin.java",
+            "com/starskyxiii/polyglottooltip/mixin/ae2/LegacyAe2EightInterfaceRecordMixin.java",
+            "com/starskyxiii/polyglottooltip/mixin/ae2/LegacyAe2EightInterfaceTerminalMixin.java",
+            "com/starskyxiii/polyglottooltip/mixin/ae2/LegacyAe2FluidRepoMixin.java",
+            "com/starskyxiii/polyglottooltip/mixin/ae2/LegacyAe2ItemRepoMixin.java",
+            "com/starskyxiii/polyglottooltip/mixin/ae2/LegacyAe2ItemStackCacheMixin.java",
+            "com/starskyxiii/polyglottooltip/mixin/controlling/LegacyControlling7ScreenMixin.java",
+            "com/starskyxiii/polyglottooltip/mixin/jade/LegacyJadeBlockNameMixin.java",
+            "com/starskyxiii/polyglottooltip/mixin/jade/LegacyJadeEntityNameMixin.java",
+            "com/starskyxiii/polyglottooltip/mixin/jei/LegacyJei7BeeIngredientRendererMixin.java",
+            "com/starskyxiii/polyglottooltip/mixin/jei/LegacyJei7ElementPrefixParserMixin.java",
+            "com/starskyxiii/polyglottooltip/mixin/jei/LegacyJei7FluidStackRendererMixin.java"
+        )
+    }
     if (sc.current.parsed <= "1.18.2") {
         java.exclude(
             "com/starskyxiii/polyglottooltip/mixin/ae2/Ae2PatternAccessTermScreenMixin.java",
@@ -211,6 +385,9 @@ sourceSets.main {
 }
 sourceSets.test {
     java.exclude("com/starskyxiii/polyglottooltip/FabricConfigStoreTest.java")
+    if (sc.current.version == "1.16.5") {
+        java.exclude("com/starskyxiii/polyglottooltip/integration/jei/OptionalEmiSearchRefreshTest.java")
+    }
     compileClasspath += sourceSets.main.get().compileClasspath
     runtimeClasspath += sourceSets.main.get().runtimeClasspath
 }
@@ -220,12 +397,17 @@ tasks {
         options.encoding = "UTF-8"
         options.release = 17
     }
+    named<JavaCompile>("compileJava") {
+        options.release = if (sc.current.version == "1.16.5") 8 else 17
+    }
     test {
         useJUnitPlatform()
     }
     processResources {
         val mixinConfig = rootProject.file(
-            if (sc.current.version == "1.18.2") {
+            if (sc.current.version == "1.16.5") {
+                "src/forge1165/resources/polyglottooltip.mixins.json"
+            } else if (sc.current.version == "1.18.2") {
                 "src/forge1182/resources/polyglottooltip.mixins.json"
             } else if (sc.current.parsed <= "1.19.2") {
                 "src/forge1192/resources/polyglottooltip.mixins.json"
@@ -270,7 +452,35 @@ tasks {
     }
 }
 
-val productionJar = renamer.classes(tasks.named<Jar>("jarJar")) {
+val legacyShadowJar = tasks.register<ShadowJar>("legacyShadowJar") {
+    archiveClassifier = "shaded-dev"
+    destinationDirectory = layout.buildDirectory.dir("intermediates/shadow")
+    from(sourceSets.main.get().output)
+    from(layout.buildDirectory.file("tmp/compileJava/compileJava-refmap.json")) {
+        rename { "polyglottooltip.refmap.json" }
+    }
+    configurations = listOf(legacyShade)
+    mergeServiceFiles()
+    relocate("com.github.houbb.opencc4j", "com.starskyxiii.polyglottooltip.shadow.opencc4j")
+    relocate("com.github.houbb.heaven", "com.starskyxiii.polyglottooltip.shadow.heaven")
+    relocate("com.github.houbb.nlp", "com.starskyxiii.polyglottooltip.shadow.nlp")
+    relocate("com.llamalad7.mixinextras", "com.starskyxiii.polyglottooltip.shadow.mixinextras")
+    exclude("META-INF/*.SF", "META-INF/*.RSA", "META-INF/*.DSA")
+    manifest.attributes("MixinConfigs" to "polyglottooltip.mixins.json")
+}
+
+tasks.named<ShadowJar>("shadowJar") {
+    enabled = false
+    destinationDirectory = layout.buildDirectory.dir("intermediates/shadow-default")
+}
+
+val productionInput = if (sc.current.version == "1.16.5") {
+    legacyShadowJar
+} else {
+    tasks.named<Jar>("jarJar")
+}
+
+val productionJar = renamer.classes(productionInput) {
     mappings(renamer.mixin.generatedMappings)
     output.set(layout.buildDirectory.file(base.archivesName.map { "libs/$it-${project.version}.jar" }))
 }
@@ -293,6 +503,45 @@ val verifyProductionJar = tasks.register("verifyProductionJar") {
             throw GradleException("Production jar does not exist: $archive")
         }
         ZipFile(archive).use { productionZip ->
+            if (sc.current.version == "1.16.5") {
+                val requiredEntries = listOf(
+                    "com/starskyxiii/polyglottooltip/mixin/LegacyMixinExtrasBootstrapPlugin.class",
+                    "com/starskyxiii/polyglottooltip/shadow/mixinextras/MixinExtrasBootstrap.class",
+                    "com/starskyxiii/polyglottooltip/shadow/opencc4j/core/impl/ZhConvertBootstrap.class",
+                    "LICENSE_MixinExtras",
+                    "polyglottooltip.mixins.json",
+                    "polyglottooltip.refmap.json"
+                )
+                val missingEntries = requiredEntries.filter { productionZip.getEntry(it) == null }
+                if (missingEntries.isNotEmpty()) {
+                    throw GradleException("Production jar is missing shaded entries: ${missingEntries.joinToString()}")
+                }
+                if (productionZip.getEntry("META-INF/jarjar/metadata.json") != null) {
+                    throw GradleException("Legacy production jar must not depend on JarJar metadata")
+                }
+                val nestedJars = productionZip.entries().asSequence()
+                    .filter { !it.isDirectory && it.name.endsWith(".jar") }
+                    .map { it.name }
+                    .toList()
+                if (nestedJars.isNotEmpty()) {
+                    throw GradleException("Legacy production jar contains nested jars: ${nestedJars.joinToString()}")
+                }
+                productionZip.entries().asSequence()
+                    .filter { !it.isDirectory && it.name.endsWith(".class") }
+                    .forEach { entry ->
+                        productionZip.getInputStream(entry).use { input ->
+                            val header = ByteArray(8)
+                            if (input.read(header) != header.size) {
+                                throw GradleException("Truncated class file: ${entry.name}")
+                            }
+                            val major = ((header[6].toInt() and 0xff) shl 8) or (header[7].toInt() and 0xff)
+                            if (major > 52) {
+                                throw GradleException("Class ${entry.name} requires class-file version $major")
+                            }
+                        }
+                    }
+                return@use
+            }
             val metadataEntry = productionZip.getEntry("META-INF/jarjar/metadata.json")
                 ?: throw GradleException("Production jar is missing META-INF/jarjar/metadata.json")
             val metadata = productionZip.getInputStream(metadataEntry).use {

@@ -1,4 +1,5 @@
 package com.starskyxiii.polyglottooltip.integration.jei;
+//~ minecraft_116_packages
 
 import mezz.jei.api.fabric.ingredients.fluids.IJeiFluidIngredient;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariantAttributes;

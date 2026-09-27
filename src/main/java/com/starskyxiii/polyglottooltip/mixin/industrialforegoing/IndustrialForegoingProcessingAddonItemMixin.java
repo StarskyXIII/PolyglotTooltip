@@ -1,4 +1,5 @@
 package com.starskyxiii.polyglottooltip.mixin.industrialforegoing;
+//~ minecraft_116_packages
 
 import com.starskyxiii.polyglottooltip.integration.industrialforegoing.IndustrialForegoingNameHelper;
 import net.minecraft.network.chat.Component;

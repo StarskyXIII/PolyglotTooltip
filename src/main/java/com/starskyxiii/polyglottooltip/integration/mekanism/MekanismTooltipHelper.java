@@ -1,4 +1,5 @@
 package com.starskyxiii.polyglottooltip.integration.mekanism;
+//~ minecraft_116_packages minecraft_116_compound_names
 
 import com.starskyxiii.polyglottooltip.SecondaryTooltipUtil;
 import net.minecraft.network.chat.Component;
@@ -41,7 +42,7 @@ public final class MekanismTooltipHelper {
 
     private static Optional<Component> getChemicalNameFromTypeHolder(Object holder) {
         Optional<Object> chemical = invokeNoArg(holder, "getType");
-        if (chemical.isEmpty()) {
+        if (!chemical.isPresent()) {
             chemical = invokeNoArg(holder, "getChemical");
         }
         return chemical.flatMap(MekanismTooltipHelper::toComponent);

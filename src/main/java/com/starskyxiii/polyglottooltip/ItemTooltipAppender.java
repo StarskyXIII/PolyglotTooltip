@@ -1,6 +1,7 @@
 package com.starskyxiii.polyglottooltip;
-//~ minecraft_legacy_components
+//~ minecraft_116_packages minecraft_legacy_components minecraft_118_factories
 
+import com.starskyxiii.polyglottooltip.minecraft.ComponentFactory;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.world.item.ItemStack;
@@ -52,9 +53,9 @@ public final class ItemTooltipAppender {
             String secondary = nameMap.get(originalLine.getString());
             if (secondary != null) {
                 Style originalStyle = originalLine.getStyle();
-                Component appendedPart = Component.empty()
-                        .append(Component.literal("｜").withStyle(net.minecraft.ChatFormatting.GRAY))
-                        .append(Component.literal(secondary).withStyle(originalStyle));
+                Component appendedPart = ComponentFactory.empty()
+                        .append(ComponentFactory.literal("｜").withStyle(net.minecraft.ChatFormatting.GRAY))
+                        .append(ComponentFactory.literal(secondary).withStyle(originalStyle));
                 tooltip.set(i, originalLine.copy().append(appendedPart));
             }
         }
@@ -64,7 +65,7 @@ public final class ItemTooltipAppender {
     /*private static void fillEnchantmentNames(Map<Enchantment, Integer> enchants,
                                              Map<String, String> nameMap,
                                              LanguageCache cache) {
-        for (var entry : enchants.entrySet()) {
+        for (Map.Entry<Enchantment, Integer> entry : enchants.entrySet()) {
             addEnchantmentName(entry.getKey().getFullname(entry.getValue()), nameMap, cache);
         }
     }

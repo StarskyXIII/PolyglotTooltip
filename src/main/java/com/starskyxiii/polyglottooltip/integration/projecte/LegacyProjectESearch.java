@@ -1,4 +1,5 @@
 package com.starskyxiii.polyglottooltip.integration.projecte;
+//~ minecraft_116_packages
 
 import com.starskyxiii.polyglottooltip.LanguageCache;
 import com.starskyxiii.polyglottooltip.SecondaryTooltipUtil;
@@ -25,9 +26,10 @@ public final class LegacyProjectESearch {
         }
         Method method = itemInfo.getClass().getMethod("createStack");
         Object value = method.invoke(itemInfo);
-        if (!(value instanceof ItemStack stack)) {
+        if (!(value instanceof ItemStack)) {
             return false;
         }
+        ItemStack stack = (ItemStack) value;
         for (String name : LanguageCache.getInstance().resolveSearchNamesForAll(stack)) {
             if (matchesCandidate(name, query, contains)) {
                 return true;

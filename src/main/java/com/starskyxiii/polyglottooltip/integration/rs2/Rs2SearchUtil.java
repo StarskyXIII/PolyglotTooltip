@@ -1,5 +1,5 @@
 package com.starskyxiii.polyglottooltip.integration.rs2;
-//~ rs_platform_resource
+//~ rs_platform_resource minecraft_116_packages
 
 import com.refinedmods.refinedstorage.api.resource.ResourceKey;
 import com.refinedmods.refinedstorage.api.resource.repository.ResourceRepositoryFilter;

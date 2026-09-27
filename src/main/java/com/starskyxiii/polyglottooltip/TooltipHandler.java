@@ -1,6 +1,7 @@
 package com.starskyxiii.polyglottooltip;
-//~ forge_neoforge_package
+//~ forge_neoforge_package minecraft_116_packages
 
+//? if >1.16.5
 import com.mojang.datafixers.util.Either;
 import net.minecraft.ChatFormatting;
 //? if >1.20.1 {
@@ -8,10 +9,12 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 //?}
 import net.minecraft.network.chat.Component;
+//? if >1.16.5 {
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.Style;
 import net.minecraft.util.StringDecomposer;
 import net.minecraft.world.inventory.tooltip.TooltipComponent;
+//?}
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantment;
 //? if <=1.20.1 {
@@ -33,11 +36,10 @@ import net.neoforged.neoforge.client.event.RenderTooltipEvent;
 *///?}
 import net.neoforged.neoforge.event.entity.player.ItemTooltipEvent;
 
+//? if >1.16.5 {
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+//?}
 
 /**
  * Handles tooltip post-processing for item stacks by:
@@ -70,6 +72,7 @@ public class TooltipHandler {
     }
     *///?}
 
+    //? if >1.16.5 {
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onGatherTooltipComponents(RenderTooltipEvent.GatherComponents event) {
         ItemStack stack = event.getItemStack();
@@ -124,4 +127,5 @@ public class TooltipHandler {
                 .map(component -> "com.hollingsworth.arsnouveau.client.gui.SchoolTooltip".equals(component.getClass().getName()))
                 .orElse(false);
     }
+    //?}
 }

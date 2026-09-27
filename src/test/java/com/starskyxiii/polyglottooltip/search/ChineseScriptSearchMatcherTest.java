@@ -7,6 +7,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -34,11 +36,11 @@ class ChineseScriptSearchMatcherTest {
     @Test
     void disabledModeMatchesOriginalAndExtraNamesWithoutScriptExpansion() {
         assertFalse(Config.ENABLE_CHINESE_SCRIPT_MATCHING.get());
-        assertEquals(Set.of(TRADITIONAL.toLowerCase(Locale.ROOT)),
+        assertEquals(Collections.singleton(TRADITIONAL.toLowerCase(Locale.ROOT)),
                 ChineseScriptSearchMatcher.getSearchVariants(TRADITIONAL));
 
         assertTrue(ChineseScriptSearchMatcher.containsMatch(TRADITIONAL, TRADITIONAL));
-        assertTrue(ChineseScriptSearchMatcher.containsMatch("iron", List.of(TRADITIONAL, SECONDARY_NAME)));
+        assertTrue(ChineseScriptSearchMatcher.containsMatch("iron", Arrays.asList(TRADITIONAL, SECONDARY_NAME)));
         assertFalse(ChineseScriptSearchMatcher.containsMatch(SIMPLIFIED, TRADITIONAL));
         assertFalse(ChineseScriptSearchMatcher.containsMatch(TRADITIONAL, SIMPLIFIED));
     }
@@ -54,22 +56,22 @@ class ChineseScriptSearchMatcherTest {
         assertTrue(ChineseScriptSearchMatcher.containsMatch(SIMPLIFIED, TRADITIONAL));
         assertTrue(ChineseScriptSearchMatcher.containsMatch(TRADITIONAL, SIMPLIFIED));
         assertTrue(ChineseScriptSearchMatcher.containsMatch(SIMPLIFIED,
-                List.of(SECONDARY_NAME, TRADITIONAL)));
+                Arrays.asList(SECONDARY_NAME, TRADITIONAL)));
     }
 
     @Test
     void blankQueriesMatchRegardlessOfCandidateCollection() {
         assertTrue(ChineseScriptSearchMatcher.containsMatch(null, "anything"));
-        assertTrue(ChineseScriptSearchMatcher.containsMatch("  ", List.of()));
-        assertTrue(ChineseScriptSearchMatcher.containsMatch("", List.of("anything")));
+        assertTrue(ChineseScriptSearchMatcher.containsMatch("  ", Collections.emptyList()));
+        assertTrue(ChineseScriptSearchMatcher.containsMatch("", Collections.singletonList("anything")));
         assertTrue(ChineseScriptSearchMatcher.getSearchVariants(null).isEmpty());
     }
 
     @Test
     void wrappedMatcherPreservesNullPrimaryNameSemantics() {
-        assertTrue(WrappedSearchMatcher.matches("", (String) null, () -> false, List::of));
-        assertTrue(WrappedSearchMatcher.matches("native", (String) null, () -> true, List::of));
-        assertFalse(WrappedSearchMatcher.matches("missing", (String) null, () -> false, List::of));
+        assertTrue(WrappedSearchMatcher.matches("", (String) null, () -> false, Collections::emptyList));
+        assertTrue(WrappedSearchMatcher.matches("native", (String) null, () -> true, Collections::emptyList));
+        assertFalse(WrappedSearchMatcher.matches("missing", (String) null, () -> false, Collections::emptyList));
     }
 
     @Test
@@ -94,7 +96,7 @@ class ChineseScriptSearchMatcherTest {
         ChineseScriptVariantIndexer.putVariants(TRADITIONAL, "value",
                 (key, value) -> indexed.add(key));
 
-        assertEquals(List.of(SIMPLIFIED), indexed);
+        assertEquals(Collections.singletonList(SIMPLIFIED), indexed);
 
         TestConfigSupport.setChineseScriptMatching(false);
         ChineseScriptSearchMatcher.clearCaches();

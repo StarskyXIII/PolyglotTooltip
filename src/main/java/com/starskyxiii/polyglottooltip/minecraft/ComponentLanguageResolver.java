@@ -1,4 +1,5 @@
 package com.starskyxiii.polyglottooltip.minecraft;
+//~ minecraft_116_packages minecraft_116_compound_names minecraft_116_language_map
 
 import net.minecraft.client.resources.language.ClientLanguage;
 import net.minecraft.network.chat.Component;
@@ -36,7 +37,7 @@ public final class ComponentLanguageResolver {
         }
 
         Optional<String> mainPart = resolveContents(component, translationLookup);
-        if (mainPart.isEmpty()) {
+        if (!mainPart.isPresent()) {
             return Optional.empty();
         }
         if (component.getSiblings().isEmpty()) {
@@ -53,14 +54,16 @@ public final class ComponentLanguageResolver {
     private static Optional<String> resolveContents(Component component,
                                                     Function<String, String> translationLookup) {
         //? if <=1.18.2 {
-        /*if (!(component instanceof TranslatableComponent translatable)) {
+        /*if (!(component instanceof TranslatableComponent)) {
             return Optional.of(component.getContents());
         }
+        TranslatableComponent translatable = (TranslatableComponent) component;
         *///?} else {
         ComponentContents contents = component.getContents();
-        if (!(contents instanceof TranslatableContents translatable)) {
+        if (!(contents instanceof TranslatableContents)) {
             return Optional.of(resolvePlainContents(contents));
         }
+        TranslatableContents translatable = (TranslatableContents) contents;
         //?}
 
         String template = translationLookup.apply(translatable.getKey());
@@ -81,7 +84,8 @@ public final class ComponentLanguageResolver {
         Object[] resolvedArgs = new Object[args.length];
         for (int index = 0; index < args.length; index++) {
             Object argument = args[index];
-            if (argument instanceof Component nested) {
+            if (argument instanceof Component) {
+                Component nested = (Component) argument;
                 resolvedArgs[index] = resolve(nested, translationLookup).orElse("");
             } else {
                 resolvedArgs[index] = String.valueOf(argument);

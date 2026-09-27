@@ -1,12 +1,16 @@
 package com.starskyxiii.polyglottooltip.integration.jei;
-//~ minecraft_identifier
+//~ minecraft_identifier minecraft_116_packages
 
 import com.starskyxiii.polyglottooltip.PolyglotTooltip;
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
 import mezz.jei.api.runtime.IJeiRuntime;
 import net.minecraft.client.Minecraft;
+//? if <=1.16.5 {
+/*import net.minecraft.client.gui.components.EditBox;
+*///?} else {
 import net.minecraft.client.gui.components.EditBox;
+//?}
 import net.minecraft.resources.ResourceLocation;
 
 import java.lang.reflect.Field;
@@ -31,10 +35,14 @@ public final class PolyglotJeiRuntimePlugin implements IModPlugin {
     @Override
     public void onRuntimeAvailable(IJeiRuntime jeiRuntime) {
         activeRuntime = jeiRuntime;
+        //? if <=1.16.5 {
+        /*boolean jemiRuntime = false;
+        *///?} else {
         boolean jemiRuntime = isJemiIngredientFilter(jeiRuntime.getIngredientFilter());
         if (jemiRuntime) {
             OptionalEmiSearchRefresh.register();
         }
+        //?}
         JeiSearchRefreshBridge.setRefreshActions(
                 () -> refreshIngredientFilter(jeiRuntime, false),
                 () -> refreshIngredientFilter(jeiRuntime, true),
@@ -57,17 +65,19 @@ public final class PolyglotJeiRuntimePlugin implements IModPlugin {
             }
             try {
                 Object filterApi = expectedRuntime.getIngredientFilter();
+                //? if >1.16.5 {
                 if (isJemiIngredientFilter(filterApi)) {
                     OptionalEmiSearchRefresh.refreshOnClientThread(rebuildSearchIndex);
                     return;
                 }
+                //?}
                 if (isDummyIngredientFilter(filterApi)) {
                     return;
                 }
                 Field filterField = filterApi.getClass().getDeclaredField("ingredientFilter");
                 filterField.setAccessible(true);
                 Object filter = filterField.get(filterApi);
-                //? if <=1.18.2 {
+                //? if >1.16.5 && <=1.18.2 {
                 /*if (rebuildSearchIndex) {
                     rebuildLegacyElementSearch(filter);
                 }
@@ -84,13 +94,17 @@ public final class PolyglotJeiRuntimePlugin implements IModPlugin {
                 notifyMethod.invoke(filter);
 
                 Object ingredientListOverlay = expectedRuntime.getIngredientListOverlay();
-                //? if <=1.18.2 {
+                //? if >1.16.5 && <=1.18.2 {
                 /*Field searchField = ingredientListOverlay.getClass().getDeclaredField("textFieldFilter");
                 *///?} else {
                 Field searchField = ingredientListOverlay.getClass().getDeclaredField("searchField");
                 //?}
                 searchField.setAccessible(true);
+                //? if <=1.16.5 {
+                /*EditBox searchBox = (EditBox) searchField.get(ingredientListOverlay);
+                *///?} else {
                 EditBox searchBox = (EditBox) searchField.get(ingredientListOverlay);
+                //?}
                 searchBox.setValue(searchBox.getValue());
             } catch (ReflectiveOperationException | RuntimeException e) {
                 PolyglotTooltip.LOGGER.warn("Unable to refresh JEI search results", e);
@@ -98,7 +112,7 @@ public final class PolyglotJeiRuntimePlugin implements IModPlugin {
         });
     }
 
-    //? if <=1.18.2 {
+    //? if >1.16.5 && <=1.18.2 {
     /*private static void rebuildLegacyElementSearch(Object filter) throws ReflectiveOperationException {
         Field searchField = filter.getClass().getDeclaredField("elementSearch");
         Field parserField = filter.getClass().getDeclaredField("elementPrefixParser");

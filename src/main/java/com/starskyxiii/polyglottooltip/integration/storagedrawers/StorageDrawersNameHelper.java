@@ -1,6 +1,7 @@
 package com.starskyxiii.polyglottooltip.integration.storagedrawers;
-//~ minecraft_legacy_components
+//~ minecraft_116_packages minecraft_legacy_components minecraft_118_factories
 
+import com.starskyxiii.polyglottooltip.minecraft.ComponentFactory;
 import com.starskyxiii.polyglottooltip.LanguageCache;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
@@ -33,10 +34,10 @@ public final class StorageDrawersNameHelper {
             return Optional.empty();
         }
         Optional<String> currentName = componentResolver.apply(
-                Component.translatable(stack.getItem().getDescriptionId()));
+                ComponentFactory.translatable(stack.getItem().getDescriptionId()));
         String primaryName = stack.getItem().getName(stack).getString();
         Optional<String> englishName = LanguageCache.getInstance().resolveEnglishComponent(
-                Component.translatable(stack.getItem().getDescriptionId()));
+                ComponentFactory.translatable(stack.getItem().getDescriptionId()));
         Optional<String> legacyName = tryCreateSpecialName(stack).flatMap(componentResolver);
         return preferTranslatedName(currentName, primaryName, englishName, legacyName);
         *///?} else {
@@ -72,7 +73,7 @@ public final class StorageDrawersNameHelper {
             return Optional.empty();
         }
 
-        return Optional.of(Component.translatable(typeNameKey.get(), Component.translatable(matNameKey.get())));
+        return Optional.of(ComponentFactory.translatable(typeNameKey.get(), ComponentFactory.translatable(matNameKey.get())));
         //?}
     }
 
@@ -101,14 +102,14 @@ public final class StorageDrawersNameHelper {
             if ("dark_oak".equals(material)) {
                 material = "big_oak";
             }
-            return Optional.of(Component.translatable("tile.storagedrawers.trim." + material + ".name"));
+            return Optional.of(ComponentFactory.translatable("tile.storagedrawers.trim." + material + ".name"));
         }
 
         String layout = drawerLayout(path);
         if (layout == null) {
             return Optional.empty();
         }
-        return Optional.of(Component.translatable(
+        return Optional.of(ComponentFactory.translatable(
                 "tile.storagedrawers.basicDrawers." + layout + ".name"));
     }
 

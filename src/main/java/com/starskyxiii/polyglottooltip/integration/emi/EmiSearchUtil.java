@@ -1,4 +1,5 @@
 package com.starskyxiii.polyglottooltip.integration.emi;
+//~ minecraft_116_packages
 
 import com.starskyxiii.polyglottooltip.search.ChineseScriptSearchMatcher;
 import net.minecraft.client.searchtree.SuffixArray;

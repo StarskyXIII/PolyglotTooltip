@@ -1,5 +1,5 @@
 package com.starskyxiii.polyglottooltip.mixin.jei;
-//~ forge_neoforge_package
+//~ minecraft_116_packages forge_neoforge_package
 
 import com.llamalad7.mixinextras.sugar.Local;
 import com.starskyxiii.polyglottooltip.LanguageCache;

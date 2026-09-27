@@ -1,4 +1,5 @@
 package com.starskyxiii.polyglottooltip.integration.jei;
+//~ minecraft_116_packages
 
 import com.starskyxiii.polyglottooltip.PolyglotTooltip;
 import net.minecraft.client.Minecraft;
