@@ -1,6 +1,7 @@
 package com.starskyxiii.polyglottooltip.integration.arsnouveau;
-//~ minecraft_identifier minecraft_legacy_components
+//~ minecraft_identifier minecraft_legacy_components minecraft_116_packages minecraft_118_factories
 
+import com.starskyxiii.polyglottooltip.minecraft.ComponentFactory;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
@@ -37,42 +38,45 @@ public final class ArsNouveauNameHelper {
     }
 
     public static Optional<Component> tryCreateSpecialName(Item item) {
-        return switch (item.getClass().getName()) {
-            case PERK_ITEM -> readField(item, "perk")
-                    .flatMap(ArsNouveauNameHelper::createThreadName);
-            case RITUAL_TABLET -> readField(item, "ritual")
-                    .flatMap(ArsNouveauNameHelper::createRitualTabletName);
-            case FAMILIAR_SCRIPT -> readField(item, "familiar")
-                    .flatMap(ArsNouveauNameHelper::createBoundScriptName);
-            case GLYPH -> readField(item, "spellPart")
-                    .flatMap(ArsNouveauNameHelper::createGlyphName);
-            default -> Optional.empty();
-        };
+        String className = item.getClass().getName();
+        if (PERK_ITEM.equals(className)) {
+            return readField(item, "perk").flatMap(ArsNouveauNameHelper::createThreadName);
+        }
+        if (RITUAL_TABLET.equals(className)) {
+            return readField(item, "ritual").flatMap(ArsNouveauNameHelper::createRitualTabletName);
+        }
+        if (FAMILIAR_SCRIPT.equals(className)) {
+            return readField(item, "familiar").flatMap(ArsNouveauNameHelper::createBoundScriptName);
+        }
+        if (GLYPH.equals(className)) {
+            return readField(item, "spellPart").flatMap(ArsNouveauNameHelper::createGlyphName);
+        }
+        return Optional.empty();
     }
 
     private static Optional<Component> createThreadName(Object perk) {
         return invokeComponent(perk, "getPerkName")
-                .map(perkName -> Component.translatable("ars_nouveau.thread_of", perkName));
+                .map(perkName -> ComponentFactory.translatable("ars_nouveau.thread_of", perkName));
     }
 
     private static Optional<Component> createRitualTabletName(Object ritual) {
         return invokeResourceLocation(ritual, "getRegistryName")
-                .map(id -> Component.translatable("ars_nouveau.tablet_of", itemNameComponent(id)));
+                .map(id -> ComponentFactory.translatable("ars_nouveau.tablet_of", itemNameComponent(id)));
     }
 
     private static Optional<Component> createBoundScriptName(Object familiar) {
         return invokeComponent(familiar, "getLangName")
-                .map(familiarName -> Component.translatable("ars_nouveau.bound_script", familiarName));
+                .map(familiarName -> ComponentFactory.translatable("ars_nouveau.bound_script", familiarName));
     }
 
     private static Optional<Component> createGlyphName(Object spellPart) {
         return invokeString(spellPart, "getLocalizationKey")
-                .map(Component::translatable)
-                .map(spellName -> Component.translatable("ars_nouveau.glyph_of", spellName));
+                .map(ComponentFactory::translatable)
+                .map(spellName -> ComponentFactory.translatable("ars_nouveau.glyph_of", spellName));
     }
 
     private static Component itemNameComponent(ResourceLocation id) {
-        return Component.translatable("item." + id.getNamespace() + "." + id.getPath());
+        return ComponentFactory.translatable("item." + id.getNamespace() + "." + id.getPath());
     }
 
     private static Optional<Object> readField(Object target, String fieldName) {

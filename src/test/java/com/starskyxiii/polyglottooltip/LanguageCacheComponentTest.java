@@ -1,6 +1,7 @@
 package com.starskyxiii.polyglottooltip;
-//~ minecraft_legacy_components
+//~ minecraft_116_packages minecraft_116_language_map minecraft_legacy_components minecraft_118_factories
 
+import com.starskyxiii.polyglottooltip.minecraft.ComponentFactory;
 import net.minecraft.client.resources.language.ClientLanguage;
 import net.minecraft.network.chat.Component;
 import org.junit.jupiter.api.AfterEach;
@@ -26,11 +27,11 @@ class LanguageCacheComponentTest {
                 "outer", "%s / %s",
                 "inner", "Nested"
         ));
-        Component component = Component.translatable(
+        Component component = ComponentFactory.translatable(
                 "outer",
-                Component.translatable("inner"),
-                Component.literal("!"))
-                .append(Component.literal(" tail"));
+                ComponentFactory.translatable("inner"),
+                ComponentFactory.literal("!"))
+                .append(ComponentFactory.literal(" tail"));
 
         assertEquals(List.of("Nested / ! tail"), resolveAll(component, List.of(language)));
     }
@@ -43,13 +44,13 @@ class LanguageCacheComponentTest {
         assertEquals(List.of("Fallback"), resolveAll(
                 Component.translatableWithFallback("missing", "Fallback"), List.of(language)));
         //?}
-        assertTrue(resolveAll(Component.translatable("missing"), List.of(language)).isEmpty());
-        assertEquals(List.of("literal"), resolveAll(Component.literal("literal"), List.of(language)));
+        assertTrue(resolveAll(ComponentFactory.translatable("missing"), List.of(language)).isEmpty());
+        assertEquals(List.of("literal"), resolveAll(ComponentFactory.literal("literal"), List.of(language)));
     }
 
     @Test
     void preservesLanguageOrderAndDeduplicatesResolvedNames() {
-        Component component = Component.translatable("name");
+        Component component = ComponentFactory.translatable("name");
         ClientLanguage first = language(Map.of("name", "First"));
         ClientLanguage duplicate = language(Map.of("name", "First"));
         ClientLanguage second = language(Map.of("name", "Second"));
@@ -64,15 +65,15 @@ class LanguageCacheComponentTest {
                 "outer", "[%s]",
                 "malformed", "%q"
         ));
-        Component missingChildren = Component.translatable(
+        Component missingChildren = ComponentFactory.translatable(
                 "outer",
-                Component.translatable("missing.argument"))
-                .append(Component.translatable("missing.sibling"))
-                .append(Component.literal(" tail"));
+                ComponentFactory.translatable("missing.argument"))
+                .append(ComponentFactory.translatable("missing.sibling"))
+                .append(ComponentFactory.literal(" tail"));
 
         assertEquals(List.of("[] tail"), resolveAll(missingChildren, List.of(language)));
         assertEquals(List.of("%q"), resolveAll(
-                Component.translatable("malformed", "unused"), List.of(language)));
+                ComponentFactory.translatable("malformed", "unused"), List.of(language)));
     }
 
     private static ClientLanguage language(Map<String, String> translations) {

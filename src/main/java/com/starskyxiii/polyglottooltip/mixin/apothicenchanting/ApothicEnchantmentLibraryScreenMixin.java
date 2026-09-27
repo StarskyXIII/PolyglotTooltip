@@ -1,5 +1,5 @@
 package com.starskyxiii.polyglottooltip.mixin.apothicenchanting;
-//~ gui_graphics_extractor
+//~ gui_graphics_extractor minecraft_116_packages
 
 import com.starskyxiii.polyglottooltip.integration.apothicenchanting.ApothicEnchantmentLibraryUtil;
 //? if <=1.20.1 {

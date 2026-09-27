@@ -23,13 +23,20 @@ public final class ChineseScriptSearchMatcher {
     private ChineseScriptSearchMatcher() {
     }
 
-    private record QueryCache(String query, Set<String> variants) {
+    private static final class QueryCache {
+        private final String query;
+        private final Set<String> variants;
+
+        private QueryCache(String query, Set<String> variants) {
+            this.query = query;
+            this.variants = variants;
+        }
     }
 
     // Single-entry cache for query variants.
     // Search may run on worker and render threads, so keep the pair atomic.
     private static final AtomicReference<QueryCache> QUERY_CACHE =
-            new AtomicReference<>(new QueryCache(null, Set.of()));
+            new AtomicReference<>(new QueryCache(null, Collections.emptySet()));
 
     // Permanent per-string cache for candidate variants.
     // Item names are fixed within a game session; caching them avoids redundant OpenCC
@@ -71,15 +78,15 @@ public final class ChineseScriptSearchMatcher {
      * so that cached variant sets are recomputed with the updated setting.
      */
     public static void clearCaches() {
-        QUERY_CACHE.set(new QueryCache(null, Set.of()));
+        QUERY_CACHE.set(new QueryCache(null, Collections.emptySet()));
         CANDIDATE_CACHE.clear();
     }
 
     /** Returns cached variants for {@code query}, recomputing only when the query string changes. */
     private static Set<String> queryVariants(String query) {
         QueryCache cache = QUERY_CACHE.get();
-        if (Objects.equals(query, cache.query())) {
-            return cache.variants();
+        if (Objects.equals(query, cache.query)) {
+            return cache.variants;
         }
         Set<String> variants = Collections.unmodifiableSet(normalizedVariants(query));
         QUERY_CACHE.set(new QueryCache(query, variants));

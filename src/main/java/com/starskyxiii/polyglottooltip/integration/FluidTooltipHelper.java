@@ -1,4 +1,5 @@
 package com.starskyxiii.polyglottooltip.integration;
+//~ minecraft_116_packages
 
 import com.starskyxiii.polyglottooltip.SecondaryTooltipUtil;
 import net.minecraft.network.chat.Component;
@@ -34,13 +35,15 @@ public final class FluidTooltipHelper {
     }
 
     private static boolean isEmptyFluidName(Component component) {
-        if (component == null || component.getString().isBlank()) {
+        if (component == null || component.getString().codePoints().allMatch(Character::isWhitespace)) {
             return true;
         }
         //? if <=1.18.2 {
-        /*if (component instanceof TranslatableComponent contents) {
+        /*if (component instanceof TranslatableComponent) {
+            TranslatableComponent contents = (TranslatableComponent) component;
         *///?} else {
-        if (component.getContents() instanceof TranslatableContents contents) {
+        if (component.getContents() instanceof TranslatableContents) {
+            TranslatableContents contents = (TranslatableContents) component.getContents();
         //?}
             String key = contents.getKey();
             return LDLIB_EMPTY_FLUID_KEY.equals(key) || GTCEU_EMPTY_FLUID_KEY.equals(key);

@@ -1,5 +1,5 @@
 package com.starskyxiii.polyglottooltip.mixin.rs2;
-//~ rs_fluid_resource
+//~ rs_fluid_resource minecraft_116_packages
 
 import com.refinedmods.refinedstorage.common.Platform;
 import com.refinedmods.refinedstorage.common.grid.view.FluidGridResource;

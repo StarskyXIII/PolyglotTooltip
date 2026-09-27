@@ -8,6 +8,7 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 //?}
 
 import java.util.List;
+import java.util.Collections;
 
 public class Config {
     //? fabric {
@@ -57,14 +58,14 @@ public class Config {
     static final ModConfigSpec SPEC = BUILDER.build();
 
     private static ModConfigSpec.ConfigValue<List<? extends String>> defineDisplayLanguage() {
-        var builder = BUILDER
+        ModConfigSpec.Builder builder = BUILDER
                 .comment("List of extra language codes to show in item tooltips (e.g. [\"en_us\", \"zh_cn\"]).",
                         "Each language adds one extra name line to the tooltip.")
                 .translation(translationKey("displayLanguage"));
         //? if <=1.19.2 {
         /*return builder.defineListAllowEmpty(
-                List.of("displayLanguage"),
-                () -> List.of("en_us"),
+                Collections.singletonList("displayLanguage"),
+                () -> Collections.singletonList("en_us"),
                 String.class::isInstance);
         *///?} else if <=1.20.1 {
         /*return builder.defineListAllowEmpty("displayLanguage", List.of("en_us"), String.class::isInstance);
@@ -74,7 +75,7 @@ public class Config {
     }
 
     private static ModConfigSpec.BooleanValue defineChineseScriptMatching() {
-        var builder = BUILDER
+        ModConfigSpec.Builder builder = BUILDER
                 .comment("If true, search treats simplified and traditional Chinese as interchangeable.",
                         "Disabling this turns off PolyglotTooltip's script-variant expansion for JEI, AE2, RS2, and related integrations.")
                 .translation(translationKey("enableChineseScriptMatching"));

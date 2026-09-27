@@ -1,6 +1,7 @@
 package com.starskyxiii.polyglottooltip.integration.controlling;
-//~ minecraft_legacy_components
+//~ minecraft_116_packages minecraft_legacy_components minecraft_118_factories
 
+import com.starskyxiii.polyglottooltip.minecraft.ComponentFactory;
 import com.starskyxiii.polyglottooltip.LanguageCache;
 import com.starskyxiii.polyglottooltip.SecondaryTooltipUtil;
 import com.starskyxiii.polyglottooltip.core.ChineseScriptPolicy;
@@ -22,8 +23,8 @@ public final class LegacyControllingSearch {
         if (matchesPrimary(nativeText, query, contains)) {
             return true;
         }
-        KeyMapping mapping = getKeyMapping(entry);
-        return mapping != null && matches(query, Component.translatable(mapping.getName()), contains);
+        KeyMapping mapping = getKeyBinding(entry);
+        return mapping != null && matches(query, ComponentFactory.translatable(mapping.getName()), contains);
     }
 
     public static boolean matchesCategory(String nativeText, CharSequence query, Object entry,
@@ -31,8 +32,8 @@ public final class LegacyControllingSearch {
         if (matchesPrimary(nativeText, query, contains)) {
             return true;
         }
-        KeyMapping mapping = getKeyMapping(entry);
-        return mapping != null && matches(query, Component.translatable(mapping.getCategory()), contains);
+        KeyMapping mapping = getKeyBinding(entry);
+        return mapping != null && matches(query, ComponentFactory.translatable(mapping.getCategory()), contains);
     }
 
     public static boolean matchesKey(String nativeText, CharSequence query, Object entry,
@@ -40,7 +41,7 @@ public final class LegacyControllingSearch {
         if (matchesPrimary(nativeText, query, contains)) {
             return true;
         }
-        KeyMapping mapping = getKeyMapping(entry);
+        KeyMapping mapping = getKeyBinding(entry);
         return mapping != null && matches(query, mapping.getTranslatedKeyMessage(), contains);
     }
 
@@ -74,14 +75,14 @@ public final class LegacyControllingSearch {
         return false;
     }
 
-    private static KeyMapping getKeyMapping(Object entry) {
+    private static KeyMapping getKeyBinding(Object entry) {
         if (entry == null) {
             return null;
         }
         try {
             Method method = entry.getClass().getMethod("getKeybinding");
             Object value = method.invoke(entry);
-            return value instanceof KeyMapping mapping ? mapping : null;
+            return value instanceof KeyMapping ? (KeyMapping) value : null;
         } catch (ReflectiveOperationException exception) {
             return null;
         }

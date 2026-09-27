@@ -1,6 +1,7 @@
 package com.starskyxiii.polyglottooltip.integration.industrialforegoing;
-//~ minecraft_legacy_components
+//~ minecraft_legacy_components minecraft_116_packages minecraft_118_factories
 
+import com.starskyxiii.polyglottooltip.minecraft.ComponentFactory;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.Item;
@@ -8,6 +9,7 @@ import net.minecraft.world.item.ItemStack;
 
 import java.lang.reflect.Field;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
@@ -70,28 +72,28 @@ public final class IndustrialForegoingNameHelper {
 
     public static Component createLaserLensName(DyeColor color) {
         //? if <=1.19.2 {
-        /*return Component.empty()
-                .append(Component.translatable("color.minecraft." + color.getName()))
-                .append(Component.literal(" "))
-                .append(Component.translatable("item.industrialforegoing.laser_lens"));
+        /*return ComponentFactory.empty()
+                .append(ComponentFactory.translatable("color.minecraft." + color.getName()))
+                .append(ComponentFactory.literal(" "))
+                .append(ComponentFactory.translatable("item.industrialforegoing.laser_lens"));
         *///?} else {
-        return Component.translatable(
+        return ComponentFactory.translatable(
                 "item.industrialforegoing.laser_lens",
-                Component.translatable("color.minecraft." + color.getName())
+                ComponentFactory.translatable("color.minecraft." + color.getName())
         );
         //?}
     }
 
     public static Component createAddonName(String addonTypeKey, int tier) {
-        return Component.empty()
-                .append(Component.translatable("item.industrialforegoing.addon"))
-                .append(Component.translatable(addonTypeKey))
+        return ComponentFactory.empty()
+                .append(ComponentFactory.translatable("item.industrialforegoing.addon"))
+                .append(ComponentFactory.translatable(addonTypeKey))
                 //? if <=1.19.2 {
-                /*.append(Component.literal(" "))
+                /*.append(ComponentFactory.literal(" "))
                 *///?} else {
-                .append(Component.translatable("item.industrialforegoing.tier"))
+                .append(ComponentFactory.translatable("item.industrialforegoing.tier"))
                 //?}
-                .append(Component.literal(Integer.toString(tier)));
+                .append(ComponentFactory.literal(Integer.toString(tier)));
     }
 
     private static Optional<String> resolveAddonName(
@@ -99,16 +101,16 @@ public final class IndustrialForegoingNameHelper {
             int tier,
             Function<Component, Optional<String>> componentResolver
     ) {
-        Optional<String> addon = componentResolver.apply(Component.translatable("item.industrialforegoing.addon"));
-        Optional<String> type = componentResolver.apply(Component.translatable(addonTypeKey));
+        Optional<String> addon = componentResolver.apply(ComponentFactory.translatable("item.industrialforegoing.addon"));
+        Optional<String> type = componentResolver.apply(ComponentFactory.translatable(addonTypeKey));
         //? if <=1.19.2 {
-        /*if (addon.isEmpty() || type.isEmpty()) {
+        /*if (!addon.isPresent() || !type.isPresent()) {
             return Optional.empty();
         }
         return Optional.of(addon.get() + type.get() + " " + tier);
         *///?} else {
-        Optional<String> tierLabel = componentResolver.apply(Component.translatable("item.industrialforegoing.tier"));
-        if (addon.isEmpty() || type.isEmpty() || tierLabel.isEmpty()) {
+        Optional<String> tierLabel = componentResolver.apply(ComponentFactory.translatable("item.industrialforegoing.tier"));
+        if (!addon.isPresent() || !type.isPresent() || !tierLabel.isPresent()) {
             return Optional.empty();
         }
         return Optional.of(addon.get() + type.get() + tierLabel.get() + tier);
@@ -176,6 +178,41 @@ public final class IndustrialForegoingNameHelper {
         return Optional.empty();
     }
 
-    private record AddonDescriptor(String translationKey, int tierOffset) {
+    private static final class AddonDescriptor {
+        private final String translationKey;
+        private final int tierOffset;
+
+        private AddonDescriptor(String translationKey, int tierOffset) {
+            this.translationKey = translationKey;
+            this.tierOffset = tierOffset;
+        }
+
+        public String translationKey() {
+            return translationKey;
+        }
+
+        public int tierOffset() {
+            return tierOffset;
+        }
+
+        @Override
+        public boolean equals(Object value) {
+            if (!(value instanceof AddonDescriptor)) {
+                return false;
+            }
+            AddonDescriptor other = (AddonDescriptor) value;
+            return Objects.equals(translationKey, other.translationKey)
+                    && tierOffset == other.tierOffset;
+        }
+
+        @Override
+        public int hashCode() {
+            return 31 * (Objects.hashCode(translationKey)) + tierOffset;
+        }
+
+        @Override
+        public String toString() {
+            return "AddonDescriptor[translationKey=" + translationKey + ", tierOffset=" + tierOffset + "]";
+        }
     }
 }

@@ -1,4 +1,5 @@
 package com.starskyxiii.polyglottooltip.mixin.arsnouveau;
+//~ minecraft_116_packages
 
 import com.starskyxiii.polyglottooltip.integration.arsnouveau.ArsNouveauGlyphSearchHelper;
 import net.minecraft.network.chat.Component;
@@ -21,7 +22,11 @@ public abstract class ArsNouveauGlyphButtonMixin {
 
     //? if <=1.19.2 {
     /*@Redirect(
+            //? if <=1.16.5 {
+            method = "func_230430_a_",
+            //?} else {
             method = {"renderButton", "m_6305_"},
+            //?}
             at = @At(value = "INVOKE", target = "Ljava/util/List;add(Ljava/lang/Object;)Z", ordinal = 0),
             remap = false
     )
@@ -32,7 +37,12 @@ public abstract class ArsNouveauGlyphButtonMixin {
                                                               int mouseY,
                                                               float partialTicks) {
         boolean added = tip.add((Component) line);
+        //? if <=1.16.5 {
+        ArsNouveauGlyphSearchHelper.insertSecondaryNameLine(tip,
+                ArsNouveauGlyphSearchHelper.resolveLegacySpellPart(this));
+        //?} else {
         ArsNouveauGlyphSearchHelper.insertSecondaryNameLine(tip, polyglottooltip$getFieldValue("abstractSpellPart"));
+        //?}
         return added;
     }
     *///?} else {

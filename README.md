@@ -12,12 +12,16 @@ PolyglotTooltip is a client-side mod that adds extra translated name lines to to
 
 PolyglotTooltip bundles [Opencc4j][opencc4j] for Simplified/Traditional Chinese conversion used by cross-search matching.
 
+The Forge 1.16.5 build also bundles [MixinExtras][mixinextras] for its mixin hooks.
+
 ## License
 
 - PolyglotTooltip
   - [MIT][license]
 - Bundled third-party components
   - [Opencc4j][opencc4j] by houbb, under the Apache-2.0.
+  - [MixinExtras][mixinextras] by LlamaLad7, under the MIT license (Forge 1.16.5).
 
 [license]: LICENSE
 [opencc4j]: https://github.com/houbb/opencc4j
+[mixinextras]: https://github.com/LlamaLad7/MixinExtras

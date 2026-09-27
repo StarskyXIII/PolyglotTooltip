@@ -1,6 +1,7 @@
 package com.starskyxiii.polyglottooltip.integration.jade;
-//~ minecraft_identifier forge_neoforge_package minecraft_legacy_components
+//~ minecraft_identifier forge_neoforge_package minecraft_legacy_components minecraft_116_packages minecraft_118_factories
 
+import com.starskyxiii.polyglottooltip.minecraft.ComponentFactory;
 import com.starskyxiii.polyglottooltip.LanguageCache;
 import com.starskyxiii.polyglottooltip.PolyglotTooltip;
 import com.starskyxiii.polyglottooltip.SecondaryTooltipUtil;
@@ -29,6 +30,7 @@ import snownee.jade.api.config.IPluginConfig;
 //?}
 
 import java.util.List;
+import java.util.Objects;
 
 //? if <=1.18.2 {
 /*public enum JadeBlockNameProvider implements IComponentProvider {
@@ -97,7 +99,7 @@ public enum JadeBlockNameProvider implements IBlockComponentProvider {
         ItemStack pickedResult = accessor.getPickedResult();
         if (!pickedResult.isEmpty()) {
             return new ResolvedNames(
-                    Component.literal(LanguageCache.getInstance().resolveCurrentDisplayName(pickedResult)),
+                    ComponentFactory.literal(LanguageCache.getInstance().resolveCurrentDisplayName(pickedResult)),
                     LanguageCache.getInstance().resolveDisplayNamesForAll(pickedResult)
             );
         }
@@ -106,6 +108,41 @@ public enum JadeBlockNameProvider implements IBlockComponentProvider {
         return new ResolvedNames(primary, LanguageCache.getInstance().resolveComponentsForAll(primary));
     }
 
-    private record ResolvedNames(Component primary, List<String> names) {
+    private static final class ResolvedNames {
+        private final Component primary;
+        private final List<String> names;
+
+        private ResolvedNames(Component primary, List<String> names) {
+            this.primary = primary;
+            this.names = names;
+        }
+
+        public Component primary() {
+            return primary;
+        }
+
+        public List<String> names() {
+            return names;
+        }
+
+        @Override
+        public boolean equals(Object value) {
+            if (!(value instanceof ResolvedNames)) {
+                return false;
+            }
+            ResolvedNames other = (ResolvedNames) value;
+            return Objects.equals(primary, other.primary)
+                    && Objects.equals(names, other.names);
+        }
+
+        @Override
+        public int hashCode() {
+            return 31 * (Objects.hashCode(primary)) + Objects.hashCode(names);
+        }
+
+        @Override
+        public String toString() {
+            return "ResolvedNames[primary=" + primary + ", names=" + names + "]";
+        }
     }
 }

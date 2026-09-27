@@ -1,6 +1,7 @@
 package com.starskyxiii.polyglottooltip.integration.apothicenchanting;
-//~ minecraft_legacy_components
+//~ minecraft_116_packages minecraft_legacy_components minecraft_118_factories
 
+import com.starskyxiii.polyglottooltip.minecraft.ComponentFactory;
 import com.starskyxiii.polyglottooltip.LanguageCache;
 import com.starskyxiii.polyglottooltip.SecondaryTooltipUtil;
 import com.starskyxiii.polyglottooltip.search.ChineseScriptSearchMatcher;
@@ -177,7 +178,7 @@ public final class ApothicEnchantmentLibraryUtil {
 
     public static Component getEnchantmentDisplayName(Enchantment enchantment) {
         //? if <=1.20.1 {
-        /*return Component.translatable(enchantment.getDescriptionId());
+        /*return ComponentFactory.translatable(enchantment.getDescriptionId());
         *///?} else {
         return enchantment.description();
         //?}

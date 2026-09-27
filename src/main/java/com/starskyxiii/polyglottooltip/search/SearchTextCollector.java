@@ -1,4 +1,5 @@
 package com.starskyxiii.polyglottooltip.search;
+//~ minecraft_116_packages
 
 import com.starskyxiii.polyglottooltip.LanguageCache;
 import net.minecraft.network.chat.Component;
@@ -20,7 +21,7 @@ public final class SearchTextCollector {
     }
 
     public SearchTextCollector addTextBlock(String value) {
-        if (value == null || value.isBlank()) {
+        if (value == null || value.codePoints().allMatch(Character::isWhitespace)) {
             return this;
         }
 
@@ -50,6 +51,12 @@ public final class SearchTextCollector {
         return addAll(LanguageCache.getInstance().resolveComponentsForAll(component));
     }
 
+    //? if <=1.16.5 {
+    /*public SearchTextCollector addITextComponent(Component component) {
+        return addComponent(component);
+    }
+    *///?}
+
     public SearchTextCollector addItemStack(ItemStack stack) {
         if (stack == null || stack.isEmpty()) {
             return this;
@@ -64,7 +71,7 @@ public final class SearchTextCollector {
     }
 
     private void addNormalized(String value) {
-        if (value == null || value.isBlank()) {
+        if (value == null || value.codePoints().allMatch(Character::isWhitespace)) {
             return;
         }
 

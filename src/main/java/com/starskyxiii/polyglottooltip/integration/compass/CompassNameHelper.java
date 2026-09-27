@@ -1,6 +1,7 @@
 package com.starskyxiii.polyglottooltip.integration.compass;
-//~ minecraft_identifier minecraft_util_package minecraft_legacy_components
+//~ minecraft_116_packages minecraft_identifier minecraft_util_package minecraft_legacy_components minecraft_118_factories
 
+import com.starskyxiii.polyglottooltip.minecraft.ComponentFactory;
 import com.starskyxiii.polyglottooltip.LanguageCache;
 import com.starskyxiii.polyglottooltip.SecondaryTooltipUtil;
 import net.minecraft.Util;
@@ -28,20 +29,21 @@ public final class CompassNameHelper {
                                                          ResourceLocation key,
                                                          String primaryText,
                                                          java.util.function.UnaryOperator<String> formatter) {
-        if (!SecondaryTooltipUtil.shouldShowSecondaryLanguage() || key == null || primaryText == null || primaryText.isBlank()) {
+        if (!SecondaryTooltipUtil.shouldShowSecondaryLanguage() || key == null || primaryText == null
+                || primaryText.codePoints().allMatch(Character::isWhitespace)) {
             return primaryText;
         }
 
-        Component translatedName = Component.translatable(Util.makeDescriptionId(category, key));
+        Component translatedName = ComponentFactory.translatable(Util.makeDescriptionId(category, key));
         List<String> rawSecondaryNames = LanguageCache.getInstance().resolveComponentsForAll(translatedName);
         Set<String> secondaryNames = new LinkedHashSet<>();
         for (String rawSecondaryName : rawSecondaryNames) {
-            if (rawSecondaryName == null || rawSecondaryName.isBlank()) {
+            if (rawSecondaryName == null || rawSecondaryName.codePoints().allMatch(Character::isWhitespace)) {
                 continue;
             }
 
             String formatted = formatter.apply(rawSecondaryName);
-            if (!formatted.isBlank() && !formatted.equals(primaryText)) {
+            if (!formatted.codePoints().allMatch(Character::isWhitespace) && !formatted.equals(primaryText)) {
                 secondaryNames.add(formatted);
             }
         }

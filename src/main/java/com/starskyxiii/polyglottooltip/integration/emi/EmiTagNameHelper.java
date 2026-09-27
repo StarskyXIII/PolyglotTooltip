@@ -1,6 +1,7 @@
 package com.starskyxiii.polyglottooltip.integration.emi;
-//~ minecraft_legacy_components
+//~ minecraft_116_packages minecraft_legacy_components minecraft_118_factories
 
+import com.starskyxiii.polyglottooltip.minecraft.ComponentFactory;
 import net.minecraft.network.chat.Component;
 import net.minecraft.tags.TagKey;
 
@@ -41,7 +42,7 @@ public final class EmiTagNameHelper {
             }
         } catch (ReflectiveOperationException ignored) {
         }
-        return Component.literal("#" + key.location());
+        return ComponentFactory.literal("#" + key.location());
         //?}
     }
 }

@@ -1,5 +1,5 @@
 package com.starskyxiii.polyglottooltip.mixin.rs2;
-//~ rs_platform_resource
+//~ rs_platform_resource minecraft_116_packages
 
 import com.refinedmods.refinedstorage.common.api.grid.view.GridResource;
 import com.starskyxiii.polyglottooltip.integration.rs2.Rs2SearchUtil;

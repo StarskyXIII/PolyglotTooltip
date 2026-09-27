@@ -1,13 +1,24 @@
 package com.starskyxiii.polyglottooltip.integration.productivebees;
-//~ minecraft_identifier minecraft_legacy_registries minecraft_legacy_components
+//~ minecraft_identifier minecraft_legacy_components minecraft_116_packages minecraft_118_factories
 
+import com.starskyxiii.polyglottooltip.minecraft.ComponentFactory;
 //? if <=1.20.1 {
-/*import net.minecraft.nbt.CompoundTag;
+/*//? if <=1.16.5 {
+import net.minecraft.nbt.CompoundNBT;
+//?} else {
+import net.minecraft.nbt.CompoundTag;
+//?}
 *///?} else {
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
 //?}
+//? if <=1.16.5 {
+/*import net.minecraft.util.registry.Registry;
+*///?} else if <=1.19.2 {
+/*import net.minecraft.core.Registry;
+*///?} else {
 import net.minecraft.core.registries.BuiltInRegistries;
+//?}
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
@@ -46,25 +57,26 @@ public final class ProductiveBeesNameHelper {
             ItemStack stack,
             Function<Component, Optional<String>> componentResolver
     ) {
+        //? if <=1.19.2 {
+        /*ResourceLocation itemId = Registry.ITEM.getKey(stack.getItem());
+        *///?} else {
         ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(stack.getItem());
+        //?}
         if (!MOD_ID.equals(itemId.getNamespace())) {
             return Optional.empty();
         }
 
-        return switch (itemId.getPath()) {
-            case CONFIGURABLE_HONEYCOMB -> resolveCombLikeName(
-                    stack,
-                    "item.productivebees.honeycomb_configurable",
-                    componentResolver
-            );
-            case CONFIGURABLE_COMB_BLOCK -> resolveCombLikeName(
-                    stack,
-                    "block.productivebees.comb_configurable",
-                    componentResolver
-            );
-            case CONFIGURABLE_SPAWN_EGG -> resolveSpawnEggName(stack, componentResolver);
-            default -> Optional.empty();
-        };
+        String path = itemId.getPath();
+        if (CONFIGURABLE_HONEYCOMB.equals(path)) {
+            return resolveCombLikeName(stack, "item.productivebees.honeycomb_configurable", componentResolver);
+        }
+        if (CONFIGURABLE_COMB_BLOCK.equals(path)) {
+            return resolveCombLikeName(stack, "block.productivebees.comb_configurable", componentResolver);
+        }
+        if (CONFIGURABLE_SPAWN_EGG.equals(path)) {
+            return resolveSpawnEggName(stack, componentResolver);
+        }
+        return Optional.empty();
     }
 
     public static Optional<Component> tryCreateBeeIngredientName(Object ingredient) {
@@ -106,7 +118,7 @@ public final class ProductiveBeesNameHelper {
         // resolveComponentWithLang returns empty and nothing is shown — which is correct.
         return resolveBeeName(stack, componentResolver)
                 .map(ProductiveBeesNameHelper::stripEnglishBeeSuffix)
-                .flatMap(beeName -> componentResolver.apply(Component.translatable(templateKey, beeName)));
+                .flatMap(beeName -> componentResolver.apply(ComponentFactory.translatable(templateKey, beeName)));
     }
 
     private static Optional<String> resolveSpawnEggName(
@@ -115,7 +127,7 @@ public final class ProductiveBeesNameHelper {
     ) {
         return resolveBeeName(stack, componentResolver)
                 .flatMap(beeName -> componentResolver.apply(
-                        Component.translatable("item.productivebees.spawn_egg_configurable", beeName)
+                        ComponentFactory.translatable("item.productivebees.spawn_egg_configurable", beeName)
                 ));
     }
 
@@ -130,7 +142,11 @@ public final class ProductiveBeesNameHelper {
 
     private static Optional<String> findBeeType(ItemStack stack) {
         //? if <=1.20.1 {
-        /*CompoundTag entityTag = stack.getTagElement("EntityTag");
+        /*//? if <=1.16.5 {
+        CompoundNBT entityTag = stack.getTagElement("EntityTag");
+        //?} else {
+        CompoundTag entityTag = stack.getTagElement("EntityTag");
+        //?}
         if (entityTag == null || !entityTag.contains("type")) {
             return Optional.empty();
         }
@@ -187,21 +203,21 @@ public final class ProductiveBeesNameHelper {
         ResourceLocation beeId = ResourceLocation.tryParse(beeType);
         // Malformed bee type string (e.g. leftover NBT from an older mod version):
         // fall back to a literal so the tooltip still shows something.
-        if (beeId == null) return Component.literal(beeType);
+        if (beeId == null) return ComponentFactory.literal(beeType);
         return createBeeNameComponent(beeId);
     }
 
     private static Component createBeeNameComponent(ResourceLocation beeId) {
         String beePath = beeId.getPath();
         if (!MOD_ID.equals(beeId.getNamespace())) {
-            return Component.translatable("entity." + beeId.getNamespace() + "." + beePath);
+            return ComponentFactory.translatable("entity." + beeId.getNamespace() + "." + beePath);
         }
 
         if (beePath.endsWith("_bee")) {
             beePath = beePath.substring(0, beePath.length() - 4);
         }
 
-        return Component.translatable("entity.productivebees." + beePath + "_bee");
+        return ComponentFactory.translatable("entity.productivebees." + beePath + "_bee");
     }
 
     private static String stripEnglishBeeSuffix(String name) {

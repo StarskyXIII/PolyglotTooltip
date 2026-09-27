@@ -1,5 +1,5 @@
 package com.starskyxiii.polyglottooltip.mixin.controlling;
-//~ keybinds_list_package
+//~ keybinds_list_package minecraft_116_packages
 
 import com.blamejared.searchables.api.SearchableComponent;
 import com.blamejared.searchables.api.SearchableType;

@@ -1,4 +1,5 @@
 package com.starskyxiii.polyglottooltip.mixin.industrialforegoing;
+//~ minecraft_116_packages
 
 import com.starskyxiii.polyglottooltip.integration.industrialforegoing.IndustrialForegoingNameHelper;
 import net.minecraft.network.chat.Component;
@@ -17,7 +18,14 @@ public abstract class LegacyIndustrialForegoingLaserLensItemMixin {
 
     @Shadow private int color;
 
-    @Inject(method = {"getName", "m_7626_"}, at = @At("RETURN"), cancellable = true, remap = false)
+    @Inject(
+            //? if <=1.16.5 {
+            method = "func_200295_i(Lnet/minecraft/item/ItemStack;)Lnet/minecraft/network/chat/Component;",
+            //?} else {
+            method = {"getName", "m_7626_"},
+            //?}
+            at = @At("RETURN"), cancellable = true, remap = false
+    )
     private void polyglottooltip$preserveTranslatableName(ItemStack stack,
                                                            CallbackInfoReturnable<Component> cir) {
         cir.setReturnValue(IndustrialForegoingNameHelper.createLaserLensName(DyeColor.byId(color)));

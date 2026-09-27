@@ -1,4 +1,5 @@
 package com.starskyxiii.polyglottooltip.integration.jade;
+//~ minecraft_116_packages
 
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.Block;

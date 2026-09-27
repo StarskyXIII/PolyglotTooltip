@@ -1,8 +1,14 @@
 package com.starskyxiii.polyglottooltip.search;
-//~ minecraft_legacy_registries
+//~ minecraft_116_packages minecraft_116_compound_names
 
 import net.minecraft.client.Minecraft;
+//? if <=1.16.5 {
+/*import net.minecraft.util.registry.Registry;
+*///?} else if <=1.19.2 {
+/*import net.minecraft.core.Registry;
+*///?} else {
 import net.minecraft.core.registries.BuiltInRegistries;
+//?}
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
@@ -33,16 +39,19 @@ public final class IntegratedTerminalSearchHelper {
         if (stack == null || stack.isEmpty()) {
             return false;
         }
-        if (query.text().isEmpty()) {
+        if (query.text.isEmpty()) {
             return true;
         }
-
-        return switch (query.mode()) {
-            case MOD -> matchesMod(stack, query.text());
-            case TOOLTIP -> matchesTooltip(stack, query.text());
-            case TAG -> matchesTags(stack, query.text());
-            case DEFAULT -> matchesSearchText(stack, query.text());
-        };
+        switch (query.mode) {
+            case MOD:
+                return matchesMod(stack, query.text);
+            case TOOLTIP:
+                return matchesTooltip(stack, query.text);
+            case TAG:
+                return matchesTags(stack, query.text);
+            default:
+                return matchesSearchText(stack, query.text);
+        }
     }
 
     private static boolean matchesMod(ItemStack stack, String query) {
@@ -63,7 +72,7 @@ public final class IntegratedTerminalSearchHelper {
     }
 
     private static boolean matchesTooltip(ItemStack stack, String query) {
-        var minecraft = Minecraft.getInstance();
+        Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player == null) {
             return false;
         }
@@ -73,27 +82,42 @@ public final class IntegratedTerminalSearchHelper {
                 Item.TooltipContext.of(minecraft.player.registryAccess()),
                 //?}
                 minecraft.player,
+                        //? if <=1.16.5 {
+                        /*TooltipFlag.TooltipFlags.NORMAL
+                        *///?} else {
                         TooltipFlag.Default.NORMAL
+                        //?}
                 ).stream()
                 .map(component -> component.getString().toLowerCase(Locale.ENGLISH))
                 .anyMatch(line -> matchesText(line, query));
     }
 
     private static boolean matchesTags(ItemStack stack, String query) {
+        //? if <=1.16.5 {
+        /*return stack.getItem().getTags().stream()
+                .anyMatch(tag -> matchesText(tag.toString().toLowerCase(Locale.ENGLISH), query));
+        *///?} else {
         return stack.getItem().builtInRegistryHolder().tags()
                 .filter(tag -> matchesText(tag.location().toString().toLowerCase(Locale.ENGLISH), query))
                 //? if >=26 {
                 /*.anyMatch(tag -> BuiltInRegistries.ITEM.get(tag).isPresent());
+                *///?} else if <=1.19.2 {
+                /*.anyMatch(tag -> !Registry.ITEM.getTag(tag).isEmpty());
                 *///?} else {
                 .anyMatch(tag -> !BuiltInRegistries.ITEM.getTag(tag).isEmpty());
                 //?}
+        //?}
     }
 
     private static boolean matchesSearchText(ItemStack stack, String query) {
-        return new SearchTextCollector()
+        String searchText = new SearchTextCollector()
                 .addItemStack(stack)
-                .build()
-                .lines()
+                .build();
+        //? if <=1.16.5 {
+        /*return java.util.Arrays.stream(searchText.split("\\R"))
+        *///?} else {
+        return searchText.lines()
+        //?}
                 .map(line -> line.toLowerCase(Locale.ENGLISH))
                 .anyMatch(line -> matchesText(line, query));
     }
@@ -113,7 +137,14 @@ public final class IntegratedTerminalSearchHelper {
         TAG
     }
 
-    private record SearchQuery(SearchMode mode, String text) {
+    private static final class SearchQuery {
+        private final SearchMode mode;
+        private final String text;
+
+        private SearchQuery(SearchMode mode, String text) {
+            this.mode = mode;
+            this.text = text;
+        }
 
         private static SearchQuery fromMode(Object mode, String query) {
             return new SearchQuery(parseMode(mode), normalize(query));
@@ -125,22 +156,24 @@ public final class IntegratedTerminalSearchHelper {
                 return new SearchQuery(SearchMode.DEFAULT, normalized);
             }
 
-            return switch (normalized.charAt(0)) {
-                case '@' -> new SearchQuery(SearchMode.MOD, normalized.substring(1));
-                case '#' -> new SearchQuery(SearchMode.TOOLTIP, normalized.substring(1));
-                case '$' -> new SearchQuery(SearchMode.TAG, normalized.substring(1));
-                default -> new SearchQuery(SearchMode.DEFAULT, normalized);
-            };
+            switch (normalized.charAt(0)) {
+                case '@':
+                    return new SearchQuery(SearchMode.MOD, normalized.substring(1));
+                case '#':
+                    return new SearchQuery(SearchMode.TOOLTIP, normalized.substring(1));
+                case '$':
+                    return new SearchQuery(SearchMode.TAG, normalized.substring(1));
+                default:
+                    return new SearchQuery(SearchMode.DEFAULT, normalized);
+            }
         }
 
         private static SearchMode parseMode(Object mode) {
-            String name = mode instanceof Enum<?> enumValue ? enumValue.name() : String.valueOf(mode);
-            return switch (name) {
-                case "MOD" -> SearchMode.MOD;
-                case "TOOLTIP" -> SearchMode.TOOLTIP;
-                case "TAG" -> SearchMode.TAG;
-                default -> SearchMode.DEFAULT;
-            };
+            String name = mode instanceof Enum<?> ? ((Enum<?>) mode).name() : String.valueOf(mode);
+            if ("MOD".equals(name)) return SearchMode.MOD;
+            if ("TOOLTIP".equals(name)) return SearchMode.TOOLTIP;
+            if ("TAG".equals(name)) return SearchMode.TAG;
+            return SearchMode.DEFAULT;
         }
 
         private static String normalize(String query) {

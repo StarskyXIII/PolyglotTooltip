@@ -1,5 +1,5 @@
 package com.starskyxiii.polyglottooltip.integration.ae2;
-//~ ae_key_rendering_package ae_key_rendering_legacy
+//~ ae_key_rendering_package ae_key_rendering_legacy minecraft_116_packages
 
 //? if <=1.19.2 {
 /*import appeng.api.client.AEStackRendering;

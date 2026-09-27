@@ -1,11 +1,14 @@
 package com.starskyxiii.polyglottooltip.minecraft;
+//~ minecraft_116_packages minecraft_116_language_map
 
 import com.starskyxiii.polyglottooltip.LanguageCache;
 import com.starskyxiii.polyglottooltip.PolyglotTooltip;
 import com.starskyxiii.polyglottooltip.core.LanguageCodePolicy;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.language.ClientLanguage;
-//? if <=1.19.2 {
+//? if <=1.16.5 {
+/*import net.minecraft.client.resources.Language;
+*///?} else if <=1.19.2 {
 /*import net.minecraft.client.resources.language.LanguageInfo;
 *///?}
 import net.minecraft.server.packs.resources.PreparableReloadListener;
@@ -23,6 +26,7 @@ import net.minecraft.util.profiling.ProfilerFiller;
 //?}
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Map;
 //? if <=1.19.2 {
 /*import java.io.FileNotFoundException;
@@ -37,6 +41,7 @@ import java.util.concurrent.Executor;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 public final class MinecraftLanguageAdapter implements PreparableReloadListener
         //? if fabric && <26
@@ -45,7 +50,7 @@ public final class MinecraftLanguageAdapter implements PreparableReloadListener
     private static final MinecraftLanguageAdapter INSTANCE = new MinecraftLanguageAdapter();
 
     private final List<Runnable> dependentCacheInvalidators = new ArrayList<>();
-    private Supplier<? extends List<? extends String>> configuredLanguages = List::of;
+    private Supplier<? extends List<? extends String>> configuredLanguages = Collections::emptyList;
 
     private MinecraftLanguageAdapter() {
     }
@@ -74,12 +79,13 @@ public final class MinecraftLanguageAdapter implements PreparableReloadListener
     }
 
     private LoadedLanguages loadLanguages(ResourceManager resourceManager) {
+        List<String> requestedLanguages = new ArrayList<>(configuredLanguages.get());
         List<ClientLanguage> result = new ArrayList<>();
         List<Map<String, String>> legacyEntries = new ArrayList<>();
-        for (String languageCode : configuredLanguages.get()) {
+        for (String languageCode : requestedLanguages) {
             try {
                 ClientLanguage language = loadLanguage(resourceManager, languageCode);
-                Map<String, String> legacyLanguage = Map.of();
+                Map<String, String> legacyLanguage = Collections.emptyMap();
                 //? if <=1.19.2 {
                 /*legacyLanguage = loadStorageDrawersLegacyLanguage(resourceManager, languageCode);
                 *///?}
@@ -103,14 +109,19 @@ public final class MinecraftLanguageAdapter implements PreparableReloadListener
                     exception.getMessage());
         }
         *///?}
-        return new LoadedLanguages(result, english, legacyEntries);
+        return new LoadedLanguages(requestedLanguages, result, english, legacyEntries);
     }
 
     static ClientLanguage loadLanguage(ResourceManager resourceManager, String languageCode) {
         //? if <=1.19.2 {
-        /*List<LanguageInfo> languageInfos = LanguageCodePolicy.fallbackChain(languageCode).stream()
+        /*//? if <=1.16.5 {
+        List<Language> languageInfos = LanguageCodePolicy.fallbackChain(languageCode).stream()
+                .map(code -> new Language(code, "", code, false))
+        //?} else {
+        List<LanguageInfo> languageInfos = LanguageCodePolicy.fallbackChain(languageCode).stream()
                 .map(code -> new LanguageInfo(code, "", code, false))
-                .toList();
+        //?}
+                .collect(Collectors.toList());
         return ClientLanguage.loadFrom(resourceManager, languageInfos);
         *///?} else {
         return ClientLanguage.loadFrom(
@@ -124,7 +135,7 @@ public final class MinecraftLanguageAdapter implements PreparableReloadListener
     /*static Map<String, String> loadStorageDrawersLegacyLanguage(ResourceManager resourceManager,
                                                                  String languageCode) {
         if ("en_us".equalsIgnoreCase(languageCode)) {
-            return Map.of();
+            return Collections.emptyMap();
         }
         Map<String, String> translations = new LinkedHashMap<>();
         ResourceLocation location = new ResourceLocation(
@@ -133,13 +144,13 @@ public final class MinecraftLanguageAdapter implements PreparableReloadListener
         try {
             resources = resourceManager.getResources(location);
         } catch (FileNotFoundException exception) {
-            return Map.of();
+            return Collections.emptyMap();
         } catch (IOException exception) {
             PolyglotTooltip.LOGGER.warn(
                     "[PolyglotTooltip] Failed to list Storage Drawers legacy language '{}': {}",
                     languageCode,
                     exception.getMessage());
-            return Map.of();
+            return Collections.emptyMap();
         }
         for (Resource resource : resources) {
             Properties properties = new Properties();
@@ -157,13 +168,13 @@ public final class MinecraftLanguageAdapter implements PreparableReloadListener
                 translations.put(normalizedKey, properties.getProperty(key));
             }
         }
-        return Map.copyOf(translations);
+        return Collections.unmodifiableMap(translations);
     }
     *///?} else if <=1.19.2 {
     /*static Map<String, String> loadStorageDrawersLegacyLanguage(ResourceManager resourceManager,
                                                                  String languageCode) {
         if ("en_us".equalsIgnoreCase(languageCode)) {
-            return Map.of();
+            return Collections.emptyMap();
         }
         Map<String, String> translations = new LinkedHashMap<>();
         ResourceLocation location = new ResourceLocation(
@@ -184,13 +195,20 @@ public final class MinecraftLanguageAdapter implements PreparableReloadListener
                 translations.put(normalizedKey, properties.getProperty(key));
             }
         }
-        return Map.copyOf(translations);
+        return Collections.unmodifiableMap(translations);
     }
     *///?}
 
-    private void applyLanguages(LoadedLanguages languages) {
+    private void applyLanguages(ResourceManager resourceManager, LoadedLanguages languages) {
+        if (!languages.requestedLanguages().equals(configuredLanguages.get())) {
+            languages = loadLanguages(resourceManager);
+        }
         LanguageCache.getInstance().replaceLanguages(
                 languages.secondary(), languages.english(), languages.legacyEntries());
+        invalidateDependentCaches();
+    }
+
+    public void invalidateDependentCaches() {
         for (Runnable invalidator : dependentCacheInvalidators) {
             invalidator.run();
         }
@@ -206,7 +224,7 @@ public final class MinecraftLanguageAdapter implements PreparableReloadListener
         return CompletableFuture
                 .supplyAsync(() -> loadLanguages(resourceManager), preparationExecutor)
                 .thenCompose(preparationBarrier::wait)
-                .thenAcceptAsync(this::applyLanguages, applyExecutor);
+                .thenAcceptAsync(languages -> applyLanguages(resourceManager, languages), applyExecutor);
     *///?} else {
     public CompletableFuture<Void> reload(PreparationBarrier preparationBarrier,
                                           ResourceManager resourceManager,
@@ -217,7 +235,7 @@ public final class MinecraftLanguageAdapter implements PreparableReloadListener
         return CompletableFuture
                 .supplyAsync(() -> loadLanguages(resourceManager), preparationExecutor)
                 .thenCompose(preparationBarrier::wait)
-                .thenAcceptAsync(this::applyLanguages, applyExecutor);
+                .thenAcceptAsync(languages -> applyLanguages(resourceManager, languages), applyExecutor);
     //?}
     }
 
@@ -227,11 +245,28 @@ public final class MinecraftLanguageAdapter implements PreparableReloadListener
             return;
         }
         ResourceManager resourceManager = minecraft.getResourceManager();
-        applyLanguages(loadLanguages(resourceManager));
+        applyLanguages(resourceManager, loadLanguages(resourceManager));
     }
 
-    private record LoadedLanguages(List<ClientLanguage> secondary,
-                                   ClientLanguage english,
-                                   List<Map<String, String>> legacyEntries) {
+    private static final class LoadedLanguages {
+        private final List<String> requestedLanguages;
+        private final List<ClientLanguage> secondary;
+        private final ClientLanguage english;
+        private final List<Map<String, String>> legacyEntries;
+
+        private LoadedLanguages(List<String> requestedLanguages,
+                                List<ClientLanguage> secondary,
+                                ClientLanguage english,
+                                List<Map<String, String>> legacyEntries) {
+            this.requestedLanguages = Collections.unmodifiableList(new ArrayList<>(requestedLanguages));
+            this.secondary = secondary;
+            this.english = english;
+            this.legacyEntries = legacyEntries;
+        }
+
+        private List<String> requestedLanguages() { return requestedLanguages; }
+        private List<ClientLanguage> secondary() { return secondary; }
+        private ClientLanguage english() { return english; }
+        private List<Map<String, String>> legacyEntries() { return legacyEntries; }
     }
 }

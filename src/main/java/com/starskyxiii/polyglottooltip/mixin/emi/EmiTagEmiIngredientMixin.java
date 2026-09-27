@@ -1,4 +1,5 @@
 package com.starskyxiii.polyglottooltip.mixin.emi;
+//~ minecraft_116_packages
 
 import com.starskyxiii.polyglottooltip.SecondaryTooltipUtil;
 import com.starskyxiii.polyglottooltip.integration.emi.EmiTagNameHelper;

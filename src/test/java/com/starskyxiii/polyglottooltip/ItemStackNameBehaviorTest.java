@@ -1,6 +1,7 @@
 package com.starskyxiii.polyglottooltip;
-//~ minecraft_legacy_components
+//~ minecraft_116_packages minecraft_legacy_components minecraft_118_factories minecraft_116_language_map
 
+import com.starskyxiii.polyglottooltip.minecraft.ComponentFactory;
 //? if >1.20.1 {
 import net.minecraft.SharedConstants;
 import net.minecraft.client.resources.language.ClientLanguage;
@@ -65,7 +66,7 @@ class ItemStackNameBehaviorTest {
                 net.minecraft.core.component.DataComponentMap.builder()
                         .addAll(net.minecraft.core.component.DataComponents.COMMON_ITEM_COMPONENTS)
                         .set(net.minecraft.core.component.DataComponents.ITEM_NAME,
-                                Component.translatable(Items.STONE.getDescriptionId()))
+                                ComponentFactory.translatable(Items.STONE.getDescriptionId()))
                         .set(net.minecraft.core.component.DataComponents.ITEM_MODEL,
                                 net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(Items.STONE))
                         .build();
@@ -94,8 +95,8 @@ class ItemStackNameBehaviorTest {
                 "probe.patched", "Translated Patched"
         ))));
         ItemStack stack = new ItemStack(Items.STONE);
-        stack.set(DataComponents.ITEM_NAME, Component.translatable("probe.patched"));
-        stack.set(DataComponents.CUSTOM_NAME, Component.translatable("probe.custom"));
+        stack.set(DataComponents.ITEM_NAME, ComponentFactory.translatable("probe.patched"));
+        stack.set(DataComponents.CUSTOM_NAME, ComponentFactory.translatable("probe.custom"));
 
         assertEquals(List.of("Translated Custom"), cache.resolveDisplayNamesForAll(stack));
     }
@@ -106,8 +107,8 @@ class ItemStackNameBehaviorTest {
                 "probe.patched", "Translated Patched"
         ))));
         ItemStack stack = new ItemStack(Items.STONE);
-        stack.set(DataComponents.ITEM_NAME, Component.translatable("probe.patched"));
-        stack.set(DataComponents.CUSTOM_NAME, Component.translatable("probe.missing"));
+        stack.set(DataComponents.ITEM_NAME, ComponentFactory.translatable("probe.patched"));
+        stack.set(DataComponents.CUSTOM_NAME, ComponentFactory.translatable("probe.missing"));
 
         assertTrue(cache.resolveDisplayNamesForAll(stack).isEmpty());
     }
@@ -118,7 +119,7 @@ class ItemStackNameBehaviorTest {
                 "block.minecraft.stone", "Translated Stone"
         ))));
         ItemStack stack = new ItemStack(Items.STONE);
-        stack.set(DataComponents.ITEM_NAME, Component.translatable("probe.missing"));
+        stack.set(DataComponents.ITEM_NAME, ComponentFactory.translatable("probe.missing"));
 
         //? if >=26 {
         /*assertTrue(cache.resolveDisplayNamesForAll(stack).isEmpty());
@@ -134,15 +135,15 @@ class ItemStackNameBehaviorTest {
                 "probe.second", "Second Name"
         ))));
         ItemStack first = new ItemStack(Items.STONE);
-        first.set(DataComponents.ITEM_NAME, Component.translatable("probe.first"));
+        first.set(DataComponents.ITEM_NAME, ComponentFactory.translatable("probe.first"));
         ItemStack second = new ItemStack(Items.STONE);
-        second.set(DataComponents.ITEM_NAME, Component.translatable("probe.second"));
+        second.set(DataComponents.ITEM_NAME, ComponentFactory.translatable("probe.second"));
 
         assertEquals(List.of("First Name"), cache.resolveDisplayNamesForAll(first));
         assertEquals(List.of("Second Name"), cache.resolveDisplayNamesForAll(second));
 
-        first.set(DataComponents.CUSTOM_NAME, Component.literal("First Custom"));
-        second.set(DataComponents.CUSTOM_NAME, Component.literal("Second Custom"));
+        first.set(DataComponents.CUSTOM_NAME, ComponentFactory.literal("First Custom"));
+        second.set(DataComponents.CUSTOM_NAME, ComponentFactory.literal("Second Custom"));
 
         assertEquals(List.of("First Custom"), cache.resolveDisplayNamesForAll(first));
         assertEquals(List.of("Second Custom"), cache.resolveDisplayNamesForAll(second));

@@ -1,4 +1,5 @@
 package com.starskyxiii.polyglottooltip.integration.emi;
+//~ minecraft_116_packages
 
 import com.starskyxiii.polyglottooltip.LanguageCache;
 import com.starskyxiii.polyglottooltip.SecondaryTooltipUtil;

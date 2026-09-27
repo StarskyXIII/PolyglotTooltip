@@ -1,6 +1,7 @@
 package com.starskyxiii.polyglottooltip;
-//~ minecraft_legacy_components
+//~ minecraft_116_packages minecraft_legacy_components minecraft_118_factories
 
+import com.starskyxiii.polyglottooltip.minecraft.ComponentFactory;
 import com.starskyxiii.polyglottooltip.core.SecondaryLanguagePolicy;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
@@ -84,7 +85,7 @@ public final class SecondaryTooltipUtil {
     }
 
     public static List<Component> getSecondaryNameLines(Component sourceName) {
-        if (!shouldShowSecondaryLanguage()) return List.of();
+        if (!shouldShowSecondaryLanguage()) return java.util.Collections.emptyList();
         List<String> names = getSecondaryNames(sourceName);
         List<Component> lines = new ArrayList<>(names.size());
         for (String secondary : names) {
@@ -127,7 +128,7 @@ public final class SecondaryTooltipUtil {
     }
 
     private static Component createSecondaryLine(String secondary, Style style) {
-        return Component.literal(secondary).withStyle(style);
+        return ComponentFactory.literal(secondary).withStyle(style);
     }
 
     private static void removeLines(List<Component> tooltip, List<String> texts) {

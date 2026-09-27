@@ -1,16 +1,15 @@
 package com.starskyxiii.polyglottooltip;
 //~ forge_neoforge_package
 
-import org.slf4j.Logger;
-
-import com.mojang.logging.LogUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 //? !fabric {
 //? if <=1.20.1 {
 /*import net.neoforged.api.distmarker.Dist;
 import net.neoforged.fml.DistExecutor;
 import net.neoforged.fml.ModList;
-import net.neoforged.fml.config.IConfigSpec;
+import net.minecraftforge.common.ForgeConfigSpec;
 *///?} else {
 import net.neoforged.bus.api.IEventBus;
 //?}
@@ -24,7 +23,7 @@ import net.neoforged.fml.config.ModConfig;
 //?}
 public class PolyglotTooltip {
     public static final String MODID = "polyglottooltip";
-    public static final Logger LOGGER = LogUtils.getLogger();
+    public static final Logger LOGGER = LogManager.getLogger();
 
     //? !fabric {
     //? if <=1.20.1 {
@@ -33,7 +32,7 @@ public class PolyglotTooltip {
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> PolyglotTooltipClient::init);
     }
 
-    private static void registerConfig(ModConfig.Type type, IConfigSpec<?> spec) {
+    private static void registerConfig(ModConfig.Type type, ForgeConfigSpec spec) {
         ModContainer modContainer = ModList.get()
                 .getModContainerById(MODID)
                 .orElseThrow(() -> new IllegalStateException("Missing mod container for " + MODID));

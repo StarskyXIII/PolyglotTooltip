@@ -1,4 +1,5 @@
 package com.starskyxiii.polyglottooltip.mixin.figura;
+//~ minecraft_116_packages
 
 import com.starskyxiii.polyglottooltip.compat.figura.FiguraEmojiContext;
 import net.minecraft.network.chat.Component;
@@ -39,14 +40,16 @@ public abstract class FiguraEmojiTranslatableGuardMixin {
         }
 
         //? if <=1.18.2 {
-        /*if (component instanceof TranslatableComponent tc) {
+        /*if (component instanceof TranslatableComponent) {
+            TranslatableComponent tc = (TranslatableComponent) component;
         *///?} else {
         ComponentContents contents = component.getContents();
-        if (contents instanceof TranslatableContents tc) {
+        if (contents instanceof TranslatableContents) {
+            TranslatableContents tc = (TranslatableContents) contents;
         //?}
             for (Object arg : tc.getArgs()) {
-                if (arg instanceof Component argComponent
-                        && polyglottooltip$containsTranslatable(argComponent, depth + 1)) {
+                if (arg instanceof Component
+                        && polyglottooltip$containsTranslatable((Component) arg, depth + 1)) {
                     return true;
                 }
             }

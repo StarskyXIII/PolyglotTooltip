@@ -1,5 +1,5 @@
 package com.starskyxiii.polyglottooltip.integration.occultism;
-//~ occultism_legacy_package
+//~ occultism_legacy_package minecraft_116_packages minecraft_116_compound_names
 
 import com.starskyxiii.polyglottooltip.search.SearchTextCollector;
 import net.minecraft.client.Minecraft;
@@ -92,7 +92,11 @@ public final class OccultismSearchUtil {
                     Item.TooltipContext.of(minecraft.level),
                     //?}
                     minecraft.player,
+                    //? if <=1.16.5 {
+                    /*TooltipFlag.TooltipFlags.NORMAL
+                    *///?} else {
                     TooltipFlag.Default.NORMAL
+                    //?}
             );
             SearchTextCollector collector = new SearchTextCollector();
             for (Component line : tooltip) {
@@ -109,7 +113,7 @@ public final class OccultismSearchUtil {
 
         try {
             Object result = getInsertItemStackMethod.invoke(machine);
-            return result instanceof ItemStack stack ? stack : ItemStack.EMPTY;
+            return result instanceof ItemStack ? (ItemStack) result : ItemStack.EMPTY;
         } catch (ReflectiveOperationException ignored) {
             return ItemStack.EMPTY;
         }
@@ -122,7 +126,7 @@ public final class OccultismSearchUtil {
 
         try {
             Object result = customNameField.get(machine);
-            return result instanceof String name ? name : "";
+            return result instanceof String ? (String) result : "";
         } catch (ReflectiveOperationException ignored) {
             return "";
         }

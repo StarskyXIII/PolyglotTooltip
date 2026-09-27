@@ -1,5 +1,5 @@
 package com.starskyxiii.polyglottooltip.mixin.jei;
-//~ forge_neoforge_package
+//~ forge_neoforge_package minecraft_116_packages
 
 import com.starskyxiii.polyglottooltip.SecondaryTooltipUtil;
 //? if <=1.20.1 {
