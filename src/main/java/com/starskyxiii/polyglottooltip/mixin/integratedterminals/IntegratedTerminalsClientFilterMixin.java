@@ -13,6 +13,9 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+//? if neoforge && >=1.21.1 && <=1.21.1 {
+import com.starskyxiii.polyglottooltip.integration.SearchScreenRefresh;
+//?}
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -62,6 +65,21 @@ public abstract class IntegratedTerminalsClientFilterMixin {
 
     @Shadow
     private Int2ObjectMap<List<?>> filteredIngredientsViews;
+
+    //? if neoforge && >=1.21.1 && <=1.21.1 {
+    @Unique
+    private long polyglot$languageGeneration = Long.MIN_VALUE;
+
+    @Inject(method = "getFilteredIngredientsView(I)Ljava/util/List;", at = @At("HEAD"))
+    private void polyglot$invalidateLanguageViews(int channel, CallbackInfoReturnable<List<?>> cir) {
+        long generation = SearchScreenRefresh.generation();
+        if (polyglot$languageGeneration != generation) {
+            filteredIngredientsViews.clear();
+            polyglot$processedViews.clear();
+            polyglot$languageGeneration = generation;
+        }
+    }
+    //?}
 
     @Inject(method = "getFilteredIngredientsView(I)Ljava/util/List;", at = @At("RETURN"), cancellable = true)
     private void polyglot$filterVisibleList(int channel, CallbackInfoReturnable<List<?>> cir) {

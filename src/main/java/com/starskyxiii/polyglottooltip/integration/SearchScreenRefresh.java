@@ -4,6 +4,7 @@ package com.starskyxiii.polyglottooltip.integration;
 import net.minecraft.client.Minecraft;
 
 public final class SearchScreenRefresh {
+    private static long generation;
     private SearchScreenRefresh() {
     }
 
@@ -11,9 +12,14 @@ public final class SearchScreenRefresh {
         void polyglot$refreshSearch();
     }
 
+    public static long generation() {
+        return generation;
+    }
+
     public static void invalidate() {
         Minecraft minecraft = Minecraft.getInstance();
         Runnable refresh = () -> {
+            generation++;
             if (minecraft.screen instanceof Refreshable screen) {
                 screen.polyglot$refreshSearch();
             }
@@ -26,4 +32,3 @@ public final class SearchScreenRefresh {
     }
 }
 //?}
-
