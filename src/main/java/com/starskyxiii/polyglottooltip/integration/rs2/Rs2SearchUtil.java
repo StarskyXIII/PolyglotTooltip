@@ -17,18 +17,13 @@ import net.minecraft.network.chat.Component;
 
 import java.lang.reflect.Method;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 
 public final class Rs2SearchUtil {
 
     private Rs2SearchUtil() {
     }
 
-    // Cache for autocrafter group names (user-defined strings, not language-dependent).
-    // The SearchTextCollector result for a given name is deterministic and never changes.
-    private static final Map<String, String> nameSearchTextCache = new ConcurrentHashMap<>();
     public static ResourceRepositoryFilter<GridResource> wrapLiteralFilter(String query,
                                                                           ResourceRepositoryFilter<GridResource> delegate) {
         return (repository, resource) -> WrappedSearchMatcher.matches(
@@ -53,9 +48,7 @@ public final class Rs2SearchUtil {
             return true;
         }
 
-        String searchText = nameSearchTextCache.computeIfAbsent(
-                name, n -> new SearchTextCollector().addText(n).build());
-        return searchText.contains(normalizedQuery);
+        return ChineseScriptSearchMatcher.containsMatch(normalizedQuery, name);
     }
 
     public static boolean matchesAutocrafterResource(String normalizedQuery, ResourceKey key) {
