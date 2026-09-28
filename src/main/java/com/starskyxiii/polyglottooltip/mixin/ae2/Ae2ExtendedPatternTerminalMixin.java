@@ -3,8 +3,8 @@ package com.starskyxiii.polyglottooltip.mixin.ae2;
 import appeng.api.stacks.GenericStack;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.starskyxiii.polyglottooltip.integration.ae2.PatternAccessSearchUtil;
-//? if forge && >1.19.2 && <=1.20.1 {
-/*import com.starskyxiii.polyglottooltip.integration.ae2.Ae2SearchRefresh;
+//? if (forge && >1.19.2 && <=1.20.1) || (neoforge && >=1.21.1 && <=1.21.1) {
+import com.starskyxiii.polyglottooltip.integration.ae2.Ae2SearchRefresh;
 import net.minecraft.client.Minecraft;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Shadow;
@@ -12,7 +12,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.HashMap;
 import java.util.Map;
-*///?}
+//?}
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.injection.At;
@@ -23,12 +23,12 @@ import java.util.List;
 @Pseudo
 @Mixin(targets = "com.glodblock.github.extendedae.client.gui.GuiExPatternTerminal", remap = false)
 public class Ae2ExtendedPatternTerminalMixin
-        //? if forge && >1.19.2 && <=1.20.1
-        //implements Ae2SearchRefresh.Refreshable
+        //? if (forge && >1.19.2 && <=1.20.1) || (neoforge && >=1.21.1 && <=1.21.1)
+        implements Ae2SearchRefresh.Refreshable
 {
 
-    //? if forge && >1.19.2 && <=1.20.1 {
-    /*@Shadow @Final
+    //? if (forge && >1.19.2 && <=1.20.1) || (neoforge && >=1.21.1 && <=1.21.1) {
+    @Shadow @Final
     private Map<String, ?> cachedSearches;
 
     @Shadow @Final
@@ -52,7 +52,7 @@ public class Ae2ExtendedPatternTerminalMixin
             refreshList();
         }
     }
-    *///?}
+    //?}
 
     @Redirect(
             method = "getOrComputePatternSearchData",

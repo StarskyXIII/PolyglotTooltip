@@ -7,6 +7,13 @@ import appeng.api.stacks.AEKey;
 import appeng.api.stacks.GenericStack;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.starskyxiii.polyglottooltip.LanguageCache;
+//? if fabric && >1.19.2 && <=1.20.1 {
+/*import com.starskyxiii.polyglottooltip.integration.ae2.Ae2SearchRefresh;
+import org.spongepowered.asm.mixin.Final;
+import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import java.util.Map;
+*///?}
 import com.starskyxiii.polyglottooltip.search.ChineseScriptSearchMatcher;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.item.ItemStack;
@@ -22,7 +29,33 @@ import java.util.Locale;
 
 @Pseudo
 @Mixin(targets = "appeng.client.gui.me.patternaccess.PatternAccessTermScreen", remap = false)
-public class FabricAe2PatternAccessSearchMixin {
+public class FabricAe2PatternAccessSearchMixin
+        //? if fabric && >1.19.2 && <=1.20.1
+        //implements Ae2SearchRefresh.Refreshable
+{
+    //? if fabric && >1.19.2 && <=1.20.1 {
+    /*@Shadow @Final
+    private Map<String, ?> cachedSearches;
+
+    @Shadow
+    private void refreshList() {
+        throw new AssertionError();
+    }
+
+    @Inject(method = "<init>", at = @At("RETURN"), remap = false)
+    private void polyglot$registerSearchRefresh(CallbackInfo ci) {
+        Ae2SearchRefresh.registerScreen(this);
+    }
+
+    @Override
+    public void polyglot$refreshSearch() {
+        cachedSearches.clear();
+        if ((Object) this == Minecraft.getInstance().screen) {
+            refreshList();
+        }
+    }
+    *///?}
+
     @Inject(
             method = "itemStackMatchesSearchTerm(Lnet/minecraft/world/item/ItemStack;Ljava/lang/String;)Z",
             at = @At("RETURN"),
