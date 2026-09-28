@@ -77,6 +77,10 @@ public class PolyglotTooltipClient {
         languageAdapter.configureLanguages(Config.DISPLAY_LANGUAGE::get);
         languageAdapter.registerDependentCacheInvalidator(OccultismSearchUtil::clearTooltipCache);
         languageAdapter.registerDependentCacheInvalidator(ChineseScriptSearchMatcher::clearCaches);
+        //? if neoforge && >=1.21.1 && <=1.21.1 {
+        languageAdapter.registerDependentCacheInvalidator(
+                com.starskyxiii.polyglottooltip.integration.SearchScreenRefresh::invalidate);
+        //?}
     }
 
     //? if >1.16.5 {

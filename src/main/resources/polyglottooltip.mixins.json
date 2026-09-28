@@ -5,6 +5,7 @@
   "compatibilityLevel": "${java_level}",
   "mixins": [],
   "client": [
+${screen_refresh_mixins}
     "figura.ItemStackHoverNameContextMixin",
     "figura.FiguraEmojiTranslatableGuardMixin",
     "apothicenchanting.ApothicEnchantmentLibraryScreenMixin",

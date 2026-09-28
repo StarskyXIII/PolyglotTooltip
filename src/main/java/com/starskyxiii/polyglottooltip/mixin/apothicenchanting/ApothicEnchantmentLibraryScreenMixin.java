@@ -92,6 +92,7 @@ public abstract class ApothicEnchantmentLibraryScreenMixin {
         boolean added = list.add((FormattedText) element);
         ApothicEnchantmentLibraryUtil.getHoveredEnchantmentName(this, mouseX, mouseY)
                 .map(enchantmentName -> ApothicEnchantmentLibraryUtil.insertSecondaryNameLines(list, enchantmentName, 160))
+                .filter(updated -> updated != list)
                 .ifPresent(updated -> {
                     list.clear();
                     list.addAll(updated);
@@ -150,6 +151,7 @@ public abstract class ApothicEnchantmentLibraryScreenMixin {
         int wrapWidth = 160;
         ApothicEnchantmentLibraryUtil.getHoveredEnchantmentName(this, mouseX, mouseY)
                 .map(enchantmentName -> ApothicEnchantmentLibraryUtil.insertSecondaryNameLines(list, enchantmentName, wrapWidth))
+                .filter(updated -> updated != list)
                 .ifPresent(updated -> {
                     list.clear();
                     list.addAll(updated);
