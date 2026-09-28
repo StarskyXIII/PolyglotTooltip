@@ -115,6 +115,9 @@ neoForge {
 
 repositories {
     mavenCentral()
+    maven("https://cursemaven.com") {
+        content { includeGroup("curse.maven") }
+    }
     maven("https://maven.blamejared.com/") {
         name = "BlameJared"
     }
@@ -132,6 +135,9 @@ repositories {
 }
 
 dependencies {
+    if (sc.current.parsed < "26") {
+        compileOnly("curse.maven:projecte-226410:6611984")
+    }
     testImplementation(platform("org.junit:junit-bom:5.11.4"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
@@ -235,6 +241,13 @@ tasks {
     }
     processResources {
         val values = mapOf(
+            "screen_refresh_mixins" to if (sc.current.parsed >= "26") "" else listOf(
+                "apothicenchanting.ApothicLibrarySearchRefreshMixin",
+                "arsnouveau.ArsBookSearchRefreshMixin",
+                "arsnouveau.ArsUnlockSearchRefreshMixin",
+                "sophisticatedcore.SophisticatedSearchRefreshMixin",
+                "projecte.ProjectESearchRefreshMixin"
+            ).joinToString("\n") { "    \"$it\"," },
             "mod_version" to modVersion,
             "minecraft_version" to sc.current.version,
             "neoforge_minimum" to project.property("neoforge.minimum"),
