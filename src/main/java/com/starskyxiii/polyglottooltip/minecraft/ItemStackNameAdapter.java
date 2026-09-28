@@ -107,6 +107,10 @@ public final class ItemStackNameAdapter {
     }
 
     //? if >1.20.1 {
+    public static Optional<Component> resolveCustomNameComponent(ItemStack stack) {
+        return Optional.ofNullable(stack.get(DataComponents.CUSTOM_NAME));
+    }
+
     private Optional<Component> resolvePatchedItemName(ItemStack stack) {
         Component itemName = stack.get(DataComponents.ITEM_NAME);
         if (itemName == null) {
@@ -116,7 +120,7 @@ public final class ItemStackNameAdapter {
         return Objects.equals(itemName, defaultItemName) ? Optional.empty() : Optional.of(itemName);
     }
     //?} else {
-    /*private Optional<Component> resolveCustomNameComponent(ItemStack stack) {
+    /*public static Optional<Component> resolveCustomNameComponent(ItemStack stack) {
         //? if <=1.16.5 {
         CompoundNBT displayTag = stack.getTagElement("display");
         if (displayTag == null || !displayTag.contains("Name", 8)) {
