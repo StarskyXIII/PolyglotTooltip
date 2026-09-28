@@ -239,6 +239,8 @@ tasks {
             "minecraft_version" to sc.current.version,
             "neoforge_minimum" to project.property("neoforge.minimum"),
             "java_level" to "JAVA_$requiredJava",
+            "rs2_tooltip_cache_mixin" to if (sc.current.parsed >= "26") "" else
+                "    \"rs2.Rs2ItemTooltipCacheMixin\",",
             "jei_fluid_mixin" to if (sc.current.parsed >= "26") "" else
                 "    \"jei.JeiFluidHelperMixin\",",
             "rs2_mekanism_mixins" to if (sc.current.parsed >= "26") "" else

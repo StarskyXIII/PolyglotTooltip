@@ -49,6 +49,7 @@ ${jei_fluid_mixin}
     "rs2.Rs2AutocrafterManagerViewGroupMixin",
     "rs2.Rs2AutocrafterManagerSubViewGroupMixin",
     "rs2.Rs2ItemGridResourceMixin",
+${rs2_tooltip_cache_mixin}
     "rs2.Rs2FluidGridResourceMixin",
     "rs2.Rs2FluidResourceRenderingMixin",
     "rs2.Rs2ItemResourceRenderingMixin",
