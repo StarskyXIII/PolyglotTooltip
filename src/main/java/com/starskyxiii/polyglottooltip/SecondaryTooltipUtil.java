@@ -2,6 +2,7 @@ package com.starskyxiii.polyglottooltip;
 //~ minecraft_116_packages minecraft_legacy_components minecraft_118_factories
 
 import com.starskyxiii.polyglottooltip.minecraft.ComponentFactory;
+import com.starskyxiii.polyglottooltip.minecraft.ItemStackNameAdapter;
 import com.starskyxiii.polyglottooltip.core.SecondaryLanguagePolicy;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
@@ -69,7 +70,8 @@ public final class SecondaryTooltipUtil {
     public static List<String> getSecondaryNames(ItemStack stack) {
         return getSecondaryNames(
                 LanguageCache.getInstance().resolveDisplayNamesForAll(stack),
-                LanguageCache.getInstance().resolveCurrentDisplayName(stack)
+                LanguageCache.getInstance().resolveCurrentDisplayName(stack),
+                ItemStackNameAdapter.resolveCustomNameComponent(stack).orElse(null)
         );
     }
 
@@ -82,6 +84,29 @@ public final class SecondaryTooltipUtil {
 
     public static List<String> getSecondaryNames(List<String> names, String primaryText) {
         return filterPrimaryName(names, primaryText);
+    }
+
+    static List<String> getSecondaryNames(List<String> names, String primaryText, Component customName) {
+        List<String> filtered = filterPrimaryName(names, primaryText);
+        return isLiteralTree(customName, 0) ? filterPrimaryName(filtered, customName.getString()) : filtered;
+    }
+
+    private static boolean isLiteralTree(Component component, int depth) {
+        if (component == null || depth > 32) return false;
+        //? if <=1.16.5 {
+        /*if (!(component instanceof net.minecraft.util.text.StringTextComponent)) return false;
+        *///?} else if <=1.18.2 {
+        /*if (!(component instanceof net.minecraft.network.chat.TextComponent)) return false;
+        *///?} else if <=1.20.1 {
+        /*if (component.getContents() != net.minecraft.network.chat.ComponentContents.EMPTY
+                && !(component.getContents() instanceof net.minecraft.network.chat.contents.LiteralContents)) return false;
+        *///?} else {
+        if (!(component.getContents() instanceof net.minecraft.network.chat.contents.PlainTextContents)) return false;
+        //?}
+        for (Component sibling : component.getSiblings()) {
+            if (!isLiteralTree(sibling, depth + 1)) return false;
+        }
+        return true;
     }
 
     public static List<Component> getSecondaryNameLines(Component sourceName) {
