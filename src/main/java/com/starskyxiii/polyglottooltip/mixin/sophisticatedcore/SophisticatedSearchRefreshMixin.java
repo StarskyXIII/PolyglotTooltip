@@ -1,6 +1,6 @@
 package com.starskyxiii.polyglottooltip.mixin.sophisticatedcore;
 
-//? if neoforge && >=1.21.1 && <=1.21.1 {
+//? if neoforge && >=1.21.1 {
 import com.starskyxiii.polyglottooltip.integration.SearchScreenRefresh;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;

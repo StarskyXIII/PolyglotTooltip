@@ -241,19 +241,24 @@ tasks {
     }
     processResources {
         val values = mapOf(
-            "screen_refresh_mixins" to if (sc.current.parsed >= "26") "" else listOf(
+            "occultism_mixin" to if (sc.current.parsed >= "26")
+                "occultism.OccultismModernStorageControllerGuiMixin" else
+                "occultism.OccultismStorageControllerGuiMixin",
+            "screen_refresh_mixins" to (if (sc.current.parsed >= "26") listOf(
+                "apothicenchanting.ApothicLibrarySearchRefreshMixin",
+                "sophisticatedcore.SophisticatedSearchRefreshMixin"
+            ) else listOf(
                 "apothicenchanting.ApothicLibrarySearchRefreshMixin",
                 "arsnouveau.ArsBookSearchRefreshMixin",
                 "arsnouveau.ArsUnlockSearchRefreshMixin",
                 "sophisticatedcore.SophisticatedSearchRefreshMixin",
                 "projecte.ProjectESearchRefreshMixin"
-            ).joinToString("\n") { "    \"$it\"," },
+            )).joinToString("\n") { "    \"$it\"," },
             "mod_version" to modVersion,
             "minecraft_version" to sc.current.version,
             "neoforge_minimum" to project.property("neoforge.minimum"),
             "java_level" to "JAVA_$requiredJava",
-            "rs2_tooltip_cache_mixin" to if (sc.current.parsed >= "26") "" else
-                "    \"rs2.Rs2ItemTooltipCacheMixin\",",
+            "rs2_tooltip_cache_mixin" to "    \"rs2.Rs2ItemTooltipCacheMixin\",",
             "jei_fluid_mixin" to if (sc.current.parsed >= "26") "" else
                 "    \"jei.JeiFluidHelperMixin\",",
             "rs2_mekanism_mixins" to if (sc.current.parsed >= "26") "" else

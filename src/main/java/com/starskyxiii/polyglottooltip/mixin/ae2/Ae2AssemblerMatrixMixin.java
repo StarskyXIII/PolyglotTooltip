@@ -4,7 +4,7 @@ package com.starskyxiii.polyglottooltip.mixin.ae2;
 import appeng.api.crafting.PatternDetailsHelper;
 import appeng.crafting.pattern.EncodedPatternItem;
 import com.starskyxiii.polyglottooltip.integration.ae2.PatternAccessSearchUtil;
-//? if (forge && >1.19.2 && <=1.20.1) || (neoforge && >=1.21.1 && <=1.21.1) {
+//? if (forge && >1.19.2 && <=1.20.1) || (neoforge && >=1.21.1) {
 import com.starskyxiii.polyglottooltip.integration.ae2.Ae2SearchRefresh;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 //?}
@@ -23,11 +23,11 @@ import java.util.Set;
 @Pseudo
 @Mixin(targets = "com.glodblock.github.extendedae.client.gui.GuiAssemblerMatrix", remap = false)
 public class Ae2AssemblerMatrixMixin
-        //? if (forge && >1.19.2 && <=1.20.1) || (neoforge && >=1.21.1 && <=1.21.1)
+        //? if (forge && >1.19.2 && <=1.20.1) || (neoforge && >=1.21.1)
         implements Ae2SearchRefresh.Refreshable
 {
 
-    //? if (forge && >1.19.2 && <=1.20.1) || (neoforge && >=1.21.1 && <=1.21.1) {
+    //? if (forge && >1.19.2 && <=1.20.1) || (neoforge && >=1.21.1) {
     @Shadow
     private void refreshList() {
         throw new AssertionError();

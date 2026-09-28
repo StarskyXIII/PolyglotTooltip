@@ -7,7 +7,11 @@ import com.starskyxiii.polyglottooltip.integration.rs2.Rs2TooltipCache;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 
+//? if >=26 {
+/*@Mixin(targets = "com.refinedmods.refinedstorage.common.grid.view.AbstractItemGridResourceType", remap = false)
+*///?} else {
 @Mixin(targets = "com.refinedmods.refinedstorage.common.grid.view.AbstractItemGridResourceRepositoryMapper", remap = false)
+//?}
 public class Rs2ItemTooltipCacheMixin {
     @WrapOperation(
             method = "apply(Lcom/refinedmods/refinedstorage/api/resource/ResourceKey;)Lcom/refinedmods/refinedstorage/common/api/grid/view/GridResource;",

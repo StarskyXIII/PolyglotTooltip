@@ -13,7 +13,7 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-//? if neoforge && >=1.21.1 && <=1.21.1 {
+//? if neoforge && >=1.21.1 {
 import com.starskyxiii.polyglottooltip.integration.SearchScreenRefresh;
 //?}
 
@@ -66,7 +66,7 @@ public abstract class IntegratedTerminalsClientFilterMixin {
     @Shadow
     private Int2ObjectMap<List<?>> filteredIngredientsViews;
 
-    //? if neoforge && >=1.21.1 && <=1.21.1 {
+    //? if neoforge && >=1.21.1 {
     @Unique
     private long polyglot$languageGeneration = Long.MIN_VALUE;
 

@@ -212,6 +212,7 @@ tasks {
                 "    \"rs2.Rs2AutocrafterManagerViewGroupMixin\",\n" +
                 "    \"rs2.Rs2AutocrafterManagerSubViewGroupMixin\",\n" +
                 "    \"rs2.Rs2ItemGridResourceMixin\",\n" +
+                "    \"rs2.Rs2ItemTooltipCacheMixin\",\n" +
                 "    \"rs2.Rs2FluidGridResourceMixin\",\n" +
                 "    \"rs2.Rs2FluidResourceRenderingMixin\",\n" +
                 "    \"rs2.Rs2ItemResourceRenderingMixin\""
