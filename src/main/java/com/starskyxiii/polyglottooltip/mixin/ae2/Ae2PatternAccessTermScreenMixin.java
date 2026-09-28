@@ -40,6 +40,14 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 *///?} else {
+//? if neoforge && >=1.21.1 && <=1.21.1 {
+import com.starskyxiii.polyglottooltip.integration.ae2.Ae2SearchRefresh;
+import org.spongepowered.asm.mixin.Final;
+import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import java.util.Map;
+//?}
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.starskyxiii.polyglottooltip.integration.ae2.PatternAccessSearchUtil;
 import net.minecraft.client.Minecraft;
@@ -50,8 +58,8 @@ import org.spongepowered.asm.mixin.injection.At;
 
 @Mixin(targets = "appeng.client.gui.me.patternaccess.PatternAccessTermScreen", remap = false)
 public class Ae2PatternAccessTermScreenMixin
-        //? if forge && >1.19.2 && <=1.20.1
-        //implements Ae2SearchRefresh.Refreshable
+        //? if (forge && >1.19.2 && <=1.20.1) || (neoforge && >=1.21.1 && <=1.21.1)
+        implements Ae2SearchRefresh.Refreshable
 {
 
     //? if <=1.19.2 {
@@ -67,9 +75,14 @@ public class Ae2PatternAccessTermScreenMixin
     }
     *///?}
 
-    //? if forge && >1.19.2 && <=1.20.1 {
-    /*@Shadow @Final
+    //? if (forge && >1.19.2 && <=1.20.1) || (neoforge && >=1.21.1 && <=1.21.1) {
+    @Shadow @Final
     private Map<String, ?> cachedSearches;
+
+    //? if neoforge && >=1.21.1 && <=1.21.1 {
+    @Shadow @Final
+    private Map<ItemStack, String> patternSearchText;
+    //?}
 
     @Shadow
     private void refreshList() {
@@ -84,11 +97,14 @@ public class Ae2PatternAccessTermScreenMixin
     @Override
     public void polyglot$refreshSearch() {
         cachedSearches.clear();
+        //? if neoforge && >=1.21.1 && <=1.21.1 {
+        patternSearchText.clear();
+        //?}
         if ((Object) this == Minecraft.getInstance().screen) {
             refreshList();
         }
     }
-    *///?}
+    //?}
 
     //? if <=1.19.2 {
     /*@Inject(
