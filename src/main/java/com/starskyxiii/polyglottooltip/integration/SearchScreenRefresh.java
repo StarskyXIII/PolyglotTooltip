@@ -1,6 +1,6 @@
 package com.starskyxiii.polyglottooltip.integration;
 
-//? if neoforge && >=1.21.1 && <=1.21.1 {
+//? if neoforge && >=1.21.1 {
 import net.minecraft.client.Minecraft;
 
 public final class SearchScreenRefresh {

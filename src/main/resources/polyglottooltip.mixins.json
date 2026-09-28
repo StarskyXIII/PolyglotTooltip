@@ -43,7 +43,7 @@ ${jei_fluid_mixin}
     "industrialforegoing.IndustrialForegoingSpeedAddonItemMixin",
     "industrialforegoing.IndustrialForegoingEfficiencyAddonItemMixin",
     "industrialforegoing.IndustrialForegoingProcessingAddonItemMixin",
-    "occultism.OccultismStorageControllerGuiMixin",
+    "${occultism_mixin}",
     "projecte.ProjectENameQueryMixin",
     "sophisticatedcore.SophisticatedCoreStorageScreenMixin",
     "rs2.Rs2GridQueryParserMixin",

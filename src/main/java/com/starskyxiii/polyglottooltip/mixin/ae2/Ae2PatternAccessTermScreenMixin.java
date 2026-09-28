@@ -40,7 +40,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 *///?} else {
-//? if neoforge && >=1.21.1 && <=1.21.1 {
+//? if neoforge && >=1.21.1 {
 import com.starskyxiii.polyglottooltip.integration.ae2.Ae2SearchRefresh;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Shadow;
@@ -58,7 +58,7 @@ import org.spongepowered.asm.mixin.injection.At;
 
 @Mixin(targets = "appeng.client.gui.me.patternaccess.PatternAccessTermScreen", remap = false)
 public class Ae2PatternAccessTermScreenMixin
-        //? if (forge && >1.19.2 && <=1.20.1) || (neoforge && >=1.21.1 && <=1.21.1)
+        //? if (forge && >1.19.2 && <=1.20.1) || (neoforge && >=1.21.1)
         implements Ae2SearchRefresh.Refreshable
 {
 
@@ -75,11 +75,11 @@ public class Ae2PatternAccessTermScreenMixin
     }
     *///?}
 
-    //? if (forge && >1.19.2 && <=1.20.1) || (neoforge && >=1.21.1 && <=1.21.1) {
+    //? if (forge && >1.19.2 && <=1.20.1) || (neoforge && >=1.21.1) {
     @Shadow @Final
     private Map<String, ?> cachedSearches;
 
-    //? if neoforge && >=1.21.1 && <=1.21.1 {
+    //? if neoforge && >=1.21.1 {
     @Shadow @Final
     private Map<ItemStack, String> patternSearchText;
     //?}
@@ -97,7 +97,7 @@ public class Ae2PatternAccessTermScreenMixin
     @Override
     public void polyglot$refreshSearch() {
         cachedSearches.clear();
-        //? if neoforge && >=1.21.1 && <=1.21.1 {
+        //? if neoforge && >=1.21.1 {
         patternSearchText.clear();
         //?}
         if ((Object) this == Minecraft.getInstance().screen) {
