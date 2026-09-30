@@ -7,6 +7,9 @@
   "refmap": "polyglottooltip.refmap.json",
   "mixins": [],
   "client": [
+    "carbonconfig.CarbonForgeArraySaveMixin",
+    "carbonconfig.LegacyCarbonForgeArrayRemoveMixin",
+    "carbonconfig.LegacyCarbonForgeValueAccessor",
     "LegacyLanguageManagerMixin",
     "figura.ItemStackHoverNameContextMixin",
     "figura.FiguraEmojiTranslatableGuardMixin",

@@ -34,8 +34,11 @@ public class OptionalIntegrationMixinPlugin implements IMixinConfigPlugin {
                 throw new ClassNotFoundException(name);
             }
             ClassNode node = new ClassNode();
-            new ClassReader(stream).accept(node,
-                    ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+            int flags = ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES;
+            if (!name.equals(CarbonConfigMixinGuard.ARRAY) && !name.equals(CarbonConfigMixinGuard.VALUE)) {
+                flags |= ClassReader.SKIP_CODE;
+            }
+            new ClassReader(stream).accept(node, flags);
             return node;
         }
     }
@@ -51,6 +54,27 @@ public class OptionalIntegrationMixinPlugin implements IMixinConfigPlugin {
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
+        if (mixinClassName.startsWith("com.starskyxiii.polyglottooltip.mixin.carbonconfig.")) {
+            try {
+                ClassNode array = metadataReader.read(CarbonConfigMixinGuard.ARRAY);
+                if (mixinClassName.endsWith(".CarbonForgeArraySaveMixin")) {
+                    return CarbonConfigMixinGuard.ARRAY.equals(targetClassName)
+                            && CarbonConfigMixinGuard.needsSaveIndexFix(array);
+                }
+                if (mixinClassName.endsWith(".LegacyCarbonForgeArrayRemoveMixin")
+                        || mixinClassName.endsWith(".LegacyCarbonForgeValueAccessor")) {
+                    return ((mixinClassName.endsWith(".LegacyCarbonForgeArrayRemoveMixin")
+                                && CarbonConfigMixinGuard.ARRAY.equals(targetClassName))
+                            || (mixinClassName.endsWith(".LegacyCarbonForgeValueAccessor")
+                                && CarbonConfigMixinGuard.VALUE.equals(targetClassName)))
+                            && CarbonConfigMixinGuard.needsRemovalIndexFix(array,
+                                    metadataReader.read(CarbonConfigMixinGuard.VALUE));
+                }
+                return false;
+            } catch (ClassNotFoundException | IOException | IllegalArgumentException | IndexOutOfBoundsException ignored) {
+                return false;
+            }
+        }
         if (mixinClassName.equals("com.starskyxiii.polyglottooltip.mixin.emi.GtoEmiSearchMixin")) {
             try {
                 ClassNode gtoMixin = metadataReader.read("com.gtolib.mixin.emi.screen.EmiSearchMixin");

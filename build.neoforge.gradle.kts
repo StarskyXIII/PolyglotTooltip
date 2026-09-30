@@ -241,6 +241,8 @@ tasks {
     }
     processResources {
         val values = mapOf(
+            "carbon_config_mixins" to if (sc.current.parsed >= "26") "" else
+                "    \"carbonconfig.CarbonForgeArraySaveMixin\",",
             "occultism_mixin" to if (sc.current.parsed >= "26")
                 "occultism.OccultismModernStorageControllerGuiMixin" else
                 "occultism.OccultismStorageControllerGuiMixin",
