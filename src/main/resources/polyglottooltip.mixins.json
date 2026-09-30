@@ -5,6 +5,7 @@
   "compatibilityLevel": "${java_level}",
   "mixins": [],
   "client": [
+${carbon_config_mixins}
 ${screen_refresh_mixins}
     "figura.ItemStackHoverNameContextMixin",
     "figura.FiguraEmojiTranslatableGuardMixin",
