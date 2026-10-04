@@ -1,0 +1,6 @@
+local.json
+.cache/
+profiles/
+evidence/
+.run.lock
+companion/libs/

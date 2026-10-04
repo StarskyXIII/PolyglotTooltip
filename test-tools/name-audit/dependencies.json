@@ -1,0 +1,46 @@
+{
+  "minecraft": "1.21.1",
+  "neoforge": "21.1.249",
+  "artifacts": [
+    {
+      "id": "reliquary",
+      "version": "2.0.80",
+      "release": "modrinth:kOKl8h6O",
+      "file": "reliquary-1.21.1-2.0.80.1570.jar",
+      "url": "https://cdn.modrinth.com/data/fQO83PId/versions/kOKl8h6O/reliquary-1.21.1-2.0.80.1570.jar",
+      "sha256": "bf309776705f6eac947cf57f0210bbd87840997069aa5566dc98127c3e56c301"
+    },
+    {
+      "id": "malum",
+      "version": "1.8.2",
+      "release": "modrinth:BIbVs1fo",
+      "file": "malum-1.21.1-1.8.2.jar",
+      "url": "https://cdn.modrinth.com/data/jgzwYsAN/versions/BIbVs1fo/malum-1.21.1-1.8.2.jar",
+      "sha256": "38f4fa53e8da9e3d67aa5f54f98fd7c83cb342f0463ce5c63a6864229c88efa8"
+    },
+    {
+      "id": "lodestone",
+      "version": "1.8.2",
+      "release": "modrinth:CohX6yP1",
+      "file": "lodestone-1.21.1-1.8.2.jar",
+      "url": "https://cdn.modrinth.com/data/bN3xUWdo/versions/CohX6yP1/lodestone-1.21.1-1.8.2.jar",
+      "sha256": "cc961af6a77391628378c1c838e521415fa895062b13def493d27234ca527f3e"
+    },
+    {
+      "id": "curios",
+      "version": "9.5.1+1.21.1",
+      "release": "modrinth:yohfFbgD",
+      "file": "curios-neoforge-9.5.1+1.21.1.jar",
+      "url": "https://cdn.modrinth.com/data/vvuO3ImH/versions/yohfFbgD/curios-neoforge-9.5.1%2B1.21.1.jar",
+      "sha256": "a45df2125c26219974aba7507ffc9afe7b83acc941a386af3faacb1cc0056fde"
+    },
+    {
+      "id": "clientdevbridge",
+      "version": "1.0.0",
+      "release": "ClientDevBridge-Releases:1.0.0-171",
+      "file": "clientdevbridge-1.21.1-neoforge-1.0.0-171.jar",
+      "url": "https://cyclopsmc.github.io/ClientDevBridge-Releases/org/cyclops/clientdevbridge/clientdevbridge-1.21.1-neoforge/1.0.0-171/clientdevbridge-1.21.1-neoforge-1.0.0-171.jar",
+      "sha256": "9907fd5f484c25c40040a40a255d1a428b3cd8d31cfe7dad7f0f6e0fa876ba7b"
+    }
+  ]
+}

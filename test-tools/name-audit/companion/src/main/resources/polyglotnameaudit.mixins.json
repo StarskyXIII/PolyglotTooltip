@@ -1,0 +1,8 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.starskyxiii.polyglotnameaudit.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "client": ["DispatcherMixin", "SecondaryLineMixin", "ClientTextTooltipMixin"],
+  "injectors": { "defaultRequire": 1 }
+}
