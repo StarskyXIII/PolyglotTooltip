@@ -168,6 +168,7 @@ English and Simplified Chinese are used because the pinned JARs provide those la
 - Required coverage includes zombie and skeleton charms and fragments, plus at least two distinct, populated Geas effects. Coverage is limited to the variants actually collected.
 - The expected English name is the **final native tooltip's first line with Polyglot absent**, not the hover name alone or a value produced by Polyglot's resolver. The Chinese baseline supplies the expected primary title and native content.
 - Literal custom names should not receive a secondary name. Translatable custom names follow the normal language rules. Unknown missing translation keys are inconclusive; a deliberate missing-key control checks fallback behavior separately.
+- Seven controls cover stone, literal and translated custom names, a missing key, and Geas names with a literal custom name, translated custom name, or patched item name.
 
 ### Text, placement, and observation
 

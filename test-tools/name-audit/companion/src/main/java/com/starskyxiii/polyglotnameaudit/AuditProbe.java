@@ -107,6 +107,11 @@ public final class AuditProbe {
                 ItemStack custom = decode(sample.get("stack"));
                 custom.set(DataComponents.CUSTOM_NAME, Component.literal("Audit Custom Geas"));
                 add(samples, custom, "control:literal-geas");
+                custom.set(DataComponents.CUSTOM_NAME, Component.translatable("item.minecraft.diamond"));
+                add(samples, custom, "control:translated-geas");
+                custom.remove(DataComponents.CUSTOM_NAME);
+                custom.set(DataComponents.ITEM_NAME, Component.translatable("item.minecraft.emerald"));
+                add(samples, custom, "control:patched-geas");
                 break;
             }
         }

@@ -89,7 +89,7 @@ test('coverage requires exact entity fields and two different populated Geas eff
   }
   add('malum:geas');
   add('malum:geas', {'malum:geas_effect': {geasEffectType: 'malum:first'}});
-  for (const control of ['stone', 'literal', 'translated', 'missing', 'literal-geas']) add('minecraft:stone', {control}, `control:${control}`);
+  for (const control of ['stone', 'literal', 'translated', 'missing', 'literal-geas', 'translated-geas', 'patched-geas']) add('minecraft:stone', {control}, `control:${control}`);
   assert.throws(() => validateManifest(freezeSamples({complete: true, samples: raw})), /Missing Geas/);
   add('malum:geas', {'malum:geas_effect': {geasEffectType: 'malum:second'}});
   validateManifest(freezeSamples({complete: true, samples: raw}));
