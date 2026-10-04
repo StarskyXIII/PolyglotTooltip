@@ -55,7 +55,7 @@ export function validateManifest(samples, requiredCoverage = true) {
     .map(s => s.stack.components?.['malum:geas_effect']?.geasEffectType)
     .filter(value => typeof value === 'string' && /^malum:[a-z0-9_/.-]+$/.test(value));
   assert(new Set(geas).size >= 2, 'Missing Geas variants');
-  for (const control of ['stone', 'literal', 'translated', 'missing', 'literal-geas']) {
+  for (const control of ['stone', 'literal', 'translated', 'missing', 'literal-geas', 'translated-geas', 'patched-geas']) {
     assert.equal(samples.filter(s => s.sources.includes(`control:${control}`)).length, 1, `Missing/duplicate control ${control}`);
   }
 }

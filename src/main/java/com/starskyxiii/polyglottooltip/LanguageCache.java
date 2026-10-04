@@ -3,6 +3,7 @@ package com.starskyxiii.polyglottooltip;
 
 import com.starskyxiii.polyglottooltip.minecraft.ComponentLanguageResolver;
 import com.starskyxiii.polyglottooltip.minecraft.ItemStackNameAdapter;
+import com.starskyxiii.polyglottooltip.minecraft.ItemNameDecorator;
 import com.starskyxiii.polyglottooltip.minecraft.ItemStackSnapshotKey;
 import com.starskyxiii.polyglottooltip.minecraft.MinecraftLanguageAdapter;
 import com.starskyxiii.polyglottooltip.minecraft.SpecialItemNameResolver;
@@ -28,6 +29,7 @@ public final class LanguageCache {
 
     private static final LanguageCache INSTANCE = new LanguageCache();
     private static final List<SpecialNameResolver> SPECIAL_NAME_RESOLVERS = new ArrayList<>();
+    private static final List<ItemNameDecorator> NAME_DECORATORS = new ArrayList<>();
 
     private final ItemStackNameAdapter itemStackNames = new ItemStackNameAdapter();
     private final Map<ItemStackSnapshotKey, List<String>> displayNameCache = new ConcurrentHashMap<>();
@@ -43,6 +45,10 @@ public final class LanguageCache {
 
     public static void registerSpecialNameResolver(SpecialNameResolver resolver) {
         SPECIAL_NAME_RESOLVERS.add(resolver);
+    }
+
+    public static void registerNameDecorator(ItemNameDecorator decorator) {
+        NAME_DECORATORS.add(decorator);
     }
 
     public void replaceLanguages(List<ClientLanguage> languages) {
@@ -81,7 +87,7 @@ public final class LanguageCache {
     }
 
     public String resolveCurrentDisplayName(ItemStack stack) {
-        return itemStackNames.resolveCurrentDisplayName(stack);
+        return itemStackNames.resolveCurrentDisplayName(stack, NAME_DECORATORS);
     }
 
     public List<String> resolveComponentsForAll(Component component) {
@@ -118,7 +124,7 @@ public final class LanguageCache {
                         ? resolved
                         : ComponentLanguageResolver.resolve(component, entry.legacyEntries()::get);
             };
-            itemStackNames.resolveDisplayName(stack, componentResolver, SPECIAL_NAME_RESOLVERS)
+            itemStackNames.resolveDisplayName(stack, componentResolver, SPECIAL_NAME_RESOLVERS, NAME_DECORATORS)
                     .ifPresent(results::add);
         }
         return Collections.unmodifiableList(new ArrayList<>(results));

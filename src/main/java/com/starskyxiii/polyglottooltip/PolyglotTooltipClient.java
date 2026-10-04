@@ -10,6 +10,10 @@ import com.starskyxiii.polyglottooltip.integration.jei.OptionalEmiSearchRefresh;
 import com.starskyxiii.polyglottooltip.integration.occultism.OccultismSearchUtil;
 import com.starskyxiii.polyglottooltip.integration.productivebees.ProductiveBeesNameHelper;
 import com.starskyxiii.polyglottooltip.integration.storagedrawers.StorageDrawersNameHelper;
+import com.starskyxiii.polyglottooltip.integration.reliquary.ReliquaryNameHelper;
+//? if neoforge && >=1.21.1 && <=1.21.1 {
+import com.starskyxiii.polyglottooltip.integration.malum.MalumNameHelper;
+//?}
 import com.starskyxiii.polyglottooltip.minecraft.MinecraftLanguageAdapter;
 import com.starskyxiii.polyglottooltip.search.ChineseScriptSearchMatcher;
 import net.minecraft.client.Minecraft;
@@ -72,6 +76,10 @@ public class PolyglotTooltipClient {
         LanguageCache.registerSpecialNameResolver(IndustrialForegoingNameHelper::tryResolveSpecialName);
         LanguageCache.registerSpecialNameResolver(ProductiveBeesNameHelper::tryResolveSpecialName);
         LanguageCache.registerSpecialNameResolver(StorageDrawersNameHelper::tryResolveSpecialName);
+        LanguageCache.registerSpecialNameResolver(ReliquaryNameHelper::tryResolveSpecialName);
+        //? if neoforge && >=1.21.1 && <=1.21.1 {
+        LanguageCache.registerNameDecorator(MalumNameHelper::decorateName);
+        //?}
 
         MinecraftLanguageAdapter languageAdapter = MinecraftLanguageAdapter.getInstance();
         languageAdapter.configureLanguages(Config.DISPLAY_LANGUAGE::get);

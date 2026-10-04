@@ -34,6 +34,20 @@ public final class ItemStackNameAdapter {
     public Optional<String> resolveDisplayName(ItemStack stack,
                                                Function<Component, Optional<String>> componentResolver,
                                                Iterable<? extends SpecialItemNameResolver> specialResolvers) {
+        return resolveBaseName(stack, componentResolver, specialResolvers);
+    }
+
+    public Optional<String> resolveDisplayName(ItemStack stack,
+                                               Function<Component, Optional<String>> componentResolver,
+                                               Iterable<? extends SpecialItemNameResolver> specialResolvers,
+                                               Iterable<? extends ItemNameDecorator> decorators) {
+        return resolveBaseName(stack, componentResolver, specialResolvers)
+                .flatMap(name -> decorateName(stack, name, componentResolver, decorators));
+    }
+
+    private Optional<String> resolveBaseName(ItemStack stack,
+                                              Function<Component, Optional<String>> componentResolver,
+                                              Iterable<? extends SpecialItemNameResolver> specialResolvers) {
         //? if <=1.20.1 {
         /*Optional<Component> customName = resolveCustomNameComponent(stack);
         if (customName.isPresent()) {
@@ -81,6 +95,44 @@ public final class ItemStackNameAdapter {
 
     public String resolveCurrentDisplayName(ItemStack stack) {
         return stack.getHoverName().getString();
+    }
+
+    public String resolveCurrentDisplayName(ItemStack stack, Iterable<? extends ItemNameDecorator> decorators) {
+        String baseName = resolveCurrentDisplayName(stack);
+        return decorateName(stack, baseName, component -> Optional.of(component.getString()), decorators)
+                .orElse(baseName);
+    }
+
+    private Optional<String> decorateName(ItemStack stack, String baseName,
+                                           Function<Component, Optional<String>> componentResolver,
+                                           Iterable<? extends ItemNameDecorator> decorators) {
+        Optional<String> name = Optional.of(baseName);
+        for (ItemNameDecorator decorator : decorators) {
+            name = name.flatMap(value -> decorator.decorate(stack, value, componentResolver));
+        }
+        return name;
+    }
+
+    public static boolean isLiteralName(Component component) {
+        return isLiteralName(component, 0);
+    }
+
+    private static boolean isLiteralName(Component component, int depth) {
+        if (component == null || depth > 32) return false;
+        //? if <=1.16.5 {
+        /*if (!(component instanceof net.minecraft.util.text.StringTextComponent)) return false;
+        *///?} else if <=1.18.2 {
+        /*if (!(component instanceof net.minecraft.network.chat.TextComponent)) return false;
+        *///?} else if <=1.20.1 {
+        /*if (component.getContents() != net.minecraft.network.chat.ComponentContents.EMPTY
+                && !(component.getContents() instanceof net.minecraft.network.chat.contents.LiteralContents)) return false;
+        *///?} else {
+        if (!(component.getContents() instanceof net.minecraft.network.chat.contents.PlainTextContents)) return false;
+        //?}
+        for (Component sibling : component.getSiblings()) {
+            if (!isLiteralName(sibling, depth + 1)) return false;
+        }
+        return true;
     }
 
     public List<Component> getCraftingEnchantmentNames(ItemStack stack) {

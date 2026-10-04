@@ -88,25 +88,7 @@ public final class SecondaryTooltipUtil {
 
     static List<String> getSecondaryNames(List<String> names, String primaryText, Component customName) {
         List<String> filtered = filterPrimaryName(names, primaryText);
-        return isLiteralTree(customName, 0) ? filterPrimaryName(filtered, customName.getString()) : filtered;
-    }
-
-    private static boolean isLiteralTree(Component component, int depth) {
-        if (component == null || depth > 32) return false;
-        //? if <=1.16.5 {
-        /*if (!(component instanceof net.minecraft.util.text.StringTextComponent)) return false;
-        *///?} else if <=1.18.2 {
-        /*if (!(component instanceof net.minecraft.network.chat.TextComponent)) return false;
-        *///?} else if <=1.20.1 {
-        /*if (component.getContents() != net.minecraft.network.chat.ComponentContents.EMPTY
-                && !(component.getContents() instanceof net.minecraft.network.chat.contents.LiteralContents)) return false;
-        *///?} else {
-        if (!(component.getContents() instanceof net.minecraft.network.chat.contents.PlainTextContents)) return false;
-        //?}
-        for (Component sibling : component.getSiblings()) {
-            if (!isLiteralTree(sibling, depth + 1)) return false;
-        }
-        return true;
+        return ItemStackNameAdapter.isLiteralName(customName) ? filterPrimaryName(filtered, customName.getString()) : filtered;
     }
 
     public static List<Component> getSecondaryNameLines(Component sourceName) {
