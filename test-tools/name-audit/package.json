@@ -1,0 +1,13 @@
+{
+  "name": "polyglot-name-audit",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "fetch": "node runner/setup.mjs fetch",
+    "prepare": "node runner/setup.mjs prepare",
+    "audit": "node runner/run.mjs",
+    "audit:strict": "node runner/run.mjs --strict"
+  }
+}

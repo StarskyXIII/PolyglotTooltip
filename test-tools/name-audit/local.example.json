@@ -1,0 +1,7 @@
+{
+  "prismExecutable": "C:/Path/To/PrismLauncher/prismlauncher.exe",
+  "prismData": "C:/Path/To/PrismLauncher/Data",
+  "javaExecutable": "C:/Path/To/jdk-21/bin/javaw.exe",
+  "productJar": "../../versions/1.21.1-neoforge/build/libs/polyglottooltip-1.21.1-neoforge-2.0.jar",
+  "basePort": 25971
+}
