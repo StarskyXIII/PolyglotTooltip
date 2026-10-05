@@ -1,6 +1,6 @@
 package com.starskyxiii.polyglottooltip.integration;
+//~ minecraft_116_packages
 
-//? if neoforge && >=1.21.1 {
 import net.minecraft.client.Minecraft;
 
 public final class SearchScreenRefresh {
@@ -20,8 +20,8 @@ public final class SearchScreenRefresh {
         Minecraft minecraft = Minecraft.getInstance();
         Runnable refresh = () -> {
             generation++;
-            if (minecraft.screen instanceof Refreshable screen) {
-                screen.polyglot$refreshSearch();
+            if (minecraft.screen instanceof Refreshable) {
+                ((Refreshable) minecraft.screen).polyglot$refreshSearch();
             }
         };
         if (minecraft.isSameThread()) {
@@ -31,4 +31,3 @@ public final class SearchScreenRefresh {
         }
     }
 }
-//?}

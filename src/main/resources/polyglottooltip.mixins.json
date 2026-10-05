@@ -7,6 +7,7 @@
   "client": [
 ${carbon_config_mixins}
 ${screen_refresh_mixins}
+${prettypipes_mixin}
     "figura.ItemStackHoverNameContextMixin",
     "figura.FiguraEmojiTranslatableGuardMixin",
     "apothicenchanting.ApothicEnchantmentLibraryScreenMixin",
