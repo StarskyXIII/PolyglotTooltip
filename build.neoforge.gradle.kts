@@ -246,6 +246,8 @@ tasks {
             "occultism_mixin" to if (sc.current.parsed >= "26")
                 "occultism.OccultismModernStorageControllerGuiMixin" else
                 "occultism.OccultismStorageControllerGuiMixin",
+            "prettypipes_mixin" to if (sc.current.parsed >= "26") "" else
+                "    \"prettypipes.PrettyPipesItemTerminalMixin\",",
             "screen_refresh_mixins" to (if (sc.current.parsed >= "26") listOf(
                 "apothicenchanting.ApothicLibrarySearchRefreshMixin",
                 "sophisticatedcore.SophisticatedSearchRefreshMixin"

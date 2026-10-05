@@ -7,6 +7,7 @@
   "refmap": "polyglottooltip.refmap.json",
   "mixins": [],
   "client": [
+    "prettypipes.PrettyPipesItemTerminalMixin",
     "carbonconfig.CarbonForgeArraySaveMixin",
     "carbonconfig.LegacyCarbonForgeArrayRemoveMixin",
     "carbonconfig.LegacyCarbonForgeValueAccessor",
