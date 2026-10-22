@@ -1,8 +1,11 @@
 package com.starskyxiii.polyglottooltip.legacy.minecraft;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -43,4 +46,23 @@ public class FluidSecondaryNamesTest {
     public void omitsLanguagesWithoutTheKey() {
         assertTrue(FluidSecondaryNames.resolve("fluid.lava", "熔岩", "熔岩", dictionaries()).isEmpty());
     }
+
+    @Test
+    public void picksTheFirstCandidateKeyWhoseTranslationMatches() {
+        Map<String, String> lang = new HashMap<>();
+        lang.put("tile.water.name", "水");
+        assertEquals("tile.water.name", FluidSecondaryNames.consistentKey("水",
+                Arrays.asList("fluid.water", null, "tile.water.name"), key -> lang.getOrDefault(key, key)));
+        lang.put("fluid.water", "水");
+        assertEquals("fluid.water", FluidSecondaryNames.consistentKey("水",
+                Arrays.asList("fluid.water", "tile.water.name"), key -> lang.getOrDefault(key, key)));
+    }
+
+    @Test
+    public void picksNoKeyWhenNoTranslationMatches() {
+        assertNull(FluidSecondaryNames.consistentKey("Holy Water",
+                Arrays.asList("fluid.water", "tile.water.name"), key -> "水"));
+        assertNull(FluidSecondaryNames.consistentKey(null, Arrays.asList("fluid.water"), key -> key));
+    }
 }
+
