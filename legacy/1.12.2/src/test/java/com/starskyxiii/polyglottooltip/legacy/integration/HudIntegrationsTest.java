@@ -15,7 +15,13 @@ public class HudIntegrationsTest {
     private final List<String> warnings = new ArrayList<>();
 
     private Integrations start(Predicate<String> loaded, Predicate<String> enabled) {
-        Integrations integrations = new Integrations(Integrations.known(), loaded, enabled,
+        List<Integrations.Entry> gated = new ArrayList<>();
+        for (Integrations.Entry entry : Integrations.known()) {
+            if (entry.modid != null) {
+                gated.add(entry);
+            }
+        }
+        Integrations integrations = new Integrations(gated, loaded, enabled,
                 (message, error) -> warnings.add(message));
         integrations.start();
         return integrations;

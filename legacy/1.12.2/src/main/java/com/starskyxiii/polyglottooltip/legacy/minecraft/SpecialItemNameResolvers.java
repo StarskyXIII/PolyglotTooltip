@@ -1,5 +1,6 @@
 package com.starskyxiii.polyglottooltip.legacy.minecraft;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -19,37 +20,50 @@ public final class SpecialItemNameResolvers {
         }
     }
 
-    public static SpecialItemNameResolver find(ItemStack stack) {
+    static void clear() {
+        RESOLVERS.clear();
+    }
+
+    public static List<SpecialItemNameResolver> candidates(ItemStack stack) {
+        List<SpecialItemNameResolver> accepted = new ArrayList<>();
         for (SpecialItemNameResolver resolver : RESOLVERS) {
+            if (accepts(resolver, stack)) {
+                accepted.add(resolver);
+            }
+        }
+        return accepted;
+    }
+
+    public static Map<String, String> resolve(ItemStack stack, ConsistencyCheck.Result result,
+                                              Map<String, SecondaryDictionary> dictionaries) {
+        for (SpecialItemNameResolver resolver : RESOLVERS) {
+            if (!accepts(resolver, stack)) {
+                continue;
+            }
             try {
-                if (resolver.accepts(stack)) {
-                    return resolver;
+                Map<String, String> names = new LinkedHashMap<>();
+                for (Map.Entry<String, SecondaryDictionary> entry : dictionaries.entrySet()) {
+                    String name = resolver.resolve(stack, result, entry.getKey(), entry.getValue());
+                    if (name != null) {
+                        names.put(entry.getKey(), name);
+                    }
+                }
+                if (!names.isEmpty()) {
+                    return names;
                 }
             } catch (RuntimeException error) {
                 failed(resolver, error);
-                return null;
             }
         }
-        return null;
+        return Collections.emptyMap();
     }
 
-    public static Map<String, String> resolve(ItemStack stack, Map<String, SecondaryDictionary> dictionaries) {
-        SpecialItemNameResolver resolver = find(stack);
-        if (resolver == null) {
-            return Collections.emptyMap();
-        }
+    private static boolean accepts(SpecialItemNameResolver resolver, ItemStack stack) {
         try {
-            Map<String, String> names = new LinkedHashMap<>();
-            for (Map.Entry<String, SecondaryDictionary> entry : dictionaries.entrySet()) {
-                String name = resolver.resolve(stack, entry.getKey(), entry.getValue());
-                if (name != null) {
-                    names.put(entry.getKey(), name);
-                }
-            }
-            return names;
+            return resolver.accepts(stack);
         } catch (RuntimeException error) {
             failed(resolver, error);
-            return Collections.emptyMap();
+            return false;
         }
     }
 

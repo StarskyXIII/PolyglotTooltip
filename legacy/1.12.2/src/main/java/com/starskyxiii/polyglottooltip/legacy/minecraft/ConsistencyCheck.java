@@ -11,12 +11,28 @@ public final class ConsistencyCheck {
     private ConsistencyCheck() {}
 
     public static final class Result {
+        private final String key;
+        private final String expected;
         private final String primary;
         private final Map<String, String> names;
 
-        private Result(String primary, Map<String, String> names) {
+        private Result(String key, String expected, String primary, Map<String, String> names) {
+            this.key = key;
+            this.expected = expected;
             this.primary = primary;
             this.names = names;
+        }
+
+        static Result inconsistent(String key, String expected, String primary) {
+            return new Result(key, expected, primary, null);
+        }
+
+        public String key() {
+            return key;
+        }
+
+        public String expected() {
+            return expected;
         }
 
         public String primary() {
@@ -35,15 +51,17 @@ public final class ConsistencyCheck {
     @SuppressWarnings("deprecation")
     public static Result resolve(ItemStack stack, Map<String, SecondaryDictionary> dictionaries) {
         String actual = null;
+        String key = null;
+        String expected = null;
         try {
             actual = TextFormatting.func_110646_a(stack.func_82833_r()).trim();
-            String key = ItemNameKeys.of(stack);
+            key = ItemNameKeys.of(stack);
             if (key == null) {
-                return new Result(actual, null);
+                return Result.inconsistent(null, null, actual);
             }
-            String expected = TextFormatting.func_110646_a(I18n.func_74838_a(key)).trim();
+            expected = TextFormatting.func_110646_a(I18n.func_74838_a(key)).trim();
             if (!expected.equals(actual)) {
-                return new Result(actual, null);
+                return Result.inconsistent(key, expected, actual);
             }
             Map<String, String> names = new LinkedHashMap<>();
             for (Map.Entry<String, SecondaryDictionary> entry : dictionaries.entrySet()) {
@@ -52,12 +70,12 @@ public final class ConsistencyCheck {
                     names.put(entry.getKey(), name);
                 }
             }
-            return new Result(actual, names);
+            return new Result(key, expected, actual, names);
         } catch (Throwable error) {
             Object item = stack == null ? null : stack.func_77973_b();
             FailureLog.debug("consistency|" + FailureLog.failureKey(item, error),
                     "Consistency check failed for " + (item == null ? "null" : item.getClass().getName()), error);
-            return new Result(actual, null);
+            return Result.inconsistent(key, expected, actual);
         }
     }
 }
