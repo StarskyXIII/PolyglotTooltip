@@ -257,6 +257,11 @@ public final class BridgeDispatch {
                 client.func_110436_a();
                 return status();
             case "config.set": return CoreProbe.configure(params);
+            case "client.command":
+                if (client.field_71439_g == null) throw new IllegalStateException("No player");
+                String clientCommand = params.get("command").getAsString();
+                if (!clientCommand.startsWith("/") || clientCommand.length() > 256) throw new IllegalArgumentException("Invalid client command");
+                return gson.toJsonTree(net.minecraftforge.client.ClientCommandHandler.instance.func_71556_a(client.field_71439_g, clientCommand));
             case "world.create":
                 String name = params.has("name") ? params.get("name").getAsString() : "pt112-fixture";
                 if (!name.matches("pt112-[a-zA-Z0-9-]{1,64}")) throw new IllegalArgumentException("Invalid fixture name");
