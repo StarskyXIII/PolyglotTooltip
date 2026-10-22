@@ -21,6 +21,13 @@ public final class Config {
         update();
     }
 
+    public static void reload() {
+        if (configuration != null) {
+            configuration.load();
+            update();
+        }
+    }
+
     public static Settings settings() {
         return settings;
     }

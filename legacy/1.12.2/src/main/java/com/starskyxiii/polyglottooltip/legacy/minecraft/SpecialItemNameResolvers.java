@@ -19,26 +19,42 @@ public final class SpecialItemNameResolvers {
         }
     }
 
-    public static Map<String, String> resolve(ItemStack stack, Map<String, SecondaryDictionary> dictionaries) {
+    public static SpecialItemNameResolver find(ItemStack stack) {
         for (SpecialItemNameResolver resolver : RESOLVERS) {
             try {
-                if (!resolver.accepts(stack)) {
-                    continue;
+                if (resolver.accepts(stack)) {
+                    return resolver;
                 }
-                Map<String, String> names = new LinkedHashMap<>();
-                for (Map.Entry<String, SecondaryDictionary> entry : dictionaries.entrySet()) {
-                    String name = resolver.resolve(stack, entry.getKey(), entry.getValue());
-                    if (name != null) {
-                        names.put(entry.getKey(), name);
-                    }
-                }
-                return names;
             } catch (RuntimeException error) {
-                FailureLog.debug("resolver|" + resolver.getClass().getName() + "|" + error.getClass().getName(),
-                        "Special name resolver " + resolver.getClass().getName() + " failed", error);
-                return Collections.emptyMap();
+                failed(resolver, error);
+                return null;
             }
         }
-        return Collections.emptyMap();
+        return null;
+    }
+
+    public static Map<String, String> resolve(ItemStack stack, Map<String, SecondaryDictionary> dictionaries) {
+        SpecialItemNameResolver resolver = find(stack);
+        if (resolver == null) {
+            return Collections.emptyMap();
+        }
+        try {
+            Map<String, String> names = new LinkedHashMap<>();
+            for (Map.Entry<String, SecondaryDictionary> entry : dictionaries.entrySet()) {
+                String name = resolver.resolve(stack, entry.getKey(), entry.getValue());
+                if (name != null) {
+                    names.put(entry.getKey(), name);
+                }
+            }
+            return names;
+        } catch (RuntimeException error) {
+            failed(resolver, error);
+            return Collections.emptyMap();
+        }
+    }
+
+    private static void failed(SpecialItemNameResolver resolver, RuntimeException error) {
+        FailureLog.debug("resolver|" + resolver.getClass().getName() + "|" + error.getClass().getName(),
+                "Special name resolver " + resolver.getClass().getName() + " failed", error);
     }
 }
