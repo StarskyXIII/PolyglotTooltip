@@ -46,7 +46,7 @@ public final class SecondaryNames {
         return seen.isEmpty() ? EMPTY : new SecondaryNames(Collections.unmodifiableList(new ArrayList<>(seen)));
     }
 
-    private static String plain(String text) {
+    static String plain(String text) {
         return FORMATTING.matcher(text).replaceAll("").trim();
     }
 

@@ -3,6 +3,7 @@ package com.starskyxiii.polyglottooltip.legacy.minecraft;
 import java.util.List;
 
 import com.starskyxiii.polyglottooltip.legacy.Config;
+import com.starskyxiii.polyglottooltip.legacy.Settings;
 
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
@@ -14,15 +15,16 @@ public final class TooltipLines {
     public void onTooltip(ItemTooltipEvent event) {
         ItemStack stack = event.getItemStack();
         try {
-            SecondaryNames names = ItemNames.of(stack);
-            if (names.isEmpty()) {
-                return;
-            }
             List<String> lines = event.getToolTip();
-            String prefix = Config.settings().tooltipPrefix();
+            Settings settings = Config.settings();
+            SecondaryNames names = ItemNames.of(stack);
             int index = Math.min(1, lines.size());
             for (String name : names.names()) {
-                lines.add(index++, prefix + name);
+                lines.add(index++, settings.tooltipPrefix() + name);
+            }
+            if (stack != null && !stack.func_190926_b()) {
+                EnchantmentLines.apply(stack, lines, settings, SecondaryLanguages.dictionaries(),
+                        SecondaryLanguages.currentLanguage());
             }
         } catch (RuntimeException error) {
             Object item = stack == null ? null : stack.func_77973_b();
