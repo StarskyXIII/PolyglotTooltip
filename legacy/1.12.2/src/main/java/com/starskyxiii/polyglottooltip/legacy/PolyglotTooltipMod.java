@@ -1,5 +1,6 @@
 package com.starskyxiii.polyglottooltip.legacy;
 
+import com.starskyxiii.polyglottooltip.legacy.integration.Integrations;
 import com.starskyxiii.polyglottooltip.legacy.minecraft.PolyglotCommand;
 import com.starskyxiii.polyglottooltip.legacy.minecraft.SecondaryLanguages;
 import com.starskyxiii.polyglottooltip.legacy.minecraft.TooltipLines;
@@ -28,6 +29,7 @@ public final class PolyglotTooltipMod {
     public void init(FMLInitializationEvent event) {
         SecondaryLanguages.register();
         MinecraftForge.EVENT_BUS.register(new TooltipLines());
-        ClientCommandHandler.instance.func_71560_a(new PolyglotCommand());
+        Integrations.install();
+        ClientCommandHandler.instance.func_71560_a(new PolyglotCommand(Integrations::describeDisabled));
     }
 }
