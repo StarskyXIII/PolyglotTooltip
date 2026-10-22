@@ -6,7 +6,7 @@ plugins {
 }
 
 group = 'com.starskyxiii.polyglottooltip'
-version = '3.0'
+version = '2.0'
 base.archivesName = 'polyglottooltip-1.12.2-forge'
 java.toolchain.languageVersion = JavaLanguageVersion.of(8)
 
