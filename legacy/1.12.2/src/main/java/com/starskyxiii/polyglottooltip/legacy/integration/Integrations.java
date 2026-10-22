@@ -14,7 +14,9 @@ import org.apache.logging.log4j.LogManager;
 
 import com.starskyxiii.polyglottooltip.legacy.Config;
 import com.starskyxiii.polyglottooltip.legacy.PolyglotTooltipMod;
+import com.starskyxiii.polyglottooltip.legacy.integration.hwyla.HwylaIntegration;
 import com.starskyxiii.polyglottooltip.legacy.integration.jei.JeiIntegration;
+import com.starskyxiii.polyglottooltip.legacy.integration.theoneprobe.TopIntegration;
 import com.starskyxiii.polyglottooltip.legacy.minecraft.SecondaryLanguages;
 
 import net.minecraftforge.fml.common.Loader;
@@ -33,7 +35,9 @@ public final class Integrations {
     }
 
     private static final List<Entry> KNOWN = Collections.unmodifiableList(Arrays.asList(
-            new Entry(JeiIntegration.ID, JeiIntegration.MODID, JeiIntegration::new)));
+            new Entry(JeiIntegration.ID, JeiIntegration.MODID, JeiIntegration::new),
+            new Entry(TopIntegration.ID, TopIntegration.MODID, TopIntegration::new),
+            new Entry(HwylaIntegration.ID, HwylaIntegration.MODID, HwylaIntegration::new)));
     private static volatile Integrations installed;
 
     private final List<Entry> entries;
@@ -59,6 +63,10 @@ public final class Integrations {
         integrations.start();
         installed = integrations;
         SecondaryLanguages.addInvalidationListener(integrations::invalidate);
+    }
+
+    public static List<Entry> known() {
+        return KNOWN;
     }
 
     public static List<String> describeDisabled() {
@@ -93,6 +101,16 @@ public final class Integrations {
         for (Map.Entry<Integration, IntegrationGuard> entry : started.entrySet()) {
             entry.getValue().run(entry.getKey()::invalidate);
         }
+    }
+
+    public synchronized List<String> active() {
+        List<String> active = new ArrayList<>();
+        for (IntegrationGuard guard : started.values()) {
+            if (guard.active()) {
+                active.add(guard.id());
+            }
+        }
+        return active;
     }
 
     public synchronized List<String> disabled() {

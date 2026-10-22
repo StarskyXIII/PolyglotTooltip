@@ -46,6 +46,8 @@ dependencies {
     compileOnly 'org.spongepowered:mixin:0.8.7'
     annotationProcessor 'org.spongepowered:mixin:0.8.7:processor'
     compileOnly('curse.maven:jei-238222:3043174') { transitive = false }
+    compileOnly('curse.maven:theoneprobe-885670:8896757') { transitive = false }
+    compileOnly('curse.maven:hwyla-253449:2568751') { transitive = false }
     compileOnly sourceSets.heiStubs.output
     heiStubsCompileOnly('curse.maven:jei-238222:3043174') { transitive = false }
     implementation 'com.github.houbb:opencc4j:1.14.0'
@@ -57,6 +59,8 @@ dependencies {
 
 renamer.enableMixinRefmaps {
     config 'polyglottooltip.jei.mixins.json'
+    config 'polyglottooltip.top.mixins.json'
+    config 'polyglottooltip.hwyla.mixins.json'
     refMap = 'polyglottooltip.legacy.refmap.json'
 }
 renamer.mappings.from minecraft.dependency.toSrgFile
