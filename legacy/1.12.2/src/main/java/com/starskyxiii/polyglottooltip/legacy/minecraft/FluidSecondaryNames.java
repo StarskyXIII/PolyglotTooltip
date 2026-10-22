@@ -1,9 +1,13 @@
 package com.starskyxiii.polyglottooltip.legacy.minecraft;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
+import net.minecraft.block.Block;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.util.text.translation.I18n;
 import net.minecraftforge.fluids.Fluid;
@@ -19,13 +23,12 @@ public final class FluidSecondaryNames {
             return Collections.emptyMap();
         }
         try {
-            String key = fluid.getUnlocalizedName(stack);
-            if (key == null) {
-                return Collections.emptyMap();
-            }
             String actual = TextFormatting.func_110646_a(fluid.getLocalizedName(stack)).trim();
-            String expected = TextFormatting.func_110646_a(I18n.func_74838_a(key)).trim();
-            return resolve(key, actual, expected, SecondaryLanguages.dictionaries());
+            Block block = fluid.getBlock();
+            String key = consistentKey(actual, Arrays.asList(fluid.getUnlocalizedName(stack),
+                    block == null ? null : block.func_149739_a() + ".name"),
+                    candidate -> TextFormatting.func_110646_a(I18n.func_74838_a(candidate)).trim());
+            return resolve(key, actual, actual, SecondaryLanguages.dictionaries());
         } catch (RuntimeException error) {
             FailureLog.debug("fluid|" + FailureLog.failureKey(fluid, error),
                     "Fluid consistency check failed for " + fluid.getClass().getName(), error);
@@ -33,8 +36,17 @@ public final class FluidSecondaryNames {
         }
     }
 
-    static Map<String, String> resolve(String key, String actual, String expected,
-                                       Map<String, SecondaryDictionary> dictionaries) {
+    static String consistentKey(String actual, List<String> candidates, Function<String, String> translate) {
+        for (String candidate : candidates) {
+            if (candidate != null && actual != null && actual.equals(translate.apply(candidate))) {
+                return candidate;
+            }
+        }
+        return null;
+    }
+
+    public static Map<String, String> resolve(String key, String actual, String expected,
+                                              Map<String, SecondaryDictionary> dictionaries) {
         if (key == null || actual == null || !actual.equals(expected)) {
             return Collections.emptyMap();
         }
