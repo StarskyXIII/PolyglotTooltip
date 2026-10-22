@@ -32,6 +32,18 @@ public final class Config {
         return settings;
     }
 
+    public static synchronized boolean integrationEnabled(String id) {
+        if (configuration == null) {
+            return true;
+        }
+        Property property = configuration.get(INTEGRATIONS, id, true);
+        property.setLanguageKey("polyglottooltip.config.integrations." + id);
+        if (configuration.hasChanged()) {
+            configuration.save();
+        }
+        return property.getBoolean();
+    }
+
     private static void update() {
         Property languages = configuration.get(GENERAL, "displayLanguage", new String[] {"en_us"});
         languages.setLanguageKey("polyglottooltip.config.displayLanguage");

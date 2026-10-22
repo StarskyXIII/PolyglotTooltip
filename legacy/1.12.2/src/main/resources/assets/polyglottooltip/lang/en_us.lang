@@ -3,6 +3,7 @@ polyglottooltip.config.alwaysShow=Always show additional languages
 polyglottooltip.config.enableChineseScriptMatching=Match simplified and traditional Chinese
 polyglottooltip.config.tooltipSecondaryNameFormat=Tooltip name formatting
 polyglottooltip.config.hudSecondaryNameFormat=HUD name formatting
+polyglottooltip.config.integrations.jei=JEI and HEI search
 polyglottooltip.command.usage=/polyglot <why|reload>
 polyglottooltip.command.empty=Hold an item in your main hand.
 polyglottooltip.command.key=Key: %s

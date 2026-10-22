@@ -17,6 +17,7 @@ sourceSets.main.java {
     include 'com/starskyxiii/polyglottooltip/core/SecondaryLanguagePolicy.java'
     include 'com/starskyxiii/polyglottooltip/core/ChineseScriptPolicy.java'
 }
+sourceSets { heiStubs }
 
 minecraft {
     mappings channel: 'srg', version: '1.12.2'
@@ -31,6 +32,8 @@ repositories {
     minecraft.mavenizer(it)
     maven fg.forgeMaven
     maven fg.minecraftLibsMaven
+    maven { url = 'https://maven.cleanroommc.com' }
+    maven { url = 'https://repo.spongepowered.org/repository/maven-public/' }
     maven { url = 'https://cursemaven.com' }
     mavenCentral()
 }
@@ -39,6 +42,12 @@ configurations { bundled }
 
 dependencies {
     implementation minecraft.dependency('net.minecraftforge:forge:1.12.2-14.23.5.2864')
+    compileOnly('zone.rong:mixinbooter:10.6') { transitive = false }
+    compileOnly 'org.spongepowered:mixin:0.8.7'
+    annotationProcessor 'org.spongepowered:mixin:0.8.7:processor'
+    compileOnly('curse.maven:jei-238222:3043174') { transitive = false }
+    compileOnly sourceSets.heiStubs.output
+    heiStubsCompileOnly('curse.maven:jei-238222:3043174') { transitive = false }
     implementation 'com.github.houbb:opencc4j:1.14.0'
     bundled('com.github.houbb:opencc4j:1.14.0') { transitive = false }
     bundled('com.github.houbb:heaven:0.13.0') { transitive = false }
@@ -46,6 +55,10 @@ dependencies {
     testImplementation 'junit:junit:4.13.2'
 }
 
+renamer.enableMixinRefmaps {
+    config 'polyglottooltip.jei.mixins.json'
+    refMap = 'polyglottooltip.legacy.refmap.json'
+}
 renamer.mappings.from minecraft.dependency.toSrgFile
 
 tasks.named('processResources') {
@@ -56,10 +69,16 @@ tasks.named('processResources') {
 }
 
 tasks.named('jar', Jar) {
+    doFirst { manifest.attributes.remove('MixinConfigs') }
     archiveClassifier = 'dev'
 }
 
 tasks.named('shadowJar') {
+    doFirst { manifest.attributes.remove('MixinConfigs') }
+    from(tasks.named('compileJava').map { it.temporaryDir }) {
+        include 'compileJava-refmap.json'
+        rename { 'polyglottooltip.legacy.refmap.json' }
+    }
     configurations = [project.configurations.bundled]
     archiveClassifier = 'shaded-dev'
     destinationDirectory = layout.buildDirectory.dir('intermediates')
@@ -71,6 +90,7 @@ tasks.named('shadowJar') {
 }
 
 def productionJar = renamer.classes(tasks.named('shadowJar')) {
+    mappings renamer.mixin.generatedMappings
     archiveClassifier = ''
 }
 

@@ -3,6 +3,7 @@ polyglottooltip.config.alwaysShow=始終顯示額外語言
 polyglottooltip.config.enableChineseScriptMatching=繁簡中文互相搜尋
 polyglottooltip.config.tooltipSecondaryNameFormat=提示名稱格式
 polyglottooltip.config.hudSecondaryNameFormat=HUD 名稱格式
+polyglottooltip.config.integrations.jei=JEI 與 HEI 搜尋
 polyglottooltip.command.usage=/polyglot <why|reload>
 polyglottooltip.command.empty=請在主手持有物品。
 polyglottooltip.command.key=翻譯鍵：%s

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import com.starskyxiii.polyglottooltip.legacy.Config;
 
@@ -22,6 +23,12 @@ import net.minecraft.util.text.translation.I18n;
 
 public final class PolyglotCommand extends CommandBase {
     private static final String PREFIX = "polyglottooltip.command.";
+
+    private final Supplier<List<String>> disabledIntegrations;
+
+    public PolyglotCommand(Supplier<List<String>> disabledIntegrations) {
+        this.disabledIntegrations = disabledIntegrations;
+    }
 
     @Override
     public String func_71517_b() {
@@ -66,7 +73,7 @@ public final class PolyglotCommand extends CommandBase {
     }
 
     @SuppressWarnings("deprecation")
-    private static void why(ICommandSender sender) {
+    private void why(ICommandSender sender) {
         EntityPlayerSP player = Minecraft.func_71410_x().field_71439_g;
         ItemStack stack = player == null ? ItemStack.field_190927_a : player.func_184614_ca();
         if (stack.func_190926_b()) {
@@ -92,7 +99,8 @@ public final class PolyglotCommand extends CommandBase {
             }
             SpecialItemNameResolver resolver = SpecialItemNameResolvers.find(stack);
             send(sender, "resolver", resolver == null ? none() : resolver.getClass().getName());
-            send(sender, "integrations", none());
+            List<String> disabled = disabledIntegrations.get();
+            send(sender, "integrations", disabled.isEmpty() ? none() : String.join(", ", disabled));
         } catch (RuntimeException error) {
             Object item = stack.func_77973_b();
             FailureLog.debug("why|" + FailureLog.failureKey(item, error), "Diagnosis failed for "
