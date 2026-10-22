@@ -1,0 +1,562 @@
+{
+ "nova": {
+  "source": "matrix-m2-fc4cb5c",
+  "candidate": "d124ef0cb7b03b5a1b908ec2d27239c9bffcba58e0381ba438b644bb1e24c923",
+  "rows": 70739,
+  "rejected": 201,
+  "cases": {
+   "stone-control": [
+    true,
+    true
+   ],
+   "diamond-pickaxe-tagless": [
+    true,
+    true
+   ],
+   "diamond-pickaxe-empty-tag": [
+    true,
+    true
+   ],
+   "diamond-pickaxe-unbreakable": [
+    true,
+    true
+   ],
+   "wyvern-pick-tagless": [
+    true,
+    true
+   ],
+   "wyvern-pick-plain": [
+    true,
+    true
+   ],
+   "wyvern-pick-energy": [
+    true,
+    true
+   ],
+   "draconic-pick-plain": [
+    true,
+    true
+   ],
+   "draconic-pick-energy": [
+    true,
+    true
+   ],
+   "capacitor-wyvern-plain": [
+    true,
+    true
+   ],
+   "capacitor-wyvern-energy": [
+    true,
+    true
+   ],
+   "capacitor-draconic-plain": [
+    true,
+    true
+   ],
+   "wyvern-bow-plain": [
+    true,
+    true
+   ],
+   "ic2-cable-copper": [
+    true,
+    true
+   ],
+   "dml-living-matter": [
+    true,
+    true
+   ],
+   "dml-pristine-matter": [
+    true,
+    true
+   ],
+   "dml-data-model": [
+    true,
+    true
+   ],
+   "dml-data-model-tier": [
+    true,
+    true
+   ],
+   "dml-living-matter-hellish": [
+    true,
+    true
+   ],
+   "dml-living-matter-legend": [
+    false,
+    false
+   ],
+   "dml-pristine-thermal-elemental": [
+    true,
+    true
+   ],
+   "dml-pristine-glitch": [
+    true,
+    true
+   ],
+   "dml-pristine-chaosguardian": [
+    true,
+    true
+   ],
+   "dml-data-model-zombie-max": [
+    true,
+    true
+   ],
+   "dml-glitch-ingot-control": [
+    true,
+    true
+   ],
+   "synthetic-stone": [
+    false,
+    true
+   ],
+   "synthetic-diamond-pickaxe": [
+    false,
+    true
+   ],
+   "synthetic-wyvern-pick": [
+    false,
+    true
+   ],
+   "synthetic-draconic-pick": [
+    false,
+    true
+   ],
+   "synthetic-capacitor-wyvern": [
+    false,
+    true
+   ]
+  },
+  "named": 24,
+  "enchantments": {
+   "ench-book-sharpness-5": true,
+   "ench-pickaxe-efficiency-5": true,
+   "ench-pickaxe-efficiency-15": true,
+   "ench-book-vanishing-curse": true
+  },
+  "playWarnings": {
+   "count": 1,
+   "blocking": 0
+  }
+ },
+ "extended": {
+  "source": "matrix-m2-fc4cb5c",
+  "candidate": "d124ef0cb7b03b5a1b908ec2d27239c9bffcba58e0381ba438b644bb1e24c923",
+  "rows": 72559,
+  "rejected": 1213,
+  "cases": {
+   "stone-control": [
+    true,
+    true
+   ],
+   "iron-ingot": [
+    true,
+    true
+   ],
+   "diamond-pickaxe-tagless": [
+    true,
+    true
+   ],
+   "diamond-pickaxe-unbreakable": [
+    true,
+    true
+   ],
+   "wyvern-pick-plain": [
+    true,
+    true
+   ],
+   "wyvern-pick-energy": [
+    true,
+    true
+   ],
+   "ic2-cable-catalogue": [
+    true,
+    true
+   ],
+   "thermal-copper-ingot": [
+    true,
+    true
+   ],
+   "tconstruct-cobalt-ingot": [
+    true,
+    true
+   ],
+   "ae2-certus-quartz": [
+    true,
+    true
+   ],
+   "mekanism-osmium-ingot": [
+    true,
+    true
+   ],
+   "botania-manasteel": [
+    true,
+    true
+   ],
+   "dml-living-matter": [
+    true,
+    true
+   ],
+   "ar-basalt-script-name": [
+    false,
+    false
+   ],
+   "curvy-tiny-energy-pipe": [
+    false,
+    false
+   ],
+   "curvy-redstone-cable-control": [
+    false,
+    false
+   ],
+   "synthetic-stone": [
+    false,
+    true
+   ],
+   "synthetic-diamond-pickaxe": [
+    false,
+    true
+   ],
+   "synthetic-wyvern-pick": [
+    false,
+    true
+   ]
+  },
+  "named": 13,
+  "enchantments": {
+   "ench-book-sharpness-5": true,
+   "ench-pickaxe-efficiency-5": true,
+   "ench-pickaxe-efficiency-15": true,
+   "ench-book-vanishing-curse": true
+  },
+  "playWarnings": {
+   "count": 0,
+   "blocking": 0
+  }
+ },
+ "dj2": {
+  "source": "matrix-m2b-fc4cb5c",
+  "candidate": "d124ef0cb7b03b5a1b908ec2d27239c9bffcba58e0381ba438b644bb1e24c923",
+  "rows": 88556,
+  "rejected": 1721,
+  "cases": {
+   "stone-control": [
+    true,
+    true
+   ],
+   "iron-ingot": [
+    true,
+    true
+   ],
+   "diamond-pickaxe-tagless": [
+    true,
+    true
+   ],
+   "diamond-pickaxe-empty-tag": [
+    true,
+    true
+   ],
+   "diamond-pickaxe-unbreakable": [
+    true,
+    true
+   ],
+   "wyvern-pick-plain": [
+    true,
+    true
+   ],
+   "wyvern-pick-energy": [
+    true,
+    true
+   ],
+   "thermal-copper-ingot": [
+    true,
+    true
+   ],
+   "tconstruct-cobalt-ingot": [
+    true,
+    true
+   ],
+   "mekanism-osmium-ingot": [
+    true,
+    true
+   ],
+   "botania-manasteel": [
+    true,
+    true
+   ],
+   "synthetic-stone": [
+    false,
+    true
+   ],
+   "synthetic-diamond-pickaxe": [
+    false,
+    true
+   ],
+   "synthetic-wyvern-pick": [
+    false,
+    true
+   ]
+  },
+  "named": 11,
+  "enchantments": {
+   "ench-book-sharpness-5": true,
+   "ench-pickaxe-efficiency-5": true,
+   "ench-pickaxe-efficiency-15": true,
+   "ench-book-vanishing-curse": true
+  },
+  "playWarnings": {
+   "count": 0,
+   "blocking": 0
+  }
+ },
+ "meatball": {
+  "knownPlayWarnings": [
+   {
+    "category": "enchantment-verify",
+    "message": "Enchantment rows will get no secondary names: {admitted=31, admitted-shape=80, formatter-overridden=7, getter-calls-unreviewed:func_77320_a=7, getter-calls-unreviewed:func_77321_a=1, getter-calls-unreviewed:func_77325_b=1, getter-calls-unreviewed:isAllowedOnBooks=3, getter-language-lookup:func_77320_a=2}",
+    "reason": "Known since 2026-10-20 (report §4.16.2): 14 mod enchantment getters refused (BiblioCraft getter-language-lookup, Wizardry and EnderIO getter-calls-unreviewed) and 7 Tombstone formatter overrides. Identical counts in the old fixture (p17play-build-2) and matrix-m2-fc4cb5c; accepted by the user 2026-10-21 only while the counts stay exactly the same."
+   }
+  ],
+  "source": "matrix-m2f-fc4cb5c",
+  "candidate": "d124ef0cb7b03b5a1b908ec2d27239c9bffcba58e0381ba438b644bb1e24c923",
+  "rows": 237029,
+  "rejected": 1489,
+  "cases": {
+   "stone-control": [
+    true,
+    true
+   ],
+   "iron-ingot": [
+    true,
+    true
+   ],
+   "diamond-pickaxe-tagless": [
+    true,
+    true
+   ],
+   "diamond-pickaxe-empty-tag": [
+    true,
+    true
+   ],
+   "diamond-pickaxe-unbreakable": [
+    true,
+    true
+   ],
+   "wyvern-pick-plain": [
+    true,
+    true
+   ],
+   "wyvern-pick-energy": [
+    true,
+    true
+   ],
+   "thermal-copper-ingot": [
+    true,
+    true
+   ],
+   "botania-manasteel": [
+    true,
+    true
+   ],
+   "dml-living-matter": [
+    false,
+    false
+   ],
+   "synthetic-stone": [
+    false,
+    true
+   ],
+   "synthetic-diamond-pickaxe": [
+    false,
+    true
+   ],
+   "synthetic-wyvern-pick": [
+    false,
+    true
+   ]
+  },
+  "named": 9,
+  "enchantments": {
+   "ench-book-sharpness-5": true,
+   "ench-pickaxe-efficiency-5": true,
+   "ench-pickaxe-efficiency-15": true,
+   "ench-book-vanishing-curse": true,
+   "ench-book-cofh-holding-4": true,
+   "ench-sword-cofh-vorpal-2": true,
+   "ench-book-de-reaper-3": true
+  },
+  "playWarnings": {
+   "count": 1,
+   "blocking": 1
+  }
+ },
+ "expert": {
+  "source": "matrix-m2-fc4cb5c",
+  "candidate": "d124ef0cb7b03b5a1b908ec2d27239c9bffcba58e0381ba438b644bb1e24c923",
+  "rows": 94840,
+  "rejected": 334,
+  "cases": {
+   "stone-control": [
+    true,
+    true
+   ],
+   "iron-ingot": [
+    true,
+    true
+   ],
+   "diamond-pickaxe-tagless": [
+    true,
+    true
+   ],
+   "diamond-pickaxe-empty-tag": [
+    true,
+    true
+   ],
+   "diamond-pickaxe-unbreakable": [
+    true,
+    true
+   ],
+   "wyvern-pick-plain": [
+    true,
+    true
+   ],
+   "wyvern-pick-energy": [
+    true,
+    true
+   ],
+   "thermal-copper-ingot": [
+    true,
+    true
+   ],
+   "ic2-cable-catalogue": [
+    true,
+    true
+   ],
+   "tconstruct-cobalt-ingot": [
+    true,
+    true
+   ],
+   "ae2-certus-quartz": [
+    true,
+    true
+   ],
+   "mekanism-osmium-ingot": [
+    true,
+    true
+   ],
+   "botania-manasteel": [
+    true,
+    true
+   ],
+   "synthetic-stone": [
+    false,
+    true
+   ],
+   "synthetic-diamond-pickaxe": [
+    false,
+    true
+   ],
+   "synthetic-wyvern-pick": [
+    false,
+    true
+   ]
+  },
+  "named": 13,
+  "enchantments": {
+   "ench-book-sharpness-5": true,
+   "ench-pickaxe-efficiency-5": true,
+   "ench-pickaxe-efficiency-15": true,
+   "ench-book-vanishing-curse": true
+  },
+  "playWarnings": {
+   "count": 0,
+   "blocking": 0
+  }
+ },
+ "sf4": {
+  "source": "matrix-s4",
+  "candidate": "94baf52f7449442df42b7190e3287d8897cada857d4758bafb3302903d9d9e36",
+  "rows": 25213,
+  "rejected": 552,
+  "cases": {
+   "stone-control": [
+    true,
+    true
+   ],
+   "iron-ingot": [
+    true,
+    true
+   ],
+   "diamond-pickaxe-tagless": [
+    true,
+    true
+   ],
+   "diamond-pickaxe-empty-tag": [
+    true,
+    true
+   ],
+   "diamond-pickaxe-unbreakable": [
+    true,
+    true
+   ],
+   "thermal-copper-ingot": [
+    true,
+    true
+   ],
+   "tconstruct-cobalt-ingot": [
+    true,
+    true
+   ],
+   "mekanism-osmium-ingot": [
+    true,
+    true
+   ],
+   "dml-living-matter": [
+    false,
+    false
+   ],
+   "compactmachines-tiny": [
+    true,
+    true
+   ],
+   "compactmachines-psd": [
+    true,
+    true
+   ],
+   "inspirations-wooden-crook": [
+    true,
+    true
+   ],
+   "mysticalagriculture-inferium-essence": [
+    true,
+    true
+   ],
+   "industrialforegoing-ore-sieve": [
+    false,
+    false
+   ],
+   "synthetic-stone": [
+    false,
+    true
+   ],
+   "synthetic-diamond-pickaxe": [
+    false,
+    true
+   ],
+   "synthetic-compactmachines-psd": [
+    false,
+    true
+   ]
+  },
+  "named": 12,
+  "enchantments": {
+   "ench-book-sharpness-5": true,
+   "ench-pickaxe-efficiency-5": true,
+   "ench-pickaxe-efficiency-15": true,
+   "ench-book-vanishing-curse": true
+  },
+  "playWarnings": {
+   "count": 0,
+   "blocking": 0
+  }
+ }
+}

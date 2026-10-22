@@ -1,0 +1,11 @@
+allprojects {
+    tasks.withType(Test).configureEach {
+        doFirst {
+            def runtimeAsm = fileTree('C:/Users/StarskyXIII/.gradle/caches/modules-2/files-2.1/org.ow2.asm') {
+                include '**/9.9.1/*/*.jar'
+                exclude '**/*-sources.jar', '**/*-javadoc.jar'
+            }
+            classpath = files(runtimeAsm, classpath.filter { !it.name.startsWith('asm') })
+        }
+    }
+}

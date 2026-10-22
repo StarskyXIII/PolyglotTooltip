@@ -1,0 +1,11 @@
+pluginManagement {
+    repositories { gradlePluginPortal() }
+}
+
+plugins {
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+}
+
+rootProject.name = 'polyglottooltip-legacy-1.12.2'
+include 'devbridge'
+project(':devbridge').projectDir = file('../../test-tools/legacy112/bridge')

@@ -1,0 +1,71 @@
+plugins {
+    id 'java'
+    id 'net.minecraftforge.gradle'
+    id 'net.minecraftforge.renamer'
+}
+
+group = 'com.starskyxiii.polyglottooltip.test'
+version = '1.0.0'
+base.archivesName = 'polyglot-devbridge-1.12.2'
+tasks.named('jar', Jar) {
+    manifest.attributes('FMLCorePlugin': 'com.starskyxiii.polyglottooltip.testbridge.BridgeCore', 'FMLCorePluginContainsFMLMod': 'true')
+}
+java.toolchain.languageVersion = JavaLanguageVersion.of(8)
+sourceSets {
+    resourceHeads {
+        compileClasspath += sourceSets.main.compileClasspath
+    }
+}
+
+minecraft { mappings channel: 'srg', version: '1.12.2' }
+repositories {
+    minecraft.mavenizer(it)
+    maven fg.forgeMaven
+    maven fg.minecraftLibsMaven
+    maven { url = 'https://cursemaven.com' }
+    maven { url = 'https://maven.cleanroommc.com' }
+    maven { url = 'https://repo.spongepowered.org/repository/maven-public/' }
+    mavenCentral()
+}
+dependencies {
+    implementation minecraft.dependency('net.minecraftforge:forge:1.12.2-14.23.5.2864')
+    compileOnly('curse.maven:ae2-223794:2747063') { transitive = false }
+    compileOnly('curse.maven:jei-238222:3043174') { transitive = false }
+    testImplementation 'junit:junit:4.13.2'
+    resourceHeadsCompileOnly('zone.rong:mixinbooter:10.6') { transitive = false }
+    resourceHeadsCompileOnly 'org.spongepowered:mixin:0.8.7'
+}
+
+tasks.register('resourceHeadsJar', Jar) {
+    archiveClassifier = 'resource-heads'
+    from sourceSets.resourceHeads.output
+    manifest.attributes('FMLCorePlugin': 'com.starskyxiii.polyglottooltip.resourceheads.ResourceHeadCore')
+}
+
+renamer.mappings.from minecraft.dependency.toSrgFile
+def productionJar = renamer.classes(tasks.named('jar', Jar)) { archiveClassifier = 'production' }
+def passiveJar = tasks.register('passiveJar', Jar) {
+    archiveClassifier = 'passive'
+    from sourceSets.main.output
+    exclude '**/BridgeCore*.class', '**/*Transformer*.class', 'META-INF/services/**'
+}
+def passiveProductionJar = renamer.classes(passiveJar) { archiveClassifier = 'passive-production' }
+def nameAuditJar = tasks.register('nameAuditJar', Jar) {
+    archiveClassifier = 'name-audit'
+    from sourceSets.main.output
+    exclude '**/BridgeCore*.class', 'META-INF/services/**'
+    exclude { entry -> entry.name.contains('Transformer') && !entry.name.startsWith('NameAuditTransformer') && !entry.name.startsWith('HudCaptureTransformer') }
+    manifest.attributes('FMLCorePlugin': 'com.starskyxiii.polyglottooltip.testbridge.NameAuditCore', 'FMLCorePluginContainsFMLMod': 'true')
+}
+def nameAuditProductionJar = renamer.classes(nameAuditJar) { archiveClassifier = 'name-audit-production' }
+tasks.named('build') { dependsOn productionJar, passiveProductionJar, nameAuditProductionJar }
+tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
+tasks.named('test') {
+    def producer = rootProject.layout.buildDirectory.file('classes/java/main/com/starskyxiii/polyglottooltip/legacy/SecondaryTooltipRows.class')
+    dependsOn rootProject.tasks.named('classes')
+    inputs.file(producer)
+    inputs.file(rootProject.layout.buildDirectory.file('classes/java/main/com/starskyxiii/polyglottooltip/legacy/ObservedTooltipRows.class'))
+    inputs.file(rootProject.layout.buildDirectory.file('classes/java/main/com/starskyxiii/polyglottooltip/legacy/minecraft/NativeEnchantmentScope.class'))
+    inputs.file(rootProject.layout.buildDirectory.file('classes/java/main/com/starskyxiii/polyglottooltip/legacy/minecraft/NativeNameScope.class'))
+    systemProperty 'audit.producerClass', producer.get().asFile.absolutePath
+}

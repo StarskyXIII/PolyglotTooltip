@@ -1,0 +1,131 @@
+plugins {
+    id 'java'
+    id 'net.minecraftforge.gradle' version '7.0.36'
+    id 'net.minecraftforge.renamer' version '1.1.7'
+    id 'com.gradleup.shadow' version '9.4.0'
+}
+
+group = 'com.starskyxiii.polyglottooltip'
+version = '2.0'
+base.archivesName = 'polyglottooltip-1.12.2-forge'
+java.toolchain.languageVersion = JavaLanguageVersion.of(8)
+
+sourceSets.main.java {
+    srcDir '../../src/main/java'
+    include 'com/starskyxiii/polyglottooltip/legacy/**'
+    include 'com/starskyxiii/polyglottooltip/core/LanguageCodePolicy.java'
+    include 'com/starskyxiii/polyglottooltip/core/SecondaryLanguagePolicy.java'
+    include 'com/starskyxiii/polyglottooltip/core/ChineseScriptPolicy.java'
+}
+
+minecraft {
+    mappings channel: 'srg', version: '1.12.2'
+    runs {
+        register('client') {
+            workingDir.convention layout.projectDirectory.dir('run')
+        }
+    }
+}
+
+repositories {
+    minecraft.mavenizer(it)
+    maven fg.forgeMaven
+    maven fg.minecraftLibsMaven
+    maven { url = 'https://maven.cleanroommc.com' }
+    maven { url = 'https://repo.spongepowered.org/repository/maven-public/' }
+    maven { url = 'https://cursemaven.com' }
+    mavenCentral()
+}
+
+configurations { bundled; runtimeGuava }
+
+dependencies {
+    implementation minecraft.dependency('net.minecraftforge:forge:1.12.2-14.23.5.2864')
+    compileOnly('zone.rong:mixinbooter:10.6') { transitive = false }
+    compileOnly 'org.spongepowered:mixin:0.8.7'
+    annotationProcessor 'org.spongepowered:mixin:0.8.7:processor'
+    compileOnly('curse.maven:ae2-223794:2747063') { transitive = false }
+    compileOnly('curse.maven:mekanism-268560:2835175') { transitive = false }
+    compileOnly('curse.maven:jei-238222:3043174') { transitive = false }
+    compileOnly('curse.maven:theoneprobe-885670:8896757') { transitive = false }
+    compileOnly('curse.maven:hwyla-253449:2568751') { transitive = false }
+    compileOnly('curse.maven:retroemi-1309244:8724578') { transitive = false }
+    implementation 'com.github.houbb:opencc4j:1.14.0'
+    bundled('com.github.houbb:opencc4j:1.14.0') { transitive = false }
+    bundled('com.github.houbb:heaven:0.13.0') { transitive = false }
+    bundled('com.github.houbb:nlp-common:0.0.5') { transitive = false }
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.spongepowered:mixin:0.8.7'
+    testImplementation('zone.rong:mixinbooter:10.6') { transitive = false }
+    runtimeGuava('com.google.guava:guava:33.6.0-jre') { transitive = false }
+}
+
+renamer.enableMixinRefmaps {
+    config 'polyglottooltip.early.mixins.json'
+    refMap = 'polyglottooltip.legacy.refmap.json'
+}
+renamer.mappings.from minecraft.dependency.toSrgFile
+
+tasks.named('processResources') {
+    from('../../src/main/resources/META-INF') {
+        include 'LICENSE-PolyglotTooltip.txt', 'LICENSE-Apache-2.0.txt'
+        into 'META-INF'
+    }
+}
+
+tasks.named('jar', Jar) {
+    doFirst { manifest.attributes.remove('MixinConfigs') }
+    archiveClassifier = 'dev'
+    manifest.attributes(
+            'FMLCorePlugin': 'com.starskyxiii.polyglottooltip.legacy.bootstrap.CorePlugin',
+            'FMLCorePluginContainsFMLMod': 'true',
+            'ForceLoadAsMod': 'true')
+}
+
+tasks.named('shadowJar') {
+    doFirst { manifest.attributes.remove('MixinConfigs') }
+    from(tasks.named('compileJava').map { it.temporaryDir }) {
+        include 'compileJava-refmap.json'
+        rename { 'polyglottooltip.legacy.refmap.json' }
+    }
+    configurations = [project.configurations.bundled]
+    archiveClassifier = 'shaded-dev'
+    destinationDirectory = layout.buildDirectory.dir('intermediates')
+    relocate 'com.github.houbb.opencc4j', 'com.starskyxiii.polyglottooltip.shadow.opencc4j'
+    relocate 'com.github.houbb.heaven', 'com.starskyxiii.polyglottooltip.shadow.heaven'
+    relocate 'com.github.houbb.nlp', 'com.starskyxiii.polyglottooltip.shadow.nlp'
+    exclude 'META-INF/*.SF', 'META-INF/*.RSA', 'META-INF/*.DSA', 'META-INF/versions/**', 'module-info.class'
+    exclude 'LICENSE.txt', 'README.md'
+}
+
+def productionJar = renamer.classes(tasks.named('shadowJar')) {
+    mappings renamer.mixin.generatedMappings
+    archiveClassifier = ''
+}
+
+tasks.named('build') { dependsOn productionJar }
+tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
+// These readers bind JDK and Guava internals of the game runtime (Cleanroom on Zulu 25.0.2, Guava 33.6.0-jre),
+// so their tests run on that runtime instead of the Java 8 compile toolchain.
+def runtimeJdkTests = ['**/ConsumedIntegerMapTest.class', '**/ConsumedStringMapTest.class', '**/ConsumedStringBiMapTest.class']
+def runtimeJdkTest = tasks.register('runtimeJdkTest', Test) {
+    description = 'Runs the readers pinned to the game runtime JDK and Guava.'
+    group = 'verification'
+    useJUnit()
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    include runtimeJdkTests
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(25)
+        vendor = JvmVendorSpec.AZUL
+    }
+    jvmArgs '--add-opens=java.base/java.util=ALL-UNNAMED'
+    def guava = configurations.runtimeGuava
+    inputs.files(guava)
+    doFirst { systemProperty 'polyglot.testGuavaJar', guava.singleFile.absolutePath }
+}
+tasks.named('test') {
+    useJUnit()
+    exclude runtimeJdkTests
+    dependsOn runtimeJdkTest
+}

@@ -1,0 +1,7 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.starskyxiii.polyglottooltip.resourceheads.mixin",
+  "compatibilityLevel": "JAVA_8",
+  "client": ["ClientHigh", "ClientLow", "ManagerHigh", "ManagerLow"]
+}
