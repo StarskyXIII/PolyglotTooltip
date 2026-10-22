@@ -14,6 +14,7 @@ import org.apache.logging.log4j.LogManager;
 
 import com.starskyxiii.polyglottooltip.legacy.Config;
 import com.starskyxiii.polyglottooltip.legacy.PolyglotTooltipMod;
+import com.starskyxiii.polyglottooltip.legacy.integration.generic.GenericIntegration;
 import com.starskyxiii.polyglottooltip.legacy.integration.hwyla.HwylaIntegration;
 import com.starskyxiii.polyglottooltip.legacy.integration.jei.JeiIntegration;
 import com.starskyxiii.polyglottooltip.legacy.integration.theoneprobe.TopIntegration;
@@ -37,7 +38,9 @@ public final class Integrations {
     private static final List<Entry> KNOWN = Collections.unmodifiableList(Arrays.asList(
             new Entry(JeiIntegration.ID, JeiIntegration.MODID, JeiIntegration::new),
             new Entry(TopIntegration.ID, TopIntegration.MODID, TopIntegration::new),
-            new Entry(HwylaIntegration.ID, HwylaIntegration.MODID, HwylaIntegration::new)));
+            new Entry(HwylaIntegration.ID, HwylaIntegration.MODID, HwylaIntegration::new),
+            new Entry(GenericIntegration.FORMAT_ID, null, GenericIntegration::format),
+            new Entry(GenericIntegration.COMPOSITE_ID, null, GenericIntegration::composite)));
     private static volatile Integrations installed;
 
     private final List<Entry> entries;
@@ -76,7 +79,7 @@ public final class Integrations {
 
     public synchronized void start() {
         for (Entry entry : entries) {
-            if (!modLoaded.test(entry.modid)) {
+            if (entry.modid != null && !modLoaded.test(entry.modid)) {
                 continue;
             }
             if (!enabled.test(entry.id)) {

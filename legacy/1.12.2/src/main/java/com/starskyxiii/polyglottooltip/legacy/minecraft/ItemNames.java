@@ -29,7 +29,7 @@ public final class ItemNames {
         }
         ConsistencyCheck.Result result = ConsistencyCheck.resolve(stack, dictionaries);
         Map<String, String> names = result.handOff()
-                ? SpecialItemNameResolvers.resolve(stack, dictionaries)
+                ? SpecialItemNameResolvers.resolve(stack, result, dictionaries)
                 : result.names();
         Settings settings = Config.settings();
         SecondaryNames resolved = SecondaryNames.of(result.primary(), settings.displayLanguages(), names,

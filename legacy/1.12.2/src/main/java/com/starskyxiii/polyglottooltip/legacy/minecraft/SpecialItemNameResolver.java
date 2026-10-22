@@ -5,5 +5,6 @@ import net.minecraft.item.ItemStack;
 public interface SpecialItemNameResolver {
     boolean accepts(ItemStack stack);
 
-    String resolve(ItemStack stack, String languageCode, SecondaryDictionary dictionary);
+    String resolve(ItemStack stack, ConsistencyCheck.Result result, String languageCode,
+                   SecondaryDictionary dictionary);
 }

@@ -79,6 +79,10 @@ public final class SecondaryDictionary {
         return key != null && ownKeys.contains(key);
     }
 
+    public Set<String> keys() {
+        return entries.keySet();
+    }
+
     public Set<String> ownKeys() {
         return ownKeys;
     }

@@ -38,6 +38,15 @@ public class IntegrationsTest {
     }
 
     @Test
+    public void integrationsWithoutModidStartWithoutALoadedMod() {
+        Integrations integrations = registry(Arrays.asList(entry("generic-format", null), entry("jei", "jei")),
+                Collections.<String>emptyList(), Collections.<String>emptyList());
+        integrations.start();
+        assertEquals(Arrays.asList("construct generic-format", "start generic-format"), events);
+        assertEquals(Collections.singletonList("generic-format"), integrations.active());
+    }
+
+    @Test
     public void constructionFailureWarnsOnceAndSkips() {
         Integrations.Entry broken = new Integrations.Entry("ae2", "appliedenergistics2", guard -> {
             throw new NoClassDefFoundError("appeng/api/Missing");

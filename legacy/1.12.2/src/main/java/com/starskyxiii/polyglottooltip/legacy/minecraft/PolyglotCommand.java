@@ -97,8 +97,11 @@ public final class PolyglotCommand extends CommandBase {
                     send(sender, result, entry.getKey(), value == null ? "" : value);
                 }
             }
-            SpecialItemNameResolver resolver = SpecialItemNameResolvers.find(stack);
-            send(sender, "resolver", resolver == null ? none() : resolver.getClass().getName());
+            List<String> resolvers = new ArrayList<>();
+            for (SpecialItemNameResolver resolver : SpecialItemNameResolvers.candidates(stack)) {
+                resolvers.add(resolver.getClass().getSimpleName());
+            }
+            send(sender, "resolver", resolvers.isEmpty() ? none() : String.join(", ", resolvers));
             List<String> disabled = disabledIntegrations.get();
             send(sender, "integrations", disabled.isEmpty() ? none() : String.join(", ", disabled));
         } catch (RuntimeException error) {
