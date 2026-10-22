@@ -1,0 +1,10 @@
+{
+  "required": false,
+  "minVersion": "0.8",
+  "package": "com.starskyxiii.polyglottooltip.legacy.mixin.theoneprobe",
+  "plugin": "com.starskyxiii.polyglottooltip.legacy.mixin.theoneprobe.TopMixinPlugin",
+  "refmap": "polyglottooltip.legacy.refmap.json",
+  "compatibilityLevel": "JAVA_8",
+  "mixins": ["TopOverlayMixin"],
+  "injectors": {"defaultRequire": 0}
+}
