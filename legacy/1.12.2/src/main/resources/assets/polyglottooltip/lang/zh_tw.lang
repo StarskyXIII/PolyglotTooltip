@@ -1,0 +1,5 @@
+polyglottooltip.config.displayLanguage=額外顯示語言
+polyglottooltip.config.alwaysShow=始終顯示額外語言
+polyglottooltip.config.enableChineseScriptMatching=繁簡中文互相搜尋
+polyglottooltip.config.tooltipSecondaryNameFormat=提示名稱格式
+polyglottooltip.config.hudSecondaryNameFormat=HUD 名稱格式

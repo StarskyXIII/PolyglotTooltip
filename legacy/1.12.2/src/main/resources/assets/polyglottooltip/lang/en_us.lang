@@ -1,0 +1,5 @@
+polyglottooltip.config.displayLanguage=Additional languages
+polyglottooltip.config.alwaysShow=Always show additional languages
+polyglottooltip.config.enableChineseScriptMatching=Match simplified and traditional Chinese
+polyglottooltip.config.tooltipSecondaryNameFormat=Tooltip name formatting
+polyglottooltip.config.hudSecondaryNameFormat=HUD name formatting
