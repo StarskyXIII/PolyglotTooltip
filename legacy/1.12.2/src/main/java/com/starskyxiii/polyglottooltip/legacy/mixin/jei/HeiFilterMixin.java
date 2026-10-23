@@ -2,6 +2,7 @@ package com.starskyxiii.polyglottooltip.legacy.mixin.jei;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiConsumer;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
@@ -13,15 +14,14 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import com.starskyxiii.polyglottooltip.legacy.integration.jei.HeiIndexes;
 import com.starskyxiii.polyglottooltip.legacy.integration.jei.JeiSearch;
 import com.starskyxiii.polyglottooltip.legacy.integration.jei.SearchIndex;
 
 import mezz.jei.gui.ingredients.IIngredientListElement;
 import mezz.jei.search.ElementSearch;
 import mezz.jei.search.IElementSearch;
-import mezz.jei.search.ISearchStorage;
 import mezz.jei.search.PrefixInfo;
-import mezz.jei.search.PrefixedSearchable;
 import net.minecraft.util.NonNullList;
 
 @Pseudo
@@ -94,13 +94,12 @@ public abstract class HeiFilterMixin implements SearchIndex {
         if (polyglot$indexed >= polyglot$pending.size() || !(elementSearch instanceof ElementSearch)) {
             return;
         }
-        Object searchable = ((HeiElementSearchAccessor) elementSearch).polyglot$searchables().get(PrefixInfo.NO_PREFIX);
-        if (!(searchable instanceof PrefixedSearchable)) {
+        BiConsumer<String, Object> sink = HeiIndexes.sink(
+                ((HeiElementSearchAccessor) elementSearch).polyglot$searchables().get(PrefixInfo.NO_PREFIX));
+        if (sink == null) {
             return;
         }
-        ISearchStorage<IIngredientListElement<?>> storage = ((PrefixedSearchable) searchable).getSearchStorage();
-        polyglot$indexed = JeiSearch.indexElements(polyglot$pending, polyglot$indexed, budgetNanos,
-                (token, element) -> storage.put(token, (IIngredientListElement<?>) element));
+        polyglot$indexed = JeiSearch.indexElements(polyglot$pending, polyglot$indexed, budgetNanos, sink);
         if (polyglot$indexed == polyglot$pending.size()) {
             polyglot$pending = new ArrayList<>();
             polyglot$indexed = 0;
