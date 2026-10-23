@@ -39,7 +39,7 @@ public final class ReverseIndex {
         int duplicates = 0;
         for (String key : ordered) {
             String value = normalize(values.apply(key));
-            if (value.isEmpty() || value.indexOf('%') >= 0) {
+            if (value.isEmpty() || value.indexOf('%') >= 0 || !hasLetter(value)) {
                 continue;
             }
             if (index.putIfAbsent(value, key) != null) {
@@ -82,6 +82,10 @@ public final class ReverseIndex {
 
     public static String normalize(String text) {
         return text == null ? "" : STYLE.matcher(text).replaceAll("").trim();
+    }
+
+    private static boolean hasLetter(String text) {
+        return text.codePoints().anyMatch(Character::isLetter);
     }
 
     public String keyOf(String primaryText) {
