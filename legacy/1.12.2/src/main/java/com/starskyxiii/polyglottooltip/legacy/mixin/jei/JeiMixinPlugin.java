@@ -25,6 +25,9 @@ public final class JeiMixinPlugin implements IMixinConfigPlugin {
         if (!Loader.isModLoaded("jei")) {
             return false;
         }
+        if (mixinClassName.endsWith(".JeiTooltipStringsMixin")) {
+            return true;
+        }
         boolean hei = JeiMixinPlugin.class.getClassLoader().getResource(HEI_MARKER) != null;
         return mixinClassName.endsWith(".JeiFilterMixin") != hei;
     }
