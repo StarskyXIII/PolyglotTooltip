@@ -348,10 +348,11 @@ def summarize(attempt):
             (', limitation' if hud.get('limitation') or any(row.get('limitation') for row in hud.get('checks', [])) else '') + ')'
         ae2 = summary.get('ae2')
         disabled = sorted(set((summary.get('whyStart') or {}).get('disabled', []) + (summary.get('whyEnd') or {}).get('disabled', [])))
-        rows.append('| %s | %s | %s/%s, mods %s/%s | %s | %s (%s/%s) | %s | %s | %s | %s | %s | %s | %s |' % (
+        rows.append('| %s | %s | %s/%s, mods %s/%s | %s | %s (%s/%s) | %s / %s | %s | %s | %s | %s | %s | %s | %s |' % (
             key, 'pass' if summary.get('pass') else 'fail: ' + ', '.join(summary.get('failures') or ['no summary']),
             layer1.get('vanillaPass', '—'), layer1.get('vanilla', '—'), layer1.get('modPass', '—'), layer1.get('modRepresentative', '—'),
             pct(coverage.get('consistentShare')), pct(coverage.get('share')), coverage.get('withSecondary', '—'), coverage.get('stacks', '—'),
+            coverage.get('complete', '—'), coverage.get('partial', '—'),
             'pass' if summary.get('searchPass') else 'fail', hud_text, '—' if ae2 is None else 'pass' if ae2.get('pass') else 'fail',
             ', '.join(disabled) or 'none', len(logs.get('productLines') or []) if logs else '—', delta,
             'yes' if restoration.get('clean') and base_restoration.get('clean') else 'no'))
@@ -367,10 +368,21 @@ def summarize(attempt):
                                                                     json.dumps(entry['byMiss'], ensure_ascii=False),
                                                                     (sample.get('name') or '').replace('|', '/')[:60]))
             details.append('')
+            if full.get('topPartialClasses'):
+                details.append('partially translated, most frequent parts: %s\n' % ', '.join(
+                    '%s (%s)' % (entry['text'], entry['count']) for entry in (full.get('topUntranslated') or [])[:15]))
+                details.append('| class | mod | stacks | partial | by source | sample | untranslated |\n|---|---|---|---|---|---|---|')
+                for entry in full['topPartialClasses'][:20]:
+                    sample = (entry.get('partialSamples') or [{}])[0]
+                    details.append('| %s | %s | %s | %s | %s | %s → %s | %s |' % (
+                        entry['name'], entry['mod'], entry['stacks'], entry['partial'], json.dumps(entry['bySource'], ensure_ascii=False),
+                        (sample.get('name') or '').replace('|', '/')[:60], ' / '.join(sample.get('secondary') or []).replace('|', '/')[:60],
+                        json.dumps(sample.get('untranslated') or {}, ensure_ascii=False).replace('|', '/')))
+                details.append('')
         for line in (logs.get('productLines') or [])[:20]: details.append('    ' + line)
     text = ['# Core matrix %s' % attempt, '',
-            '| pack | result | layer 1 vanilla, mods | standard-path consistent | with secondary | search | HUD | AE2 | disabled integrations | product log lines | IngredientFilter product vs baseline | restored |',
-            '|---|---|---|---|---|---|---|---|---|---|---|---|'] + rows + [''] + details
+            '| pack | result | layer 1 vanilla, mods | standard-path consistent | with secondary | complete / partial | search | HUD | AE2 | disabled integrations | product log lines | IngredientFilter product vs baseline | restored |',
+            '|---|---|---|---|---|---|---|---|---|---|---|---|---|'] + rows + [''] + details
     (REPORT / ('summary-%s.md' % attempt)).write_text('\n'.join(text) + '\n', encoding='utf-8')
 
 

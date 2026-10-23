@@ -1,5 +1,6 @@
 package com.starskyxiii.polyglottooltip.legacy.minecraft;
 
+import java.util.List;
 import java.util.Map;
 
 import com.starskyxiii.polyglottooltip.legacy.Config;
@@ -31,14 +32,16 @@ public final class ItemNames {
         }
         ConsistencyCheck.Result result = ConsistencyCheck.resolve(stack, dictionaries);
         Map<String, String> names = result.names();
+        Map<String, List<String>> untranslated = null;
         String source = STANDARD_SOURCE;
         if (result.handOff()) {
             SpecialItemNameResolvers.Resolution resolution = SpecialItemNameResolvers.resolution(stack, result, dictionaries);
             names = resolution.names();
+            untranslated = resolution.untranslated();
             source = resolution.resolver() == null ? null : resolution.resolver().getClass().getSimpleName();
         }
         Settings settings = Config.settings();
-        SecondaryNames resolved = SecondaryNames.of(result.primary(), settings.displayLanguages(), names,
+        SecondaryNames resolved = SecondaryNames.of(result.primary(), settings.displayLanguages(), names, untranslated,
                 settings.alwaysShow(), SecondaryLanguages.currentLanguage()).withSource(source);
         CACHE.put(key, resolved);
         return resolved;

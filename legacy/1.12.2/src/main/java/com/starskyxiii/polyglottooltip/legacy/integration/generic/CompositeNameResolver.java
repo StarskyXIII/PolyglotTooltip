@@ -7,6 +7,7 @@ import java.util.function.Function;
 
 import com.starskyxiii.polyglottooltip.legacy.integration.IntegrationGuard;
 import com.starskyxiii.polyglottooltip.legacy.minecraft.ConsistencyCheck;
+import com.starskyxiii.polyglottooltip.legacy.minecraft.ResolvedName;
 import com.starskyxiii.polyglottooltip.legacy.minecraft.SecondaryDictionary;
 import com.starskyxiii.polyglottooltip.legacy.minecraft.SpecialItemNameResolver;
 
@@ -33,22 +34,24 @@ public final class CompositeNameResolver implements SpecialItemNameResolver {
     @Override
     public String resolve(ItemStack stack, ConsistencyCheck.Result result, String languageCode,
                           SecondaryDictionary dictionary) {
-        return guard.call(() -> resolveNow(stack, result, dictionary), null);
+        ResolvedName name = resolveName(stack, result, languageCode, dictionary);
+        return name == null ? null : name.name();
+    }
+
+    @Override
+    public ResolvedName resolveName(ItemStack stack, ConsistencyCheck.Result result, String languageCode,
+                                    SecondaryDictionary dictionary) {
+        return guard.call(() -> around(stack, result.key(), result.expected(), result.primary(),
+                result.key() == null ? null : dictionary.get(result.key()), dictionary), null);
     }
 
     @SuppressWarnings("deprecation")
-    private static String resolveNow(ItemStack stack, ConsistencyCheck.Result result,
-                                     SecondaryDictionary dictionary) {
-        String expected = result.expected();
-        String actual = result.primary();
-        if (expected == null || expected.isEmpty() || actual == null || !actual.contains(expected)) {
+    static ResolvedName around(ItemStack stack, String nameKey, String expected, String actual, String anchor,
+                               SecondaryDictionary dictionary) {
+        if (expected == null || expected.isEmpty() || actual == null || !actual.contains(expected) || anchor == null) {
             return null;
         }
-        String anchor = dictionary.get(result.key());
-        if (anchor == null) {
-            return null;
-        }
-        Function<String, String> parts = translator(derivedKeys(stack, result.key()),
+        Function<String, String> parts = translator(derivedKeys(stack, nameKey),
                 key -> ReverseIndex.normalize(I18n.func_74838_a(key)), dictionary::get,
                 text -> ReverseIndex.current().translate(text, dictionary));
         return compose(expected, actual, anchor, parts);
@@ -89,7 +92,7 @@ public final class CompositeNameResolver implements SpecialItemNameResolver {
         };
     }
 
-    static String compose(String expected, String actual, String anchor, Function<String, String> parts) {
+    static ResolvedName compose(String expected, String actual, String anchor, Function<String, String> parts) {
         if (expected == null || expected.isEmpty() || actual == null || anchor == null) {
             return null;
         }
@@ -97,16 +100,21 @@ public final class CompositeNameResolver implements SpecialItemNameResolver {
         if (at < 0) {
             return null;
         }
-        String prefix = part(actual.substring(0, at), parts);
-        String suffix = part(actual.substring(at + expected.length()), parts);
+        List<String> untranslated = new ArrayList<>();
+        String prefix = part(actual.substring(0, at), parts, untranslated);
+        String suffix = part(actual.substring(at + expected.length()), parts, untranslated);
         String composed = join(join(prefix, anchor), suffix);
         if (ReverseIndex.normalize(composed).equals(ReverseIndex.normalize(actual))) {
             return null;
         }
-        return composed;
+        return ResolvedName.of(composed, untranslated);
     }
 
-    private static String part(String text, Function<String, String> parts) {
+    static boolean hasLetter(String text) {
+        return text.codePoints().anyMatch(Character::isLetter);
+    }
+
+    private static String part(String text, Function<String, String> parts, List<String> untranslated) {
         int start = 0;
         int end = text.length();
         while (start < end && isSeparator(text.charAt(start))) {
@@ -120,6 +128,9 @@ public final class CompositeNameResolver implements SpecialItemNameResolver {
         }
         String core = text.substring(start, end);
         String translated = parts.apply(core);
+        if (translated == null && hasLetter(core)) {
+            untranslated.add(core);
+        }
         return text.substring(0, start) + (translated != null ? translated : core) + text.substring(end);
     }
 

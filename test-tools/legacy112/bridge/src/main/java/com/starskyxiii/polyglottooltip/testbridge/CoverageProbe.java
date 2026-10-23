@@ -32,7 +32,9 @@ import java.util.TreeMap;
  * Coverage of the minimal-core product on a pack: every JEI/HEI item ingredient goes through the product's own
  * {@code ItemNames.of} (layer 1, then the layer 2 resolvers), reached by reflection because the bridge is not compiled
  * against the product. Counts stacks with a shown secondary name, which layer or resolver produced it
- * ({@code SecondaryNames.source()}), hits and misses per item class, and samples of the classes that miss most.
+ * ({@code SecondaryNames.source()}), hits and misses per item class, and samples of the classes that miss most. Hits are
+ * split into complete and partial names ({@code SecondaryNames.partial()}, a resolver kept some primary-language parts);
+ * the classes with the most partial names and the most frequent untranslated parts are reported with samples.
  * {@code item} reads one stack of the player's inventory with its tooltip and the secondary names an independent
  * dictionary (the one {@link ConsistencyProbe} builds) gives for its standard key, and translates extra keys the same way; {@code command} runs a client
  * command and returns the messages it sent.
@@ -51,6 +53,8 @@ public final class CoverageProbe {
         Method of = Class.forName(PRODUCT + "ItemNames").getMethod("of", ItemStack.class);
         Method names = Class.forName(PRODUCT + "SecondaryNames").getMethod("names");
         Method source = Class.forName(PRODUCT + "SecondaryNames").getMethod("source");
+        Method partial = optional(PRODUCT + "SecondaryNames", "partial");
+        Method untranslated = optional(PRODUCT + "SecondaryNames", "untranslated");
         Class<?> check = Class.forName(PRODUCT + "ConsistencyCheck");
         Method resolve = check.getMethod("resolve", ItemStack.class, Map.class);
         Method handOff = Class.forName(PRODUCT + "ConsistencyCheck$Result").getMethod("handOff");
@@ -58,8 +62,9 @@ public final class CoverageProbe {
 
         ConsistencyProbe.Stacks stacks = ConsistencyProbe.Stacks.collect(params.has("source") ? params.get("source").getAsString() : "auto");
         Map<String, Integer> sources = new TreeMap<>(), misses = new TreeMap<>(), errors = new TreeMap<>();
+        Map<String, Integer> fragments = new HashMap<>();
         Map<String, Bucket> byClass = new HashMap<>();
-        int total = 0, hits = 0, consistent = 0;
+        int total = 0, hits = 0, consistent = 0, partials = 0;
         long nanos = 0;
         for (ItemStack stack : stacks.stacks) {
             Item item = stack.func_77973_b();
@@ -70,6 +75,7 @@ public final class CoverageProbe {
             bucket.stacks++;
             String outcome;
             List<?> shown = null;
+            Map<?, ?> parts = null;
             try {
                 long before = System.nanoTime();
                 Object resolved = of.invoke(null, stack);
@@ -83,6 +89,14 @@ public final class CoverageProbe {
                     outcome = String.valueOf(source.invoke(resolved));
                     sources.merge(outcome, 1, Integer::sum);
                     bucket.sources.merge(outcome, 1, Integer::sum);
+                    if (partial != null && (Boolean) partial.invoke(resolved)) {
+                        partials++;
+                        bucket.partial++;
+                        parts = (Map<?, ?>) untranslated.invoke(resolved);
+                        for (Object list : parts.values()) {
+                            for (Object part : (List<?>) list) fragments.merge(String.valueOf(part), 1, Integer::sum);
+                        }
+                    }
                 } else {
                     outcome = stack.func_82837_s() ? "custom" : layer1 ? "consistentNoName" : "inconsistentUnresolved";
                     misses.merge(outcome, 1, Integer::sum);
@@ -97,6 +111,11 @@ public final class CoverageProbe {
             }
             boolean hit = shown != null && !shown.isEmpty();
             if (hit && bucket.hitSamples.size() < 2) bucket.hitSamples.add(sample(stack, id, outcome, shown));
+            if (parts != null && bucket.partialSamples.size() < sampleLimit) {
+                JsonObject sample = sample(stack, id, outcome, shown);
+                sample.add("untranslated", GSON.toJsonTree(parts));
+                bucket.partialSamples.add(sample);
+            }
             if (!hit && !"custom".equals(outcome) && bucket.missSamples.size() < sampleLimit) bucket.missSamples.add(sample(stack, id, outcome, null));
         }
         JsonObject result = new JsonObject();
@@ -107,6 +126,9 @@ public final class CoverageProbe {
         result.addProperty("stacks", total);
         result.addProperty("withSecondary", hits);
         result.addProperty("share", total == 0 ? 0 : (double) hits / total);
+        result.addProperty("complete", hits - partials);
+        result.addProperty("partial", partials);
+        result.addProperty("partialShare", total == 0 ? 0 : (double) partials / total);
         result.addProperty("consistent", consistent);
         result.addProperty("consistentShare", total == 0 ? 0 : (double) consistent / total);
         result.add("bySource", ConsistencyProbe.BridgeJson.counts(sources));
@@ -123,11 +145,40 @@ public final class CoverageProbe {
             top.add(entry.getValue().report(entry.getKey(), true));
         }
         result.add("topMissClasses", top);
+        List<Map.Entry<String, Bucket>> byPartial = new ArrayList<>(byClass.entrySet());
+        byPartial.sort((a, b) -> b.getValue().partial != a.getValue().partial
+                ? Integer.compare(b.getValue().partial, a.getValue().partial) : a.getKey().compareTo(b.getKey()));
+        JsonArray topPartial = new JsonArray();
+        for (Map.Entry<String, Bucket> entry : byPartial) {
+            if (topPartial.size() >= 20 || entry.getValue().partial == 0) break;
+            topPartial.add(entry.getValue().partialReport(entry.getKey()));
+        }
+        result.add("topPartialClasses", topPartial);
+        List<Map.Entry<String, Integer>> rankedFragments = new ArrayList<>(fragments.entrySet());
+        rankedFragments.sort((a, b) -> !a.getValue().equals(b.getValue())
+                ? Integer.compare(b.getValue(), a.getValue()) : a.getKey().compareTo(b.getKey()));
+        JsonArray topFragments = new JsonArray();
+        for (Map.Entry<String, Integer> entry : rankedFragments) {
+            if (topFragments.size() >= 30) break;
+            JsonObject fragment = new JsonObject();
+            fragment.addProperty("text", entry.getKey());
+            fragment.addProperty("count", entry.getValue());
+            topFragments.add(fragment);
+        }
+        result.add("topUntranslated", topFragments);
         JsonArray all = new JsonArray();
         for (Map.Entry<String, Bucket> entry : ranked) all.add(entry.getValue().report(entry.getKey(), false));
         result.add("byClass", all);
         result.addProperty("elapsedMs", (System.nanoTime() - started) / 1_000_000);
         return result;
+    }
+
+    private static Method optional(String type, String name) {
+        try {
+            return Class.forName(type).getMethod(name);
+        } catch (ReflectiveOperationException missing) {
+            return null;
+        }
     }
 
     @SuppressWarnings("deprecation")
@@ -232,9 +283,9 @@ public final class CoverageProbe {
 
     private static final class Bucket {
         final String mod;
-        int stacks, hits;
+        int stacks, hits, partial;
         final Map<String, Integer> sources = new TreeMap<>(), misses = new TreeMap<>();
-        final List<JsonObject> hitSamples = new ArrayList<>(), missSamples = new ArrayList<>();
+        final List<JsonObject> hitSamples = new ArrayList<>(), missSamples = new ArrayList<>(), partialSamples = new ArrayList<>();
 
         Bucket(String mod) { this.mod = mod; }
 
@@ -247,10 +298,23 @@ public final class CoverageProbe {
             report.addProperty("stacks", stacks);
             report.addProperty("hits", hits);
             report.addProperty("misses", missed());
+            report.addProperty("partial", partial);
             report.add("bySource", ConsistencyProbe.BridgeJson.counts(sources));
             report.add("byMiss", ConsistencyProbe.BridgeJson.counts(misses));
             if (samples) report.add("missSamples", GSON.toJsonTree(missSamples));
             report.add("hitSamples", GSON.toJsonTree(hitSamples));
+            return report;
+        }
+
+        JsonObject partialReport(String name) {
+            JsonObject report = new JsonObject();
+            report.addProperty("name", name);
+            report.addProperty("mod", mod);
+            report.addProperty("stacks", stacks);
+            report.addProperty("hits", hits);
+            report.addProperty("partial", partial);
+            report.add("bySource", ConsistencyProbe.BridgeJson.counts(sources));
+            report.add("partialSamples", GSON.toJsonTree(partialSamples));
             return report;
         }
     }

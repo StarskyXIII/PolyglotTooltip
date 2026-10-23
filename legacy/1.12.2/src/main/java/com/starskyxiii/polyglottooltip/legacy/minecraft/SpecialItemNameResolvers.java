@@ -35,18 +35,26 @@ public final class SpecialItemNameResolvers {
     }
 
     public static final class Resolution {
-        static final Resolution NONE = new Resolution(Collections.<String, String>emptyMap(), null);
+        static final Resolution NONE = new Resolution(Collections.<String, String>emptyMap(),
+                Collections.<String, List<String>>emptyMap(), null);
 
         private final Map<String, String> names;
+        private final Map<String, List<String>> untranslated;
         private final SpecialItemNameResolver resolver;
 
-        private Resolution(Map<String, String> names, SpecialItemNameResolver resolver) {
+        private Resolution(Map<String, String> names, Map<String, List<String>> untranslated,
+                           SpecialItemNameResolver resolver) {
             this.names = names;
+            this.untranslated = untranslated;
             this.resolver = resolver;
         }
 
         public Map<String, String> names() {
             return names;
+        }
+
+        public Map<String, List<String>> untranslated() {
+            return untranslated;
         }
 
         public SpecialItemNameResolver resolver() {
@@ -67,14 +75,18 @@ public final class SpecialItemNameResolvers {
             }
             try {
                 Map<String, String> names = new LinkedHashMap<>();
+                Map<String, List<String>> untranslated = new LinkedHashMap<>();
                 for (Map.Entry<String, SecondaryDictionary> entry : dictionaries.entrySet()) {
-                    String name = resolver.resolve(stack, result, entry.getKey(), entry.getValue());
+                    ResolvedName name = resolver.resolveName(stack, result, entry.getKey(), entry.getValue());
                     if (name != null) {
-                        names.put(entry.getKey(), name);
+                        names.put(entry.getKey(), name.name());
+                        if (name.partial()) {
+                            untranslated.put(entry.getKey(), name.untranslated());
+                        }
                     }
                 }
                 if (!names.isEmpty()) {
-                    return new Resolution(names, resolver);
+                    return new Resolution(names, untranslated, resolver);
                 }
             } catch (RuntimeException error) {
                 failed(resolver, error);

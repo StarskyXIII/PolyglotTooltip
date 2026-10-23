@@ -50,6 +50,7 @@ public final class Integrations {
             new Entry(NamesIntegration.IC2_ID, NamesIntegration.IC2_MODID, NamesIntegration::ic2),
             new Entry(NamesIntegration.MICROBLOCK_ID, NamesIntegration.MICROBLOCK_MODID, NamesIntegration::microblock),
             new Entry(NamesIntegration.EXTRACELLS_ID, NamesIntegration.EXTRACELLS_MODID, NamesIntegration::extracells),
+            new Entry(GenericIntegration.BARE_KEY_ID, null, GenericIntegration::bareKey),
             new Entry(GenericIntegration.FORMAT_ID, null, GenericIntegration::format),
             new Entry(GenericIntegration.COMPOSITE_ID, null, GenericIntegration::composite),
             new Entry(CarbonConfigIntegration.ID, CarbonConfigIntegration.MODID, CarbonConfigIntegration::new)));

@@ -8,6 +8,7 @@ import com.starskyxiii.polyglottooltip.legacy.minecraft.SpecialItemNameResolvers
 public final class GenericIntegration implements Integration {
     public static final String FORMAT_ID = "generic-format";
     public static final String COMPOSITE_ID = "generic-composite";
+    public static final String BARE_KEY_ID = "generic-bare-key";
 
     private final String id;
     private final SpecialItemNameResolver resolver;
@@ -19,6 +20,10 @@ public final class GenericIntegration implements Integration {
 
     public static GenericIntegration format(IntegrationGuard guard) {
         return new GenericIntegration(FORMAT_ID, new FormatNameResolver(guard));
+    }
+
+    public static GenericIntegration bareKey(IntegrationGuard guard) {
+        return new GenericIntegration(BARE_KEY_ID, new BareKeyResolver(guard));
     }
 
     public static GenericIntegration composite(IntegrationGuard guard) {
