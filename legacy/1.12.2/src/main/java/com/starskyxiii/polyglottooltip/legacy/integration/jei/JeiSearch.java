@@ -13,6 +13,7 @@ import com.starskyxiii.polyglottooltip.legacy.minecraft.SecondaryLanguages;
 
 import mezz.jei.gui.ingredients.IIngredientListElement;
 import mezz.jei.util.Translator;
+import net.minecraft.client.Minecraft;
 import net.minecraft.item.ItemStack;
 
 public final class JeiSearch {
@@ -58,6 +59,13 @@ public final class JeiSearch {
         SearchIndex index = current.get();
         if (active != null && index != null && index.polyglot$generation() != SecondaryLanguages.generation()) {
             active.run(index::polyglot$rebuild);
+        }
+    }
+
+    public static void indexBeforeSearch(SearchIndex index) {
+        IntegrationGuard active = guard;
+        if (active != null && Minecraft.func_71410_x().func_152345_ab()) {
+            active.run(() -> index.polyglot$indexPending(COMPLETE));
         }
     }
 
