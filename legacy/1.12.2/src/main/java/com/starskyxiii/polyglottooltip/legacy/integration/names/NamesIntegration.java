@@ -19,6 +19,12 @@ public final class NamesIntegration implements Integration {
     public static final String EXTRACELLS_ID = "names-extracells";
     public static final String EXTRACELLS_MODID = "extracells";
     public static final String POTION_ID = "names-potion";
+    public static final String TCONSTRUCT_ID = "names-tconstruct";
+    public static final String TCONSTRUCT_MODID = "tconstruct";
+    public static final String AE2_ID = "names-ae2";
+    public static final String AE2_MODID = "appliedenergistics2";
+    public static final String CHISELSANDBITS_ID = "names-chiselsandbits";
+    public static final String CHISELSANDBITS_MODID = "chiselsandbits";
 
     private final String id;
     private final String modid;
@@ -49,6 +55,26 @@ public final class NamesIntegration implements Integration {
 
     public static NamesIntegration extracells(IntegrationGuard guard) {
         return new NamesIntegration(EXTRACELLS_ID, EXTRACELLS_MODID, new ExtraCellsNameResolver(guard));
+    }
+
+    public static NamesIntegration tconstruct(IntegrationGuard guard) {
+        try {
+            return new NamesIntegration(TCONSTRUCT_ID, TCONSTRUCT_MODID, new TinkersNameResolver(guard));
+        } catch (ReflectiveOperationException error) {
+            throw new IllegalStateException("Tinkers' Construct material API not found", error);
+        }
+    }
+
+    public static NamesIntegration ae2(IntegrationGuard guard) {
+        return new NamesIntegration(AE2_ID, AE2_MODID, new Ae2FacadeNameResolver(guard));
+    }
+
+    public static NamesIntegration chiselsandbits(IntegrationGuard guard) {
+        try {
+            return new NamesIntegration(CHISELSANDBITS_ID, CHISELSANDBITS_MODID, new ChiselsAndBitsNameResolver(guard));
+        } catch (ReflectiveOperationException error) {
+            throw new IllegalStateException("Chisels & Bits bit API not found", error);
+        }
     }
 
     public static NamesIntegration potion(IntegrationGuard guard) {
