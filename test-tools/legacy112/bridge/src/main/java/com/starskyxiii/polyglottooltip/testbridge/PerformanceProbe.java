@@ -17,7 +17,6 @@ import net.minecraftforge.fml.common.registry.ForgeRegistries;
 
 /** Bounded diagnostics for an explicitly owned test client; never part of the shipped mod. */
 final class PerformanceProbe {
-    private static final String PRODUCT = "com.starskyxiii.polyglottooltip.legacy.";
     private static final Gson GSON = new Gson();
     private static final List<Double> ticks = new ArrayList<>(), frames = new ArrayList<>(), frameIntervals = new ArrayList<>();
     private static long tickStart, frameStart, previousFrameStart, until, monitorStarted, monitorStartedAt;
@@ -62,13 +61,6 @@ final class PerformanceProbe {
             return result;
         }
         if (action.equals("state")) return state();
-        if (action.equals("settings")) {
-            long start = System.nanoTime();
-            JsonObject result = CoreProbe.configure(params);
-            result.addProperty("saveMillis", (System.nanoTime() - start) / 1_000_000.0);
-            result.add("immediate", state());
-            return result;
-        }
         if (action.equals("hover")) {
             int repetitions = params.has("repetitions") ? params.get("repetitions").getAsInt() : 32;
             if (repetitions < 1 || repetitions > 64) throw new IllegalArgumentException("Use 1..64 repetitions");
@@ -89,104 +81,14 @@ final class PerformanceProbe {
             result.addProperty("unchanged", before.equals(stack.func_77955_b(new NBTTagCompound())));
             return result;
         }
-        if (action.equals("fallbackSample")) return fallbackSample(params);
         throw new IllegalArgumentException("Unknown performance action");
     }
 
-    /**
-     * For each named item class (or superclass), the first recipe-viewer stack is hovered as listed and with one
-     * extra NBT byte. The listed stack is the table's own state; the extra byte keeps every name input but misses the
-     * table, so that tooltip comes from the fallback resolver. Both tooltips and their timings are returned.
-     */
-    private static JsonObject fallbackSample(JsonObject params) throws Exception {
-        int repetitions = params.has("repetitions") ? params.get("repetitions").getAsInt() : 16;
-        if (repetitions < 1 || repetitions > 64) throw new IllegalArgumentException("Use 1..64 repetitions");
-        java.util.Collection<ItemStack> ingredients = mezz.jei.Internal.getIngredientRegistry().getAllIngredients(ItemStack.class);
+    private static JsonObject state() {
         JsonObject result = new JsonObject();
-        for (com.google.gson.JsonElement element : params.getAsJsonArray("classes")) {
-            String name = element.getAsString();
-            ItemStack found = null;
-            for (ItemStack stack : ingredients) {
-                for (Class<?> type = stack.func_77973_b().getClass(); type != null && found == null; type = type.getSuperclass())
-                    if (type.getName().equals(name)) found = stack;
-                if (found != null) break;
-            }
-            JsonObject row = new JsonObject();
-            if (found == null) { row.addProperty("missing", true); result.add(name, row); continue; }
-            row.addProperty("item", String.valueOf(found.func_77973_b().getRegistryName()));
-            row.addProperty("metadata", found.func_77960_j());
-            row.addProperty("nbt", found.func_77942_o() ? found.func_77978_p().toString() : null);
-            ItemStack listed = found.func_77946_l(), miss = found.func_77946_l();
-            NBTTagCompound tag = miss.func_77942_o() ? miss.func_77978_p() : new NBTTagCompound();
-            tag.func_74774_a("polyglotProbe", (byte) 1); miss.func_77982_d(tag);
-            row.add("table", hover(listed, repetitions));
-            row.add("miss", hover(miss, repetitions));
-            try {
-                Object observation = NativeAccess.call(NativeAccess.type(PRODUCT + "minecraft.NativeTableObservation"), "capture", listed);
-                row.addProperty("covered", observation != null && (Boolean) NativeAccess.call(observation, "covered"));
-            } catch (Exception unavailable) { row.addProperty("covered", "unavailable"); }
-            result.add(name, row);
-        }
-        return result;
-    }
-
-    private static JsonObject hover(ItemStack stack, int repetitions) {
-        List<Double> times = new ArrayList<>();
-        List<String> tooltip = Collections.emptyList();
-        try {
-            for (int i = 0; i < repetitions; i++) {
-                long start = System.nanoTime();
-                tooltip = stack.func_82840_a(Minecraft.func_71410_x().field_71439_g, ITooltipFlag.TooltipFlags.NORMAL);
-                times.add((System.nanoTime() - start) / 1_000_000.0);
-            }
-        } catch (RuntimeException | LinkageError error) {
-            // Some mods' own name getters throw for listed stacks; record it instead of failing the whole sample.
-            JsonObject failed = new JsonObject(); failed.addProperty("error", error.toString()); return failed;
-        }
-        JsonObject result = statistics(times);
-        result.add("tooltip", GSON.toJsonTree(tooltip));
-        return result;
-    }
-
-    private static JsonObject state() throws Exception {
-        JsonObject result = new JsonObject();
-        Class<?> adapter = NativeAccess.type(PRODUCT + "minecraft.MinecraftLanguageAdapter");
-        Object language = NativeAccess.call(adapter, "snapshot");
-        result.addProperty("ready", (Boolean) NativeAccess.call(language, "ready"));
-        result.addProperty("generation", (Number) NativeAccess.get(language, "generation"));
-        result.addProperty("nativeNameEpoch", (Number) NativeAccess.get(language, "nativeNameEpoch"));
-        result.addProperty("snapshot", System.identityHashCode(language));
-        result.addProperty("primaryTable", System.identityHashCode(NativeAccess.get(language, "primaryTable")));
-        result.add("settings", GSON.toJsonTree(NativeAccess.call(NativeAccess.type(PRODUCT + "Config"), "get")));
-        JsonArray languages = new JsonArray();
-        for (Object table : (List<?>) NativeAccess.get(language, "tables")) languages.add((String) NativeAccess.call(table, "code"));
-        result.add("languages", languages);
-        Object filter = mezz.jei.Internal.getIngredientFilter();
-        if (filter != null) {
-            for (String field : new String[]{"elementSearch", "searchTree"}) {
-                try { result.addProperty(field, System.identityHashCode(NativeAccess.get(filter, field))); }
-                catch (NoSuchFieldException ignored) { }
-            }
-            try {
-                Object aliases = NativeAccess.call(filter, "polyglot$aliases");
-                if (aliases != null) {
-                    result.addProperty("aliasReady", NativeAccess.get(aliases, "index") != null);
-                    result.addProperty("aliasCursor", (Number) NativeAccess.get(aliases, "cursor"));
-                    Object source = NativeAccess.get(aliases, "source");
-                    if (source != null) result.addProperty("aliasSize", ((List<?>) NativeAccess.get(source, "elements")).size());
-                    try {
-                        result.addProperty("aliasIndexed", (Number) NativeAccess.call(aliases, "tableIndexed"));
-                        result.addProperty("aliasFallback", (Number) NativeAccess.call(aliases, "tableFallback"));
-                        result.addProperty("aliasMissing", (Number) NativeAccess.call(aliases, "tableMissing"));
-                    } catch (NoSuchMethodException ignored) { }
-                }
-            } catch (NoSuchMethodException ignored) { }
-        }
-        try {
-            Class<?> libraries = NativeAccess.type(PRODUCT + "bootstrap.NameLibrarySource");
-            result.addProperty("libraryPending", (Boolean) NativeAccess.call(libraries, "preparationPending"));
-            result.addProperty("libraryRevision", (Number) NativeAccess.call(libraries, "preparationRevision"));
-        } catch (NoSuchMethodException ignored) { }
+        result.addProperty("monitoring", System.nanoTime() <= until);
+        result.addProperty("ticks", ticks.size());
+        result.addProperty("frames", frames.size());
         return result;
     }
 

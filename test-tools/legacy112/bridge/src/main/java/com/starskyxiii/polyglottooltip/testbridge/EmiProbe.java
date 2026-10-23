@@ -110,32 +110,6 @@ public final class EmiProbe {
         }
         Class<?> config = NativeAccess.type("dev.emi.emi.config.EmiConfig");
         for (String key : new String[]{"searchTooltipByDefault", "searchModNameByDefault", "searchTagsByDefault", "appendItemModId", "editMode"}) result.addProperty(key, (Boolean) NativeAccess.get(config, key));
-        if (Loader.isModLoaded("polyglottooltip")) {
-            Class<?> bridge = NativeAccess.type("com.starskyxiii.polyglottooltip.legacy.integration.emi.EmiSearchCoordinator");
-            synchronized (NativeAccess.get(bridge, "stateLock")) {
-            result.add("coordinator", gson.toJsonTree(NativeAccess.call(bridge, "diagnostics")));
-            result.addProperty("retry", (Boolean) NativeAccess.get(bridge, "retry"));
-            result.addProperty("pendingInputs", (Boolean) NativeAccess.get(bridge, "pendingInputs"));
-            result.addProperty("binding", NativeAccess.get(bridge, "binding") != null);
-            Object pair = NativeAccess.get(bridge, "accepted");
-            result.addProperty("bundleObject", identity(NativeAccess.get(bridge, "indexSnapshot")));
-            result.addProperty("pairQuerySame", pair != null && NativeAccess.get(pair, "query") == query);
-            result.addProperty("pairResultsSame", pair != null && NativeAccess.get(pair, "stacks") == results);
-            Object capture = NativeAccess.get(bridge, "inputs");
-            result.addProperty("currentCaptureEpoch", capture == null ? -1 : (Number) NativeAccess.get(capture, "searchInputEpoch"));
-            result.addProperty("acceptedCaptureEpoch", -1);
-            result.addProperty("stampBundleCurrent", false);
-            try {
-                Object stamp = query == null ? null : NativeAccess.get(query, "polyglot$queryStamp");
-                result.addProperty("stamped", stamp != null);
-                if (stamp != null) {
-                    Object stampedBundle = NativeAccess.get(stamp, "indexSnapshot");
-                    result.addProperty("stampBundleCurrent", stampedBundle == NativeAccess.get(bridge, "indexSnapshot"));
-                    result.addProperty("acceptedCaptureEpoch", (Number) NativeAccess.get(NativeAccess.get(stampedBundle, "inputs"), "searchInputEpoch"));
-                }
-            } catch (NoSuchFieldException missing) { result.addProperty("stamped", false); }
-            }
-        }
         return result;
     }
 
@@ -167,10 +141,6 @@ public final class EmiProbe {
         }
         result.add("targets", targets);
         result.addProperty("nativeLoaded", (Boolean) NativeAccess.call(NativeAccess.type("dev.emi.emi.runtime.EmiReloadManager"), "isLoaded"));
-        if (Loader.isModLoaded("polyglottooltip")) {
-            result.add("admission", gson.toJsonTree(NativeAccess.call(NativeAccess.type("com.starskyxiii.polyglottooltip.legacy.bootstrap.EmiTransformAdmission"), "diagnostics")));
-            result.add("coordinator", gson.toJsonTree(NativeAccess.call(NativeAccess.type("com.starskyxiii.polyglottooltip.legacy.integration.emi.EmiSearchCoordinator"), "diagnostics")));
-        }
         return result;
     }
 }

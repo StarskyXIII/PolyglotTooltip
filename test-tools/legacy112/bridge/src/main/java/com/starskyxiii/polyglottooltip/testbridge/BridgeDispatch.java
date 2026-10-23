@@ -65,8 +65,6 @@ public final class BridgeDispatch {
                     ScreenProbe.request(params, future);
                 } else if ("lifecycle.transition".equals(method)) {
                     LifecycleProbe.request(params, future);
-                } else if ("lifecycle.adversary".equals(method)) {
-                    LanguageAdversaryProbe.request(params, future);
                 } else if ("emi.frame".equals(method)) {
                     EmiFrameProbe.request(params, future);
                 } else if ("hud.capture".equals(method)) {
@@ -91,7 +89,6 @@ public final class BridgeDispatch {
 
     public static void tick() {
         ticks++;
-        NameInventoryProbe.tick();
         for (int index = 0; index < 16; index++) {
             Runnable task = tasks.poll();
             if (task == null) break;
@@ -108,39 +105,22 @@ public final class BridgeDispatch {
 
     static JsonElement dispatch(String method, JsonObject params) throws Exception {
         Minecraft client = Minecraft.func_71410_x();
-        if (method.startsWith("audit.")) return NameAuditProbe.call(method, params);
         switch (method) {
             case "probe.consistency": return ConsistencyProbe.run(params);
             case "probe.coverage": return CoverageProbe.run(params);
             case "probe.coreItem": return CoverageProbe.item(params);
+            case "probe.nameExport": return NameExportProbe.run(params);
             case "lifecycle.snapshot": return LifecycleProbe.snapshot();
-            case "lifecycle.translations": return LanguageStateProbe.enable();
-            case "lifecycle.reentry": return LanguageStateProbe.reentry();
-            case "lifecycle.preparation": return LanguagePreparationAdversary.run(params);
-            case "lifecycle.languageRestart": return LanguageRestartProbe.run(params);
             case "pack.runtime": return PackProbe.runtime();
             case "pack.setup": return PackProbe.setup();
             case "pack.item": return PackProbe.item(params);
             case "status": return status();
-            case "probe.core": return CoreProbe.inspect(params);
-            case "probe.enchantment": return EnchantmentProbe.inspect(params);
-            case "probe.tinker": return TinkerProbe.inspect(params);
-            case "probe.export": return NameExportProbe.inspect(params);
-            case "probe.exportBatch": return NameExportBatchProbe.inspect(params);
-            case "probe.nameInventory": return NameInventoryProbe.inspect(params);
-            case "probe.nameTable": return NameTableProbe.inspect(params);
-            case "probe.nameReuse": return NameReuseProbe.inspect(params);
-            case "probe.nameCopy": return NameCopyProbe.inspect(params);
             case "probe.performance": return PerformanceProbe.run(params);
-            case "probe.coldNameCache": return ColdNameCacheProbe.run(params);
-            case "probe.contracts": return CoreProbe.contracts();
-            case "probe.resources": return resourceProfile();
             case "probe.emiProfile": return EmiProbe.profile();
             case "emi": return EmiProbe.run(params);
             case "jemi": return JemiProbe.run(params);
             case "emi.arm": return EmiProviderProbe.arm(params);
             case "emi.provider": return EmiProviderProbe.state();
-            case "probe.resourceScenario": return ResourceProbe.run(params);
             case "ae.setup": return AeProbe.setup(params);
             case "ae.search": return AeProbe.search(params);
             case "ae.observe": return AeProbe.observe();
@@ -164,11 +144,6 @@ public final class BridgeDispatch {
             case "addon.inherited.open": return AddonInheritedProbe.openWireless();
             case "addon.inherited.ui": return AddonInheritedProbe.ui(params);
             case "integration.names": return IntegrationNameProbe.inspect(params);
-            case "candidate.names": return CandidateNameProbe.inspect(params);
-            case "candidate.item.open": return CandidateNameProbe.open(params);
-            case "candidate.cache": return CandidateNameProbe.cache(params);
-            case "candidate.guards": return CandidateNameProbe.guards();
-            case "candidate.race": return ReliquaryRaceProbe.run(params);
             case "rs.ui": return RefinedProbe.ui(params);
             case "integration.item.open": return IntegrationNameProbe.open(params);
             case "integration.widget.open": return IntegrationWidgetProbe.open(params);
@@ -258,7 +233,6 @@ public final class BridgeDispatch {
                 repository.func_148527_a(selected);
                 client.func_110436_a();
                 return status();
-            case "config.set": return CoreProbe.configure(params);
             case "client.command":
                 if (client.field_71439_g == null) throw new IllegalStateException("No player");
                 String clientCommand = params.get("command").getAsString();
@@ -269,22 +243,6 @@ public final class BridgeDispatch {
                 String name = params.has("name") ? params.get("name").getAsString() : "pt112-fixture";
                 if (!name.matches("pt112-[a-zA-Z0-9-]{1,64}")) throw new IllegalArgumentException("Invalid fixture name");
                 client.func_71371_a(name, name, new WorldSettings(1122026L, GameType.CREATIVE, false, false, WorldType.field_77138_c));
-                return status();
-            case "world.leave":
-                if (!Boolean.getBoolean("clientdevbridge.nameTablePrototype")
-                        || client.func_71401_C() == null || client.field_71441_e == null)
-                    throw new IllegalStateException("Owned name-table fixture required");
-                java.nio.file.Path save = client.func_71401_C().func_71218_a(0)
-                        .func_72860_G().func_75765_b().toPath().toRealPath();
-                java.nio.file.Path saves = client.field_71412_D.toPath().resolve("saves").toRealPath();
-                if (!save.getParent().equals(saves) || !save.getFileName().toString().matches("pt112-[a-zA-Z0-9-]{1,64}"))
-                    throw new IllegalStateException("World is not an owned fixture");
-                if ((Boolean) NativeAccess.call(NativeAccess.type(
-                        "com.starskyxiii.polyglottooltip.legacy.nametable.NameTableRuntime"), "busy"))
-                    throw new IllegalStateException("Name preparation must finish before leaving");
-                client.field_71441_e.func_72882_A();
-                client.func_71403_a(null);
-                client.func_147108_a(new net.minecraft.client.gui.GuiMainMenu());
                 return status();
             case "screenshot":
                 String file = params.get("name").getAsString();
@@ -300,16 +258,6 @@ public final class BridgeDispatch {
             case "quit": client.func_71400_g(); return gson.toJsonTree(true);
             default: throw new IllegalArgumentException("Unknown method " + method);
         }
-    }
-
-    private static JsonObject resourceProfile() throws Exception {
-        JsonObject result = new JsonObject();
-        result.addProperty("finalClassDirectory", String.valueOf(NativeAccess.get(net.minecraft.launchwrapper.Launch.classLoader, "tempFolder")));
-        if (Loader.isModLoaded("polyglottooltip")) {
-            result.add("admission", gson.toJsonTree(NativeAccess.call(NativeAccess.type("com.starskyxiii.polyglottooltip.legacy.bootstrap.ResourceTransformAdmission"), "diagnostics")));
-            result.add("resources", ResourceProbe.snapshot());
-        }
-        return result;
     }
 
     private static void command(JsonObject params, CompletableFuture<JsonElement> future) {
