@@ -31,6 +31,7 @@ public class GenericNameResolversTest {
             {"spell.ebwizardry:magic_missile", "魔法彈"},
             {"tile.compressed.cobblestone.name", "%s Cobblestone"},
             {"tile.styled.name", "§e石头 "},
+            {"gui.page.first", "0"},
     };
     private static final String[][] SECONDARY = {
             {"tile.stone.stone.name", "Stone"},
@@ -61,6 +62,8 @@ public class GenericNameResolversTest {
             {"item.gendustry.gene_sample.name", "Gene Sample - %s - %s"},
             {"tile.compressed.cobblestone.name", "%s Cobblestone"},
             {"item.potion.name", "Potion"},
+            {"gui.page.first", "4"},
+            {"item.openblocks.glyph.name", "'%s' Glyph"},
     };
 
     private static final String[][] COMPOSITE_SAMPLES = {
@@ -169,6 +172,12 @@ public class GenericNameResolversTest {
         assertEquals("Unknown Block Cover", format("item.thermaldynamics.cover.name", "覆盖板：%s",
                 "覆盖板：Unknown Block"));
         assertNull(format("tile.compressed.cobblestone.name", "%s Cobblestone", "Nonuple Compressed Cobblestone"));
+    }
+
+    @Test
+    public void argumentsWithoutLettersStayLiteral() {
+        assertNull(index.keyOf("0"));
+        assertNull(format("item.openblocks.glyph.name", "'%s' Glyph", "'0' Glyph"));
     }
 
     @Test
