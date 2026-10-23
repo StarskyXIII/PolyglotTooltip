@@ -111,6 +111,8 @@ public final class BridgeDispatch {
         if (method.startsWith("audit.")) return NameAuditProbe.call(method, params);
         switch (method) {
             case "probe.consistency": return ConsistencyProbe.run(params);
+            case "probe.coverage": return CoverageProbe.run(params);
+            case "probe.coreItem": return CoverageProbe.item(params);
             case "lifecycle.snapshot": return LifecycleProbe.snapshot();
             case "lifecycle.translations": return LanguageStateProbe.enable();
             case "lifecycle.reentry": return LanguageStateProbe.reentry();
@@ -261,6 +263,7 @@ public final class BridgeDispatch {
                 if (client.field_71439_g == null) throw new IllegalStateException("No player");
                 String clientCommand = params.get("command").getAsString();
                 if (!clientCommand.startsWith("/") || clientCommand.length() > 256) throw new IllegalArgumentException("Invalid client command");
+                if (params.has("capture") && params.get("capture").getAsBoolean()) return CoverageProbe.command(clientCommand);
                 return gson.toJsonTree(net.minecraftforge.client.ClientCommandHandler.instance.func_71556_a(client.field_71439_g, clientCommand));
             case "world.create":
                 String name = params.has("name") ? params.get("name").getAsString() : "pt112-fixture";

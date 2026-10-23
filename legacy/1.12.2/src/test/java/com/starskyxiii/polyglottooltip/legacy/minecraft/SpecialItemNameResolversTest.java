@@ -1,6 +1,8 @@
 package com.starskyxiii.polyglottooltip.legacy.minecraft;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
@@ -72,5 +74,16 @@ public class SpecialItemNameResolversTest {
         SpecialItemNameResolvers.register(resolver("empty", true, null));
         ConsistencyCheck.Result result = ConsistencyCheck.Result.inconsistent(null, null, "Name");
         assertTrue(SpecialItemNameResolvers.resolve(null, result, dictionaries()).isEmpty());
+        assertNull(SpecialItemNameResolvers.resolution(null, result, dictionaries()).resolver());
+    }
+
+    @Test
+    public void resolutionNamesTheResolverThatProducedTheNames() {
+        SpecialItemNameResolver empty = resolver("empty", true, null);
+        SpecialItemNameResolver named = resolver("named", true, "Cable Facade - Stone");
+        SpecialItemNameResolvers.register(empty);
+        SpecialItemNameResolvers.register(named);
+        ConsistencyCheck.Result result = ConsistencyCheck.Result.inconsistent(null, null, "线缆伪装板 - 石头");
+        assertSame(named, SpecialItemNameResolvers.resolution(null, result, dictionaries()).resolver());
     }
 }
