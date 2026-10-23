@@ -1,0 +1,10 @@
+{
+  "required": false,
+  "minVersion": "0.8",
+  "package": "com.starskyxiii.polyglottooltip.legacy.mixin.carbonconfig",
+  "plugin": "com.starskyxiii.polyglottooltip.legacy.mixin.carbonconfig.CarbonConfigMixinPlugin",
+  "refmap": "polyglottooltip.legacy.refmap.json",
+  "compatibilityLevel": "JAVA_8",
+  "mixins": ["CarbonConfigArraySaveMixin"],
+  "injectors": {"defaultRequire": 0}
+}

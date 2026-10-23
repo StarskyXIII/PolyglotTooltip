@@ -16,7 +16,8 @@ import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
         name = "Polyglot Tooltip",
         version = "2.0",
         acceptedMinecraftVersions = "[1.12.2]",
-        clientSideOnly = true)
+        clientSideOnly = true,
+        guiFactory = "com.starskyxiii.polyglottooltip.legacy.ConfigGuiFactory")
 public final class PolyglotTooltipMod {
     public static final String MOD_ID = "polyglottooltip";
 
@@ -29,6 +30,7 @@ public final class PolyglotTooltipMod {
     public void init(FMLInitializationEvent event) {
         SecondaryLanguages.register();
         MinecraftForge.EVENT_BUS.register(new TooltipLines());
+        MinecraftForge.EVENT_BUS.register(new ConfigChanges());
         Integrations.install();
         ClientCommandHandler.instance.func_71560_a(new PolyglotCommand(Integrations::describeDisabled));
     }

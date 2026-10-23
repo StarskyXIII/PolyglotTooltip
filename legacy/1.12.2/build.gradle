@@ -66,6 +66,7 @@ renamer.enableMixinRefmaps {
     config 'polyglottooltip.hwyla.mixins.json'
     config 'polyglottooltip.ae2.mixins.json'
     config 'polyglottooltip.rs.mixins.json'
+    config 'polyglottooltip.carbonconfig.mixins.json'
     refMap = 'polyglottooltip.legacy.refmap.json'
 }
 renamer.mappings.from minecraft.dependency.toSrgFile

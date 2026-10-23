@@ -15,6 +15,7 @@ import org.apache.logging.log4j.LogManager;
 import com.starskyxiii.polyglottooltip.legacy.Config;
 import com.starskyxiii.polyglottooltip.legacy.PolyglotTooltipMod;
 import com.starskyxiii.polyglottooltip.legacy.integration.ae2.Ae2Integration;
+import com.starskyxiii.polyglottooltip.legacy.integration.carbonconfig.CarbonConfigIntegration;
 import com.starskyxiii.polyglottooltip.legacy.integration.generic.GenericIntegration;
 import com.starskyxiii.polyglottooltip.legacy.integration.hwyla.HwylaIntegration;
 import com.starskyxiii.polyglottooltip.legacy.integration.jei.JeiIntegration;
@@ -50,7 +51,8 @@ public final class Integrations {
             new Entry(NamesIntegration.MICROBLOCK_ID, NamesIntegration.MICROBLOCK_MODID, NamesIntegration::microblock),
             new Entry(NamesIntegration.EXTRACELLS_ID, NamesIntegration.EXTRACELLS_MODID, NamesIntegration::extracells),
             new Entry(GenericIntegration.FORMAT_ID, null, GenericIntegration::format),
-            new Entry(GenericIntegration.COMPOSITE_ID, null, GenericIntegration::composite)));
+            new Entry(GenericIntegration.COMPOSITE_ID, null, GenericIntegration::composite),
+            new Entry(CarbonConfigIntegration.ID, CarbonConfigIntegration.MODID, CarbonConfigIntegration::new)));
     private static volatile Integrations installed;
 
     private final List<Entry> entries;
