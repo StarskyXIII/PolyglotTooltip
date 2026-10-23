@@ -50,7 +50,7 @@ public abstract class JeiFilterMixin implements SearchIndex {
 
     @Inject(method = "getIngredientListUncached", at = @At("HEAD"))
     private void polyglot$beforeSearch(String filterText, CallbackInfoReturnable<List<?>> cir) {
-        polyglot$indexPending(JeiSearch.COMPLETE);
+        JeiSearch.indexBeforeSearch(this);
     }
 
     @Override
