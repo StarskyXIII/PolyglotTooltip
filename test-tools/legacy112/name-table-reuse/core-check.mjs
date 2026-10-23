@@ -189,6 +189,30 @@ async function why(label, languages) {
   return parsed;
 }
 
+const PARTIAL_PREFERENCE = ['appeng.items.parts.ItemFacade', 'mod.chiselsandbits.items.ItemChiseledBit',
+  'slimeknights.tconstruct.library.tools.ToolPart'];
+
+// /polyglot why on one held partial name from the coverage samples; recorded, not part of the pass condition.
+async function whyPartial(coverage) {
+  const classes = coverage.topPartialClasses || [];
+  const ordered = [...classes.filter(entry => PARTIAL_PREFERENCE.includes(entry.name)), ...classes];
+  const sample = ordered.flatMap(entry => entry.partialSamples || [])[0];
+  if (!sample) return {sample: null, pass: false};
+  const nbt = sample.nbt ? ' ' + sample.nbt : '';
+  const count = await call('world.command', {command: `/replaceitem entity @p slot.hotbar.0 ${sample.id} 1 ${sample.metadata}${nbt}`});
+  await call('wait.ticks', {ticks: 10});
+  const observed = await call('client.command', {command: '/polyglot why', capture: true});
+  const untranslated = observed.messages.filter(message => message.key === 'polyglottooltip.command.untranslated')
+    .map(message => ({language: message.args?.[0]?.text, parts: message.args?.[1]?.text}));
+  const source = observed.messages.find(message => message.key === 'polyglottooltip.command.source')?.args?.[0]?.text ?? null;
+  const expected = Object.entries(sample.untranslated || {}).map(([language, parts]) => ({language, parts: parts.join(', ')}));
+  const pass = count > 0 && expected.length > 0
+    && expected.every(entry => untranslated.some(line => line.language === entry.language && line.parts === entry.parts));
+  const result = {sample, count, source, untranslated, expected, pass};
+  await record('why-partial', {observed, ...result});
+  return result;
+}
+
 async function hudCheck(state, stone, water, current, failures) {
   const kinds = [...(hasMod(state, 'theoneprobe') ? ['top'] : []), ...(hasMod(state, 'waila') ? ['waila'] : [])];
   const result = {kinds, checks: []};
@@ -270,6 +294,7 @@ async function matrix(world) {
   result.coverage = {stacks: coverage.stacks, withSecondary: coverage.withSecondary, share: coverage.share,
     complete: coverage.complete, partial: coverage.partial, partialShare: coverage.partialShare, consistent: coverage.consistent, consistentShare: coverage.consistentShare, bySource: coverage.bySource,
     misses: coverage.misses, errors: coverage.errors, meanMicros: coverage.meanMicros, elapsedMs: coverage.elapsedMs};
+  result.whyPartial = await whyPartial(coverage);
 
   const stone = result.items.find(row => row.id === 'minecraft:stone'), iron = result.items.find(row => row.id === 'minecraft:iron_ingot');
   const queries = [];
