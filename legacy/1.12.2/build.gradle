@@ -50,6 +50,7 @@ dependencies {
     compileOnly('curse.maven:hwyla-253449:2568751') { transitive = false }
     compileOnly('curse.maven:ae2-223794:2747063') { transitive = false }
     compileOnly('curse.maven:refined-storage-243076:2940914') { transitive = false }
+    compileOnly('curse.maven:forestry-59751:7398359') { transitive = false }
     compileOnly sourceSets.heiStubs.output
     heiStubsCompileOnly('curse.maven:jei-238222:3043174') { transitive = false }
     implementation 'com.github.houbb:opencc4j:1.14.0'

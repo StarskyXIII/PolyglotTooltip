@@ -116,7 +116,7 @@ public final class FormatNameResolver implements SpecialItemNameResolver {
         return arguments;
     }
 
-    static String render(String format, List<String> arguments) {
+    public static String render(String format, List<String> arguments) {
         StringBuilder out = new StringBuilder();
         for (Token token : tokens(format)) {
             if (token.position == LITERAL_PERCENT) {
