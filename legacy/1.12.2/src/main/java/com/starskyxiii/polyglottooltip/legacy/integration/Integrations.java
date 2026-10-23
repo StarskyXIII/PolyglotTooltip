@@ -14,9 +14,11 @@ import org.apache.logging.log4j.LogManager;
 
 import com.starskyxiii.polyglottooltip.legacy.Config;
 import com.starskyxiii.polyglottooltip.legacy.PolyglotTooltipMod;
+import com.starskyxiii.polyglottooltip.legacy.integration.ae2.Ae2Integration;
 import com.starskyxiii.polyglottooltip.legacy.integration.generic.GenericIntegration;
 import com.starskyxiii.polyglottooltip.legacy.integration.hwyla.HwylaIntegration;
 import com.starskyxiii.polyglottooltip.legacy.integration.jei.JeiIntegration;
+import com.starskyxiii.polyglottooltip.legacy.integration.rs.RsIntegration;
 import com.starskyxiii.polyglottooltip.legacy.integration.theoneprobe.TopIntegration;
 import com.starskyxiii.polyglottooltip.legacy.minecraft.SecondaryLanguages;
 
@@ -39,6 +41,8 @@ public final class Integrations {
             new Entry(JeiIntegration.ID, JeiIntegration.MODID, JeiIntegration::new),
             new Entry(TopIntegration.ID, TopIntegration.MODID, TopIntegration::new),
             new Entry(HwylaIntegration.ID, HwylaIntegration.MODID, HwylaIntegration::new),
+            new Entry(Ae2Integration.ID, Ae2Integration.MODID, Ae2Integration::new),
+            new Entry(RsIntegration.ID, RsIntegration.MODID, RsIntegration::new),
             new Entry(GenericIntegration.FORMAT_ID, null, GenericIntegration::format),
             new Entry(GenericIntegration.COMPOSITE_ID, null, GenericIntegration::composite)));
     private static volatile Integrations installed;

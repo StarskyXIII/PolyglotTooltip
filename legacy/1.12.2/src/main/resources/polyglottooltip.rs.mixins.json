@@ -1,0 +1,10 @@
+{
+  "required": false,
+  "minVersion": "0.8",
+  "package": "com.starskyxiii.polyglottooltip.legacy.mixin.rs",
+  "plugin": "com.starskyxiii.polyglottooltip.legacy.mixin.rs.RsMixinPlugin",
+  "refmap": "polyglottooltip.legacy.refmap.json",
+  "compatibilityLevel": "JAVA_8",
+  "mixins": ["RsSearchNameMixin", "RsNameCacheMixin"],
+  "injectors": {"defaultRequire": 0}
+}

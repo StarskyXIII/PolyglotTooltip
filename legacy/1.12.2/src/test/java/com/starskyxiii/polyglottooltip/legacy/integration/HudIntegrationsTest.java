@@ -54,11 +54,11 @@ public class HudIntegrationsTest {
 
     @Test
     public void turningOneOffLeavesTheOtherRunning() {
-        Integrations topOff = start(modid -> !modid.equals("jei"), id -> !id.equals("top"));
+        Integrations topOff = start(modid -> modid.equals("theoneprobe") || modid.equals("waila"), id -> !id.equals("top"));
         assertEquals(Collections.singletonList("hwyla"), topOff.active());
         assertEquals(Collections.singletonList("top (turned off in the config)"), topOff.disabled());
 
-        Integrations hwylaOff = start(modid -> !modid.equals("jei"), id -> !id.equals("hwyla"));
+        Integrations hwylaOff = start(modid -> modid.equals("theoneprobe") || modid.equals("waila"), id -> !id.equals("hwyla"));
         assertEquals(Collections.singletonList("top"), hwylaOff.active());
         assertEquals(Collections.singletonList("hwyla (turned off in the config)"), hwylaOff.disabled());
     }
