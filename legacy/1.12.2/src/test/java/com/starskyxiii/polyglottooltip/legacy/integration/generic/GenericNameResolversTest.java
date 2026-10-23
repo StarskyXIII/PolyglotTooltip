@@ -14,6 +14,7 @@ import java.util.function.Function;
 
 import org.junit.Test;
 
+import com.starskyxiii.polyglottooltip.legacy.minecraft.ResolvedName;
 import com.starskyxiii.polyglottooltip.legacy.minecraft.SecondaryDictionary;
 
 public class GenericNameResolversTest {
@@ -32,6 +33,9 @@ public class GenericNameResolversTest {
             {"tile.compressed.cobblestone.name", "%s Cobblestone"},
             {"tile.styled.name", "§e石头 "},
             {"gui.page.first", "0"},
+            {"tile.thermalfoundation.ore.copper", "铜矿石"},
+            {"tile.thermalexpansion.machine.furnace", "红石炉"},
+            {"info.thermalexpansion.level.basic", "基础"},
     };
     private static final String[][] SECONDARY = {
             {"tile.stone.stone.name", "Stone"},
@@ -64,29 +68,32 @@ public class GenericNameResolversTest {
             {"item.potion.name", "Potion"},
             {"gui.page.first", "4"},
             {"item.openblocks.glyph.name", "'%s' Glyph"},
+            {"tile.thermalfoundation.ore.copper", "Copper Ore"},
+            {"tile.thermalexpansion.machine.furnace", "Redstone Furnace"},
+            {"info.thermalexpansion.level.basic", "Basic"},
     };
 
     private static final String[][] COMPOSITE_SAMPLES = {
-            {"AE2 facade", "item.appliedenergistics2.facade.name", "线缆伪装板", "线缆伪装板 - 石头", "Cable Facade - Stone"},
-            {"Tinkers ToolPart", "item.tconstruct.pick_head.name", "镐头", "磁钢 镐头", "Electrical Steel Pickaxe Head"},
-            {"Tinkers tool", "item.tconstruct.crossbow.name", "十字弓", "充能合金 十字弓", "Energetic Alloy Crossbow"},
-            {"Tinkers unknown material", "item.tconstruct.pick_head.name", "镐头", "Electrical 镐头", "Electrical Pickaxe Head"},
-            {"Chisels & Bits", "item.mod.chiselsandbits.block_bit.name", "雕刻碎屑", "雕刻碎屑 - 花岗岩", "Chiseled Bit - Granite"},
-            {"OpenBlocks tank", "tile.openblocks.tank.name", "蓄水槽", "水蓄水槽", "Water Tank"},
-            {"TE florb", "item.thermalexpansion.florb.standard.name", "流体球", "流体球 (水)", "Florb (Water)"},
-            {"TE empty florb", "item.thermalexpansion.florb.standard.name", "流体球", "流体球 (空)", "Florb (Empty)"},
-            {"TE morb", "item.thermalexpansion.morb.standard.name", "生物球", "生物球 (凋灵骷髅)", "Morb (Wither Skeleton)"},
-            {"vanilla potion keeps unknown prefix", "item.potion.name", "药水", "平凡的药水", "平凡的Potion"},
+            {"AE2 facade", "item.appliedenergistics2.facade.name", "线缆伪装板", "线缆伪装板 - 石头", "Cable Facade - Stone", ""},
+            {"Tinkers ToolPart", "item.tconstruct.pick_head.name", "镐头", "磁钢 镐头", "Electrical Steel Pickaxe Head", ""},
+            {"Tinkers tool", "item.tconstruct.crossbow.name", "十字弓", "充能合金 十字弓", "Energetic Alloy Crossbow", ""},
+            {"Tinkers unknown material", "item.tconstruct.pick_head.name", "镐头", "Electrical 镐头", "Electrical Pickaxe Head", "Electrical"},
+            {"Chisels & Bits", "item.mod.chiselsandbits.block_bit.name", "雕刻碎屑", "雕刻碎屑 - 花岗岩", "Chiseled Bit - Granite", ""},
+            {"OpenBlocks tank", "tile.openblocks.tank.name", "蓄水槽", "水蓄水槽", "Water Tank", ""},
+            {"TE florb", "item.thermalexpansion.florb.standard.name", "流体球", "流体球 (水)", "Florb (Water)", ""},
+            {"TE empty florb", "item.thermalexpansion.florb.standard.name", "流体球", "流体球 (空)", "Florb (Empty)", ""},
+            {"TE morb", "item.thermalexpansion.morb.standard.name", "生物球", "生物球 (凋灵骷髅)", "Morb (Wither Skeleton)", ""},
+            {"vanilla potion keeps unknown prefix", "item.potion.name", "药水", "平凡的药水", "平凡的Potion", "平凡的"},
     };
 
     private static final String[][] FORMAT_SAMPLES = {
-            {"Thermal Dynamics cover", "item.thermaldynamics.cover.name", "覆盖板：%s", "覆盖板：石头", "Stone Cover"},
-            {"Forge UniversalBucket", "item.forge.bucketFilled.name", "%s Bucket", "熔融铁 Bucket", "Molten Iron Bucket"},
-            {"JAOPCA dust", "item.jaopca.dust.name", "%s粉", "紫水晶粉", "Amethyst Dust"},
-            {"JAOPCA block", "tile.jaopca.block.name", "%s 块", "花岗岩 块", "Block of Granite"},
-            {"Wizardry scroll", "item.ebwizardry:scroll.name", "%1$s的卷軸", "魔法彈的卷軸", "Scroll of Magic Missile"},
+            {"Thermal Dynamics cover", "item.thermaldynamics.cover.name", "覆盖板：%s", "覆盖板：石头", "Stone Cover", ""},
+            {"Forge UniversalBucket", "item.forge.bucketFilled.name", "%s Bucket", "熔融铁 Bucket", "Molten Iron Bucket", ""},
+            {"JAOPCA dust", "item.jaopca.dust.name", "%s粉", "紫水晶粉", "Amethyst Dust", ""},
+            {"JAOPCA block", "tile.jaopca.block.name", "%s 块", "花岗岩 块", "Block of Granite", ""},
+            {"Wizardry scroll", "item.ebwizardry:scroll.name", "%1$s的卷軸", "魔法彈的卷軸", "Scroll of Magic Missile", ""},
             {"Gendustry sample keeps every unknown argument", "item.gendustry.gene_sample.name", "基因样本 - %s - %s",
-                    "基因样本 - INVALID - ERROR", "Gene Sample - INVALID - ERROR"},
+                    "基因样本 - INVALID - ERROR", "Gene Sample - INVALID - ERROR", "INVALID;ERROR"},
     };
 
     private final SecondaryDictionary primary = dictionary("zh_cn", PRIMARY);
@@ -107,14 +114,33 @@ public class GenericNameResolversTest {
         return text -> index.translate(text, secondary);
     }
 
-    private String composite(String key, String expected, String actual, List<String> derived,
-                             Function<String, String> primaryOf) {
+    private ResolvedName composite(String key, String expected, String actual, List<String> derived,
+                                   Function<String, String> primaryOf) {
         return CompositeNameResolver.compose(expected, actual, secondary.get(key),
                 CompositeNameResolver.translator(derived, primaryOf, secondary::get, reverse()));
     }
 
-    private String format(String key, String expected, String actual) {
+    private ResolvedName format(String key, String expected, String actual) {
         return FormatNameResolver.compose(expected, actual, secondary.get(key), reverse());
+    }
+
+    private ResolvedName bareKey(String bare, String actual) {
+        String expected = ReverseIndex.normalize(primary.get(bare));
+        String value = secondary.get(bare);
+        return value == null ? null : BareKeyResolver.named(expected, actual, value,
+                () -> CompositeNameResolver.compose(expected, actual, value, reverse()));
+    }
+
+    private static String name(ResolvedName resolved) {
+        return resolved == null ? null : resolved.name();
+    }
+
+    private static void assertResolved(String message, String name, String untranslated, ResolvedName resolved) {
+        assertEquals(message, name, name(resolved));
+        List<String> parts = untranslated.isEmpty() ? Collections.<String>emptyList()
+                : Arrays.asList(untranslated.split(";"));
+        assertEquals(message, parts, resolved.untranslated());
+        assertEquals(message, !parts.isEmpty(), resolved.partial());
     }
 
     @Test
@@ -130,26 +156,46 @@ public class GenericNameResolversTest {
     @Test
     public void compositeSamplesReplaceTheAnchorAndDerivableParts() {
         for (String[] sample : COMPOSITE_SAMPLES) {
-            assertEquals(sample[0], sample[4], composite(sample[1], sample[2], sample[3],
+            assertResolved(sample[0], sample[4], sample[5], composite(sample[1], sample[2], sample[3],
                     Collections.<String>emptyList(), key -> null));
         }
+    }
+
+    @Test
+    public void bareKeyEqualToTheShownNameUsesItsSecondaryValue() {
+        assertResolved("CoFH ore", "Copper Ore", "", bareKey("tile.thermalfoundation.ore.copper", "铜矿石"));
+    }
+
+    @Test
+    public void bareKeyContainedInTheShownNameAnchorsTheComposite() {
+        assertResolved("TE machine", "Redstone Furnace (Basic)", "",
+                bareKey("tile.thermalexpansion.machine.furnace", "红石炉 (基础)"));
+        assertResolved("TE machine, unknown level", "Redstone Furnace (强化)", "强化",
+                bareKey("tile.thermalexpansion.machine.furnace", "红石炉 (强化)"));
+    }
+
+    @Test
+    public void bareKeyLeavesOtherNamesToLaterResolvers() {
+        assertNull(bareKey("tile.thermalfoundation.ore.tin", "锡矿石"));
+        assertNull(bareKey("tile.thermalfoundation.ore.copper", "铁矿石"));
+        assertNull(BareKeyResolver.named("", "铜矿石", "Copper Ore", () -> null));
     }
 
     @Test
     public void spawnEggUsesTheEntityKeyDerivedFromTheStack() {
         Map<String, String> shown = new HashMap<>();
         shown.put("entity.Bat.name", "蝙蝠");
-        assertEquals("Spawn Bat", composite("item.monsterPlacer.name", "生成", "生成 蝙蝠",
+        assertResolved("derived", "Spawn Bat", "", composite("item.monsterPlacer.name", "生成", "生成 蝙蝠",
                 Collections.singletonList("entity.Bat.name"), shown::get));
-        assertEquals("Spawn 蝙蝠", composite("item.monsterPlacer.name", "生成", "生成 蝙蝠",
+        assertResolved("not derived", "Spawn 蝙蝠", "蝙蝠", composite("item.monsterPlacer.name", "生成", "生成 蝙蝠",
                 Collections.<String>emptyList(), key -> null));
     }
 
     @Test
     public void derivedKeyWinsOverTheReverseIndex() {
         Map<String, String> shown = Collections.singletonMap("fluid.tile.water", "水");
-        assertEquals("Fluid Water Tank", composite("tile.openblocks.tank.name", "蓄水槽", "水蓄水槽",
-                Arrays.asList("tile.missing.name", "fluid.tile.water"), shown::get));
+        assertEquals("Fluid Water Tank", name(composite("tile.openblocks.tank.name", "蓄水槽", "水蓄水槽",
+                Arrays.asList("tile.missing.name", "fluid.tile.water"), shown::get)));
     }
 
     @Test
@@ -163,14 +209,14 @@ public class GenericNameResolversTest {
     @Test
     public void formatSamplesTranslateEveryArgumentThroughTheReverseIndex() {
         for (String[] sample : FORMAT_SAMPLES) {
-            assertEquals(sample[0], sample[4], format(sample[1], sample[2], sample[3]));
+            assertResolved(sample[0], sample[4], sample[5], format(sample[1], sample[2], sample[3]));
         }
     }
 
     @Test
     public void formatKeepsPrimaryArgumentsWhenNoneReverseResolve() {
-        assertEquals("Unknown Block Cover", format("item.thermaldynamics.cover.name", "覆盖板：%s",
-                "覆盖板：Unknown Block"));
+        assertResolved("cover", "Unknown Block Cover", "Unknown Block", format("item.thermaldynamics.cover.name",
+                "覆盖板：%s", "覆盖板：Unknown Block"));
         assertNull(format("tile.compressed.cobblestone.name", "%s Cobblestone", "Nonuple Compressed Cobblestone"));
     }
 
@@ -194,9 +240,9 @@ public class GenericNameResolversTest {
         assertFalse(FormatNameResolver.hasPositions("100%% pure"));
         assertFalse(FormatNameResolver.hasPositions("Plain"));
         assertEquals(Arrays.asList("石头", "花岗岩"), FormatNameResolver.arguments("%2$s上的%1$s", "花岗岩上的石头"));
-        assertEquals("Stone on Granite", FormatNameResolver.compose("%2$s上的%1$s", "花岗岩上的石头",
-                "%1$s on %2$s", reverse()));
-        assertEquals("Stone 50%", FormatNameResolver.compose("%s 五成", "石头 五成", "%s 50%%", reverse()));
+        assertEquals("Stone on Granite", name(FormatNameResolver.compose("%2$s上的%1$s", "花岗岩上的石头",
+                "%1$s on %2$s", reverse())));
+        assertEquals("Stone 50%", name(FormatNameResolver.compose("%s 五成", "石头 五成", "%s 50%%", reverse())));
         assertNull(FormatNameResolver.arguments("%1$s和%1$s", "石头和花岗岩"));
     }
 }

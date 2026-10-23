@@ -102,6 +102,11 @@ public final class PolyglotCommand extends CommandBase {
                 resolvers.add(resolver.getClass().getSimpleName());
             }
             send(sender, "resolver", resolvers.isEmpty() ? none() : String.join(", ", resolvers));
+            SecondaryNames names = ItemNames.of(stack);
+            send(sender, "source", names.isEmpty() ? none() : String.valueOf(names.source()));
+            for (Map.Entry<String, List<String>> entry : names.untranslated().entrySet()) {
+                send(sender, "untranslated", entry.getKey(), String.join(", ", entry.getValue()));
+            }
             List<String> disabled = disabledIntegrations.get();
             send(sender, "integrations", disabled.isEmpty() ? none() : String.join(", ", disabled));
         } catch (RuntimeException error) {

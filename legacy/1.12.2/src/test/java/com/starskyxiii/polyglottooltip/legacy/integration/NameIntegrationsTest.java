@@ -40,9 +40,11 @@ public class NameIntegrationsTest {
                 "names-microblock=microblockcbe", "names-extracells=extracells");
         for (String entry : expected) {
             assertTrue(entry, modids.contains(entry));
+            assertTrue(entry, modids.indexOf(entry) < modids.indexOf("generic-bare-key=null"));
             assertTrue(entry, modids.indexOf(entry) < modids.indexOf("generic-format=null"));
             assertTrue(entry, modids.indexOf(entry) < modids.indexOf("generic-composite=null"));
         }
+        assertTrue(modids.indexOf("generic-bare-key=null") < modids.indexOf("generic-format=null"));
     }
 
     @Test

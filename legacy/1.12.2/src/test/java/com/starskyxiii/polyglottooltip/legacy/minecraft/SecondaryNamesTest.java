@@ -1,7 +1,9 @@
 package com.starskyxiii.polyglottooltip.legacy.minecraft;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -66,5 +68,23 @@ public class SecondaryNamesTest {
         SecondaryNames result = SecondaryNames.of("鐵錠", LANGUAGES, names(), false, "zh_tw").withSource("standard");
         assertEquals("standard", result.source());
         assertEquals(SecondaryNames.of("鐵錠", LANGUAGES, names(), false, "zh_tw").names(), result.names());
+        assertFalse(result.partial());
+    }
+
+    @Test
+    public void partialNamesKeepTheUntranslatedPartsOfShownLanguages() {
+        Map<String, String> names = new HashMap<>();
+        names.put("en_us", "平凡的Potion");
+        names.put("ja_jp", "平凡的ポーション");
+        names.put("zh_cn", "平凡的药水");
+        Map<String, List<String>> untranslated = new HashMap<>();
+        untranslated.put("en_us", Collections.singletonList("平凡的"));
+        untranslated.put("zh_cn", Collections.singletonList("平凡的"));
+        SecondaryNames result = SecondaryNames.of("平凡的药水", LANGUAGES, names, untranslated, false, "zh_tw")
+                .withSource("CompositeNameResolver");
+        assertEquals(Arrays.asList("平凡的ポーション", "平凡的Potion"), result.names());
+        assertTrue(result.partial());
+        assertEquals("CompositeNameResolver" + SecondaryNames.PARTIAL_SUFFIX, result.source());
+        assertEquals(Collections.singletonMap("en_us", Collections.singletonList("平凡的")), result.untranslated());
     }
 }

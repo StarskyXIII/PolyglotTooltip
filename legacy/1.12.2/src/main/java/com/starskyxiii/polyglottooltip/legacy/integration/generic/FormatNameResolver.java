@@ -8,6 +8,7 @@ import java.util.regex.Pattern;
 
 import com.starskyxiii.polyglottooltip.legacy.integration.IntegrationGuard;
 import com.starskyxiii.polyglottooltip.legacy.minecraft.ConsistencyCheck;
+import com.starskyxiii.polyglottooltip.legacy.minecraft.ResolvedName;
 import com.starskyxiii.polyglottooltip.legacy.minecraft.SecondaryDictionary;
 import com.starskyxiii.polyglottooltip.legacy.minecraft.SpecialItemNameResolver;
 
@@ -32,10 +33,17 @@ public final class FormatNameResolver implements SpecialItemNameResolver {
     @Override
     public String resolve(ItemStack stack, ConsistencyCheck.Result result, String languageCode,
                           SecondaryDictionary dictionary) {
+        ResolvedName name = resolveName(stack, result, languageCode, dictionary);
+        return name == null ? null : name.name();
+    }
+
+    @Override
+    public ResolvedName resolveName(ItemStack stack, ConsistencyCheck.Result result, String languageCode,
+                                    SecondaryDictionary dictionary) {
         return guard.call(() -> resolve(result, dictionary), null);
     }
 
-    private static String resolve(ConsistencyCheck.Result result, SecondaryDictionary dictionary) {
+    private static ResolvedName resolve(ConsistencyCheck.Result result, SecondaryDictionary dictionary) {
         String format = result.expected();
         if (format == null || !hasPositions(format)) {
             return null;
@@ -57,8 +65,8 @@ public final class FormatNameResolver implements SpecialItemNameResolver {
         return false;
     }
 
-    static String compose(String primaryFormat, String actual, String secondaryFormat,
-                          Function<String, String> translate) {
+    static ResolvedName compose(String primaryFormat, String actual, String secondaryFormat,
+                                Function<String, String> translate) {
         if (primaryFormat == null || actual == null || secondaryFormat == null) {
             return null;
         }
@@ -67,15 +75,19 @@ public final class FormatNameResolver implements SpecialItemNameResolver {
             return null;
         }
         List<String> translated = new ArrayList<>(arguments.size());
+        List<String> untranslated = new ArrayList<>();
         for (String argument : arguments) {
             String value = argument == null ? null : translate.apply(argument.trim());
+            if (value == null && argument != null && CompositeNameResolver.hasLetter(argument)) {
+                untranslated.add(argument.trim());
+            }
             translated.add(value != null ? value : argument);
         }
         String composed = render(secondaryFormat, translated);
         if (composed == null || ReverseIndex.normalize(composed).equals(ReverseIndex.normalize(actual))) {
             return null;
         }
-        return composed;
+        return ResolvedName.of(composed, untranslated);
     }
 
     static List<String> arguments(String format, String actual) {

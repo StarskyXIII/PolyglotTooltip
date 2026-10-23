@@ -268,7 +268,7 @@ async function matrix(world) {
   const coverage = await call('probe.coverage', {samples: 5, classes: 30}, 1800000);
   await record('coverage', coverage);
   result.coverage = {stacks: coverage.stacks, withSecondary: coverage.withSecondary, share: coverage.share,
-    consistent: coverage.consistent, consistentShare: coverage.consistentShare, bySource: coverage.bySource,
+    complete: coverage.complete, partial: coverage.partial, partialShare: coverage.partialShare, consistent: coverage.consistent, consistentShare: coverage.consistentShare, bySource: coverage.bySource,
     misses: coverage.misses, errors: coverage.errors, meanMicros: coverage.meanMicros, elapsedMs: coverage.elapsedMs};
 
   const stone = result.items.find(row => row.id === 'minecraft:stone'), iron = result.items.find(row => row.id === 'minecraft:iron_ingot');
