@@ -1,6 +1,6 @@
 # 1.12.2 matrix tools
 
-This directory holds the game-test runners and controllers for the 1.12.2 mod. Only the files in the first table work with the current mod. The others were written for the earlier implementation (background name tables, bytecode observation, `/polyglotnames`), which is kept at tag `archive/legacy112-admission-2026-10-22`; they are kept unchanged as a record of how its results were produced and only make sense at that tag.
+This directory holds the game-test runners and controllers for the 1.12.2 mod. Only the files in the first table work with the current mod. The others were written for the earlier implementation (background name tables, bytecode observation, `/polyglotnames`), which is kept at tag `archive/1.12.2-admission-2026-10-22`; they are kept unchanged as a record of how its results were produced and only make sense at that tag.
 
 ## Current mod
 
