@@ -5,11 +5,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.ObjIntConsumer;
+import java.util.function.Supplier;
 
 import com.starskyxiii.polyglottooltip.legacy.Config;
 import com.starskyxiii.polyglottooltip.legacy.integration.IntegrationGuard;
 import com.starskyxiii.polyglottooltip.legacy.minecraft.ItemNames;
 import com.starskyxiii.polyglottooltip.legacy.minecraft.SecondaryLanguages;
+import com.starskyxiii.polyglottooltip.legacy.minecraft.TooltipLines;
 
 import mezz.jei.gui.ingredients.IIngredientListElement;
 import mezz.jei.util.Translator;
@@ -67,6 +69,14 @@ public final class JeiSearch {
         if (active != null && Minecraft.func_71410_x().func_152345_ab()) {
             active.run(() -> index.polyglot$indexPending(COMPLETE));
         }
+    }
+
+    public static <T> T searchTooltip(Supplier<T> tooltip) {
+        IntegrationGuard active = guard;
+        if (active == null || !active.active()) {
+            return tooltip.get();
+        }
+        return TooltipLines.withoutSecondaryLines(tooltip);
     }
 
     static void indexPending() {
