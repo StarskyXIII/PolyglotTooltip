@@ -8,6 +8,8 @@ import com.starskyxiii.polyglottooltip.legacy.Settings;
 import net.minecraft.item.ItemStack;
 
 public final class ItemNames {
+    public static final String STANDARD_SOURCE = "standard";
+
     private static final NameCache<SecondaryNames> CACHE = new NameCache<>();
 
     private ItemNames() {}
@@ -28,12 +30,16 @@ public final class ItemNames {
             return cached;
         }
         ConsistencyCheck.Result result = ConsistencyCheck.resolve(stack, dictionaries);
-        Map<String, String> names = result.handOff()
-                ? SpecialItemNameResolvers.resolve(stack, result, dictionaries)
-                : result.names();
+        Map<String, String> names = result.names();
+        String source = STANDARD_SOURCE;
+        if (result.handOff()) {
+            SpecialItemNameResolvers.Resolution resolution = SpecialItemNameResolvers.resolution(stack, result, dictionaries);
+            names = resolution.names();
+            source = resolution.resolver() == null ? null : resolution.resolver().getClass().getSimpleName();
+        }
         Settings settings = Config.settings();
         SecondaryNames resolved = SecondaryNames.of(result.primary(), settings.displayLanguages(), names,
-                settings.alwaysShow(), SecondaryLanguages.currentLanguage());
+                settings.alwaysShow(), SecondaryLanguages.currentLanguage()).withSource(source);
         CACHE.put(key, resolved);
         return resolved;
     }

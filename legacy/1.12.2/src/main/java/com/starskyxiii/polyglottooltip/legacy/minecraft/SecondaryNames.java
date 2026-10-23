@@ -13,9 +13,15 @@ public final class SecondaryNames {
     public static final SecondaryNames EMPTY = new SecondaryNames(Collections.<String>emptyList());
 
     private final List<String> names;
+    private final String source;
 
     private SecondaryNames(List<String> names) {
+        this(names, null);
+    }
+
+    private SecondaryNames(List<String> names, String source) {
         this.names = names;
+        this.source = source;
     }
 
     public static SecondaryNames of(String primary,
@@ -56,5 +62,13 @@ public final class SecondaryNames {
 
     public boolean isEmpty() {
         return names.isEmpty();
+    }
+
+    public String source() {
+        return source;
+    }
+
+    public SecondaryNames withSource(String source) {
+        return isEmpty() ? EMPTY : new SecondaryNames(names, source);
     }
 }

@@ -34,8 +34,33 @@ public final class SpecialItemNameResolvers {
         return accepted;
     }
 
+    public static final class Resolution {
+        static final Resolution NONE = new Resolution(Collections.<String, String>emptyMap(), null);
+
+        private final Map<String, String> names;
+        private final SpecialItemNameResolver resolver;
+
+        private Resolution(Map<String, String> names, SpecialItemNameResolver resolver) {
+            this.names = names;
+            this.resolver = resolver;
+        }
+
+        public Map<String, String> names() {
+            return names;
+        }
+
+        public SpecialItemNameResolver resolver() {
+            return resolver;
+        }
+    }
+
     public static Map<String, String> resolve(ItemStack stack, ConsistencyCheck.Result result,
                                               Map<String, SecondaryDictionary> dictionaries) {
+        return resolution(stack, result, dictionaries).names();
+    }
+
+    public static Resolution resolution(ItemStack stack, ConsistencyCheck.Result result,
+                                        Map<String, SecondaryDictionary> dictionaries) {
         for (SpecialItemNameResolver resolver : RESOLVERS) {
             if (!accepts(resolver, stack)) {
                 continue;
@@ -49,13 +74,13 @@ public final class SpecialItemNameResolvers {
                     }
                 }
                 if (!names.isEmpty()) {
-                    return names;
+                    return new Resolution(names, resolver);
                 }
             } catch (RuntimeException error) {
                 failed(resolver, error);
             }
         }
-        return Collections.emptyMap();
+        return Resolution.NONE;
     }
 
     private static boolean accepts(SpecialItemNameResolver resolver, ItemStack stack) {

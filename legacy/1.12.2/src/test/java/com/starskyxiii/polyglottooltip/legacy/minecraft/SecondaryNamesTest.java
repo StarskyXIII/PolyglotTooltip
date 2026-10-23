@@ -58,5 +58,13 @@ public class SecondaryNamesTest {
     public void emptyWhenNothingRemains() {
         assertSame(SecondaryNames.EMPTY, SecondaryNames.of("x", LANGUAGES, Collections.<String, String>emptyMap(), false, "zh_tw"));
         assertSame(SecondaryNames.EMPTY, SecondaryNames.of("x", LANGUAGES, null, false, "zh_tw"));
+        assertSame(SecondaryNames.EMPTY, SecondaryNames.EMPTY.withSource("standard"));
+    }
+
+    @Test
+    public void withSourceKeepsTheNames() {
+        SecondaryNames result = SecondaryNames.of("鐵錠", LANGUAGES, names(), false, "zh_tw").withSource("standard");
+        assertEquals("standard", result.source());
+        assertEquals(SecondaryNames.of("鐵錠", LANGUAGES, names(), false, "zh_tw").names(), result.names());
     }
 }
