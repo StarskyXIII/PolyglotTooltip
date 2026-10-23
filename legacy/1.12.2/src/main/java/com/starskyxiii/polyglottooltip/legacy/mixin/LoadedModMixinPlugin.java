@@ -2,15 +2,21 @@ package com.starskyxiii.polyglottooltip.legacy.mixin;
 
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.apache.logging.log4j.LogManager;
 
 import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
 
+import com.starskyxiii.polyglottooltip.legacy.PolyglotTooltipMod;
+
 import net.minecraftforge.fml.common.Loader;
 
 public abstract class LoadedModMixinPlugin implements IMixinConfigPlugin {
     private final String modid;
+    private final Set<String> missing = ConcurrentHashMap.newKeySet();
 
     protected LoadedModMixinPlugin(String modid) {
         this.modid = modid;
@@ -26,7 +32,16 @@ public abstract class LoadedModMixinPlugin implements IMixinConfigPlugin {
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
-        return Loader.isModLoaded(modid);
+        if (!Loader.isModLoaded(modid)) {
+            return false;
+        }
+        if (getClass().getClassLoader().getResource(targetClassName.replace('.', '/') + ".class") != null) {
+            return true;
+        }
+        if (missing.add(targetClassName)) {
+            LogManager.getLogger(PolyglotTooltipMod.MOD_ID).debug("Skipped {} because {} is not present", mixinClassName, targetClassName);
+        }
+        return false;
     }
 
     @Override

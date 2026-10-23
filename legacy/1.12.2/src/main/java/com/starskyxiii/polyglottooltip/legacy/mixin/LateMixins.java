@@ -9,6 +9,6 @@ public final class LateMixins implements ILateMixinLoader {
     @Override
     public List<String> getMixinConfigs() {
         return Arrays.asList("polyglottooltip.jei.mixins.json", "polyglottooltip.top.mixins.json",
-                "polyglottooltip.hwyla.mixins.json");
+                "polyglottooltip.hwyla.mixins.json", "polyglottooltip.ae2.mixins.json", "polyglottooltip.rs.mixins.json");
     }
 }
