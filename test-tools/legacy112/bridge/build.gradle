@@ -50,17 +50,5 @@ def passiveJar = tasks.register('passiveJar', Jar) {
     exclude '**/BridgeCore*.class', '**/*Transformer*.class', 'META-INF/services/**'
 }
 def passiveProductionJar = renamer.classes(passiveJar) { archiveClassifier = 'passive-production' }
-def nameAuditJar = tasks.register('nameAuditJar', Jar) {
-    archiveClassifier = 'name-audit'
-    from sourceSets.main.output
-    exclude '**/BridgeCore*.class', 'META-INF/services/**'
-    exclude { entry -> entry.name.contains('Transformer') && !entry.name.startsWith('NameAuditTransformer') && !entry.name.startsWith('HudCaptureTransformer') }
-    manifest.attributes('FMLCorePlugin': 'com.starskyxiii.polyglottooltip.testbridge.NameAuditCore', 'FMLCorePluginContainsFMLMod': 'true')
-}
-def nameAuditProductionJar = renamer.classes(nameAuditJar) { archiveClassifier = 'name-audit-production' }
-tasks.named('build') { dependsOn productionJar, passiveProductionJar, nameAuditProductionJar }
+tasks.named('build') { dependsOn productionJar, passiveProductionJar }
 tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
-tasks.named('test') {
-    // Disabled until T11 rewrites the tests that read classes of the archived 1.12.2 module.
-    onlyIf { false }
-}

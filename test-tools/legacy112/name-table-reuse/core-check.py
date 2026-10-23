@@ -5,10 +5,11 @@ install the passive devbridge, enable it through polyglot-devbridge.properties, 
 the clone through the PrismLauncher helper and let core-check.mjs run one scenario in a throwaway pt112-core-* world.
 Afterwards the candidate and the bridge are removed, the original jar name is restored, the properties file is deleted,
 every config file this run touched is restored byte for byte and the world is deleted. Reports go to
-docs/research/legacy112/<report>/run-<attempt>/.
+docs/research/legacy112/<report>/run-<attempt>/. Scenario export writes the probe.nameExport TSV into the game's
+polyglottooltip-export/ directory and moves it into the report directory afterwards.
 
-Usage: core-check.py <pack|instance-name> <attempt> [--scenario ae2] [--jar PATH] [--report DIR]
-                     [--set integrations.ae2=false] [--ae-search-tooltips NO]
+Usage: core-check.py <pack|instance-name> <attempt> [--scenario ae2|export] [--jar PATH] [--report DIR]
+                     [--set integrations.ae2=false] [--ae-search-tooltips NO] [--export-source auto|jei|creative]
 
 Rules kept from consistency-run.py: the clone must not be running, port 19594 must be free (one bridged launch at a
 time), and only PT-Matrix-* clones are touched unless an explicit instance name is given.
@@ -39,6 +40,7 @@ HIDDEN = '.core-hidden'
 CANDIDATE = 'polyglottooltip-core-check.jar'
 AE_CONFIG = Path('config/AppliedEnergistics2/AppliedEnergistics2.cfg')
 PRODUCT_CONFIG = Path('config/polyglottooltip.cfg')
+EXPORT = 'polyglottooltip-export'
 PACKS = {
     'nova': 'PT-Matrix-Nova',
     'extended': 'PT-Matrix-Extended',
@@ -130,6 +132,7 @@ def run_pack(key, instance, args):
     world = 'pt112-core-' + args.attempt
     started = time.time()
     crashes_before = crash_reports(game)
+    exports_before = set(os.listdir(game / EXPORT)) if (game / EXPORT).is_dir() else set()
     hidden = None
     code = None
     crash = None
@@ -160,6 +163,7 @@ def run_pack(key, instance, args):
                             'clientdevbridge.lifecycleTimeoutSeconds=1200\nclientdevbridge.fixtureNonce=%s\n' % (PORT, nonce), encoding='utf-8')
         write(run / 'config.json', dict(pack=key, instance=instance, fixture=str(game), port=PORT, nonce=nonce, worldName=world,
                                         attempt=args.attempt, scenario=args.scenario, overrides=args.set, aeSearchTooltips=tooltips,
+                                        exportSource=args.export_source, exportFile='names-%s.tsv' % args.attempt,
                                         candidate=str(jar), candidateSha=sha(jar), bridge=sha(BRIDGE), backups=backups,
                                         hiddenProduct=(hidden.name if hidden else None), hiddenProductSha=(sha(hidden) if hidden else None)))
         subprocess.Popen([str(PRISM), '--launch', instance], creationflags=subprocess.CREATE_NO_WINDOW, stdin=subprocess.DEVNULL,
@@ -222,6 +226,12 @@ def run_pack(key, instance, args):
                 configs[relative] = not target.exists()
         if not processes(instance) and (game / 'logs' / 'latest.log').is_file():
             shutil.copy2(game / 'logs' / 'latest.log', run / 'latest.log')
+        exported = []
+        if (game / EXPORT).is_dir():
+            for name in sorted(set(os.listdir(game / EXPORT)) - exports_before):
+                shutil.move(str(game / EXPORT / name), str(run / name))
+                exported.append(name)
+            if not exports_before and not os.listdir(game / EXPORT): (game / EXPORT).rmdir()
         save = game / 'saves' / world
         removed_world = False
         if save.is_dir() and not processes(instance):
@@ -230,6 +240,7 @@ def run_pack(key, instance, args):
         write(run / 'restoration.json', dict(at=now(), settingsRemoved=not settings.exists(), bridgeRemoved=not bridge_target.exists(),
                                              candidateRemoved=not candidate.exists(), productRestored=restored, configsRestored=configs,
                                              worldRemoved=removed_world, worldLeft=save.exists(), javaLeft=processes(instance),
+                                             exportsMoved=exported,
                                              controllerExit=code))
     log = run / 'latest.log'
     warnings = []
@@ -249,11 +260,12 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('target', help='pack key (%s) or an instance name' % ', '.join(PACKS))
     parser.add_argument('attempt')
-    parser.add_argument('--scenario', default='ae2', choices=['ae2'])
+    parser.add_argument('--scenario', default='ae2', choices=['ae2', 'export'])
     parser.add_argument('--jar', default=str(JAR))
     parser.add_argument('--report', default='core-stage3-ae2-2026-10-23')
     parser.add_argument('--set', action='append', default=[], help='polyglottooltip.cfg override, category.option=value')
     parser.add_argument('--ae-search-tooltips', choices=['YES', 'NO'])
+    parser.add_argument('--export-source', default='auto', choices=['auto', 'jei', 'creative'])
     args = parser.parse_args()
     assert re.fullmatch(r'[a-z0-9-]{1,40}', args.attempt), 'attempt must be [a-z0-9-]{1,40}'
     assert re.fullmatch(r'[A-Za-z0-9._-]{1,80}', args.report), 'report must be a plain directory name'

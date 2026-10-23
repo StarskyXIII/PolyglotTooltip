@@ -156,19 +156,6 @@ public final class PackProbe {
             mods.add(value);
         }
         result.add("mods", mods);
-        if (Loader.isModLoaded("polyglottooltip")) {
-            java.util.Properties catalog = new java.util.Properties();
-            Class<?> selector = NativeAccess.type("com.starskyxiii.polyglottooltip.legacy.bootstrap.IntegrationProfileSelector");
-            try (java.io.InputStream source = selector.getResourceAsStream("/polyglottooltip.integrations.properties")) {
-                catalog.load(source);
-            }
-            JsonObject profiles = new JsonObject();
-            for (String name : new java.util.TreeSet<String>(catalog.stringPropertyNames())) {
-                String key = name.substring(0, name.lastIndexOf('.'));
-                if (!profiles.has(key)) profiles.addProperty(key, (Boolean) NativeAccess.call(selector, "enabled", key));
-            }
-            result.add("profiles", profiles);
-        }
         return result;
     }
 }

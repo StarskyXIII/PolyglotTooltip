@@ -61,7 +61,6 @@ public final class MekProbe {
             row.addProperty("nativeName", (String) gasType.getMethod("getLocalizedName").invoke(gas));
             row.addProperty("amount", stackType.getField("amount").getInt(stack));
             row.add("tooltip", gson.toJsonTree(tooltip.invoke(renderer, Minecraft.func_71410_x(), stack, ITooltipFlag.TooltipFlags.NORMAL)));
-            if (Loader.isModLoaded("polyglottooltip")) row.add("aliases", gson.toJsonTree(Class.forName("com.starskyxiii.polyglottooltip.legacy.minecraft.SecondaryNameResolver").getMethod("resolveIngredientNames", Object.class).invoke(null, stack)));
             gases.add(row);
         }
         JsonObject result = new JsonObject();
@@ -79,7 +78,7 @@ public final class MekProbe {
         row.addProperty("metadata", stack.func_77960_j());
         row.addProperty("nbt", String.valueOf(stack.func_77978_p()));
         row.add("tooltip", gson.toJsonTree(stack.func_82840_a(Minecraft.func_71410_x().field_71439_g, ITooltipFlag.TooltipFlags.NORMAL)));
-        if (Loader.isModLoaded("polyglottooltip")) row.add("aliases", gson.toJsonTree(Class.forName("com.starskyxiii.polyglottooltip.legacy.minecraft.SecondaryNameResolver").getMethod("resolveItemNames", ItemStack.class).invoke(null, stack)));
+        if (Loader.isModLoaded("polyglottooltip")) row.add("aliases", gson.toJsonTree(ProductNames.item(stack)));
         return row;
     }
 }

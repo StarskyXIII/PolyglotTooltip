@@ -219,12 +219,6 @@ public final class RefinedProbe {
         result.addProperty("rows", (Integer) NativeAccess.call(screen, "getRows")); result.addProperty("visibleRows", (Integer) NativeAccess.call(screen, "getVisibleRows"));
         result.addProperty("topHeight", (Integer) NativeAccess.call(screen, "getTopHeight"));
         result.addProperty("scroll", (Integer) NativeAccess.call(bar, "getOffset")); result.addProperty("maxScroll", (Integer) NativeAccess.get(bar, "maxOffset"));
-        if (Loader.isModLoaded("polyglottooltip")) {
-            String profile = more() ? "mrs-232-search-refresh" : "rs-1616-search-refresh";
-            try {
-                result.addProperty("profile", (Boolean) NativeAccess.call(NativeAccess.type("com.starskyxiii.polyglottooltip.legacy.bootstrap.IntegrationProfileSelector"), "enabled", profile));
-            } catch (Exception absent) { result.addProperty("profile", "absent"); }
-        }
         if (manager) manager(screen, params.has("raw") && params.get("raw").getAsBoolean(), result); else grid(screen, params, result);
         return result;
     }

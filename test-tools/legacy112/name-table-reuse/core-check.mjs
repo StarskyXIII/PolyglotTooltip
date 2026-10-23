@@ -3,7 +3,9 @@
 // an ME chest built through ae.world, with secondary-language queries; read the stone and iron ingot tooltips and run
 // recipe-viewer searches. Scenario rs (a launch.py fixture, not a clone): switch the game to zh_tw at the main menu, build
 // a creative RS network through rs.world and search the item grid with secondary-language queries. Write every
-// observation and a summary, then quit. Scenarios matrix and baseline (core-matrix.py) are described above matrix().
+// observation and a summary, then quit. Scenario export: in the same kind of world, write every ingredient's primary and
+// secondary names through probe.nameExport (core-check.py moves the TSV into the report). Scenarios matrix and baseline
+// (core-matrix.py) are described above matrix().
 import path from 'node:path';
 import assert from 'node:assert/strict';
 import {Bridge} from '../../name-audit/runner/bridge.mjs';
@@ -305,6 +307,12 @@ async function matrix(world) {
   return result;
 }
 
+async function nameExport() {
+  const exported = await call('probe.nameExport', {source: config.exportSource ?? 'auto', file: config.exportFile}, 1200000);
+  await record('export', exported);
+  return {export: exported, pass: exported.stacks > 0 && exported.languages.length > 0};
+}
+
 try {
   const menu = await waitFor(state => state.screen && !state.world && /GuiMainMenu|GuiCustom|MainMenu/.test(state.screen),
     (config.menuTimeoutS ?? 2400) * 1000, 'Main menu');
@@ -322,8 +330,9 @@ try {
     await record('status-world', world);
     if (world.screen) await call('screen.close').catch(() => {});
     await pause(config.worldSettleMs ?? 15000);
-    assert.ok(['ae2', 'rs', 'matrix'].includes(config.scenario));
-    const result = config.scenario === 'ae2' ? await ae2() : config.scenario === 'rs' ? await rs() : await matrix(world);
+    assert.ok(['ae2', 'rs', 'matrix', 'export'].includes(config.scenario));
+    const result = config.scenario === 'ae2' ? await ae2() : config.scenario === 'rs' ? await rs()
+      : config.scenario === 'export' ? await nameExport() : await matrix(world);
     await record('summary', {scenario: config.scenario, instance: config.instance, language: world.language,
       overrides: config.overrides, integrationOn, ...result});
   }

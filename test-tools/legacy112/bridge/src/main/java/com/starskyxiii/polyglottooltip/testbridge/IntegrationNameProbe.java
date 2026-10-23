@@ -49,13 +49,6 @@ public final class IntegrationNameProbe {
         }
         result.add("fluids", fluids);
         result.addProperty("language", Minecraft.func_71410_x().field_71474_y.field_74363_ab);
-        if (Loader.isModLoaded("polyglottooltip")) {
-            JsonObject profiles = new JsonObject();
-            for (String profile : new String[]{"if-names", "gt-material-names", "gt-fluid-tooltips", "mui-303", "mui-304", "mui-316", "controlling", "carbon-124-native", "carbon-2021-repair", "pe-search", "it-search-refresh", "top-original", "top-ce", "hwyla", "jec-comparison"}) {
-                profiles.addProperty(profile, (Boolean) NativeAccess.call(NativeAccess.type("com.starskyxiii.polyglottooltip.legacy.bootstrap.IntegrationProfileSelector"), "enabled", profile));
-            }
-            result.add("profiles", profiles);
-        }
         return result;
     }
 
@@ -122,7 +115,7 @@ public final class IntegrationNameProbe {
         row.addProperty("rawNativeName", net.minecraft.client.resources.I18n.func_135052_a(stack.func_77973_b().func_77667_c(stack) + ".name"));
         row.addProperty("serialized", before.toString());
         row.add("tooltip", gson.toJsonTree(stack.func_82840_a(Minecraft.func_71410_x().field_71439_g, ITooltipFlag.TooltipFlags.NORMAL)));
-        if (Loader.isModLoaded("polyglottooltip")) row.add("aliases", gson.toJsonTree(NativeAccess.call(NativeAccess.type("com.starskyxiii.polyglottooltip.legacy.minecraft.SecondaryNameResolver"), "resolveItemNames", stack)));
+        if (Loader.isModLoaded("polyglottooltip")) row.add("aliases", gson.toJsonTree(ProductNames.item(stack)));
         row.addProperty("unchanged", before.equals(stack.func_77955_b(new NBTTagCompound())));
         row.addProperty("count", stack.func_190916_E()); row.addProperty("nbt", String.valueOf(stack.func_77978_p()));
         row.addProperty("identity", System.identityHashCode(stack));
@@ -134,7 +127,7 @@ public final class IntegrationNameProbe {
         row.addProperty("id", stack.getFluid().getName()); row.addProperty("class", stack.getFluid().getClass().getName());
         row.addProperty("nativeName", stack.getLocalizedName()); row.addProperty("amount", stack.amount);
         NBTTagCompound before = stack.writeToNBT(new NBTTagCompound());
-        if (Loader.isModLoaded("polyglottooltip")) row.add("aliases", gson.toJsonTree(NativeAccess.call(NativeAccess.type("com.starskyxiii.polyglottooltip.legacy.minecraft.SecondaryNameResolver"), "resolveFluidNames", stack)));
+        if (Loader.isModLoaded("polyglottooltip")) row.add("aliases", gson.toJsonTree(ProductNames.fluid(stack)));
         row.addProperty("unchanged", before.equals(stack.writeToNBT(new NBTTagCompound())));
         return row;
     }

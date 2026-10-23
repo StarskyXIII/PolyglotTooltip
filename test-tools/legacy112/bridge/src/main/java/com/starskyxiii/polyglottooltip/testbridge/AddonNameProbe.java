@@ -136,7 +136,7 @@ public final class AddonNameProbe {
         row.addProperty("id", String.valueOf(stack.func_77973_b().getRegistryName()));
         row.addProperty("nativeName", stack.func_82833_r());
         row.add("tooltip", gson.toJsonTree(stack.func_82840_a(Minecraft.func_71410_x().field_71439_g, ITooltipFlag.TooltipFlags.NORMAL)));
-        if (Loader.isModLoaded("polyglottooltip")) row.add("aliases", gson.toJsonTree(NativeAccess.call(NativeAccess.type("com.starskyxiii.polyglottooltip.legacy.minecraft.SecondaryNameResolver"), "resolveItemNames", stack)));
+        if (Loader.isModLoaded("polyglottooltip")) row.add("aliases", gson.toJsonTree(ProductNames.item(stack)));
         row.addProperty("unchanged", before.equals(stack.func_77955_b(new NBTTagCompound())));
         row.addProperty("count", stack.func_190916_E()); row.addProperty("nbt", String.valueOf(stack.func_77978_p()));
         return row;

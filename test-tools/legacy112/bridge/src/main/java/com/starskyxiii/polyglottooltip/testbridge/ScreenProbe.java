@@ -16,7 +16,7 @@ public final class ScreenProbe {
     private static String name;
     private static int mouseX, mouseY;
     private static boolean rendered;
-    private static JsonObject configuration, inheritedBefore, inheritedChanged, inheritedAfter;
+    private static JsonObject inheritedBefore, inheritedChanged, inheritedAfter;
     private static boolean inherited;
     private static boolean nativeEvents, innerDraw, requireTooltip, innerCanceled;
     private static int frames, requestedFrames;
@@ -47,7 +47,6 @@ public final class ScreenProbe {
         mouseY = y;
         pending = future;
         rendered = false;
-        configuration = params.has("configuration") ? params.getAsJsonObject("configuration") : null;
         inherited = params.has("inherited") && params.get("inherited").getAsBoolean();
         nativeEvents = params.has("nativeEvents") && params.get("nativeEvents").getAsBoolean();
         requireTooltip = params.has("requireTooltip") && params.get("requireTooltip").getAsBoolean();
@@ -78,11 +77,6 @@ public final class ScreenProbe {
             if (frames++ == 0) {
                 if (inherited) inheritedBefore = AddonInheritedProbe.ui(new JsonObject());
                 if (integration != null) integrationBefore = integrationState(true);
-                if (configuration != null) {
-                    CoreProbe.configure(configuration);
-                    Class.forName("com.starskyxiii.polyglottooltip.legacy.minecraft.MinecraftLanguageAdapter").getMethod("tick").invoke(null);
-                    configuration = null;
-                }
                 if (inherited) inheritedChanged = AddonInheritedProbe.ui(new JsonObject());
                 if (integration != null) integrationChanged = integrationState(true);
             }
@@ -112,10 +106,6 @@ public final class ScreenProbe {
             if (event.isCanceled() || event.getGui() != screen || Minecraft.func_71410_x().field_71462_r != screen) throw new IllegalStateException("Screen render changed or canceled");
             event.setCanceled(true);
             if (inherited) inheritedBefore = AddonInheritedProbe.ui(new JsonObject());
-            if (configuration != null) {
-                CoreProbe.configure(configuration);
-                Class.forName("com.starskyxiii.polyglottooltip.legacy.minecraft.MinecraftLanguageAdapter").getMethod("tick").invoke(null);
-            }
             if (inherited) inheritedChanged = AddonInheritedProbe.ui(new JsonObject());
             TooltipProbe.captured = null;
             TooltipProbe.refined = null;
@@ -178,7 +168,7 @@ public final class ScreenProbe {
         screen = null;
         name = null;
         rendered = false;
-        configuration = null; inherited = false; inheritedBefore = null; inheritedChanged = null; inheritedAfter = null;
+        inherited = false; inheritedBefore = null; inheritedChanged = null; inheritedAfter = null;
         nativeEvents = false; requireTooltip = false; innerCanceled = false; frames = 0; requestedFrames = 1;
         integration = null; integrationBefore = null; integrationChanged = null;
     }

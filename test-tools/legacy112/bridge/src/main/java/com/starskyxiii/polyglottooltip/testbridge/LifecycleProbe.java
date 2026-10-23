@@ -21,8 +21,7 @@ public final class LifecycleProbe {
         if (screen == null) throw new IllegalStateException("A retained screen is required");
         String method = params.get("method").getAsString();
         if (!method.equals("language.gui") && !method.equals("language.set")
-                && !method.equals("resources.reload") && !method.equals("resources.select")
-                && !method.equals("probe.resourceScenario")) throw new IllegalArgumentException("Unsupported transition");
+                && !method.equals("resources.reload") && !method.equals("resources.select")) throw new IllegalArgumentException("Unsupported transition");
         JsonObject result = new JsonObject();
         result.addProperty("method", method);
         result.add("before", snapshot());
@@ -72,52 +71,8 @@ public final class LifecycleProbe {
     public static JsonObject snapshot() throws Exception {
         JsonObject result = new JsonObject();
         result.add("status", BridgeDispatch.dispatch("status", new JsonObject()));
-        result.add("resources", ResourceProbe.snapshot());
-        if (Loader.isModLoaded("polyglottooltip")) {
-            Object value = NativeAccess.call(NativeAccess.type("com.starskyxiii.polyglottooltip.legacy.minecraft.MinecraftLanguageAdapter"), "snapshot");
-            JsonObject language = new JsonObject();
-            language.addProperty("primary", (String) NativeAccess.get(value, "primary"));
-            language.addProperty("generation", (Number) NativeAccess.get(value, "generation"));
-            language.addProperty("nativeNameEpoch", (Number) NativeAccess.get(value, "nativeNameEpoch"));
-            language.addProperty("enabled", (Boolean) NativeAccess.call(value, "enabled"));
-            language.addProperty("ready", (Boolean) NativeAccess.call(value, "ready"));
-            Object settings = NativeAccess.get(value, "settings");
-            language.addProperty("alwaysShow", (Boolean) NativeAccess.get(settings, "alwaysShow"));
-            JsonArray codes = new JsonArray();
-            for (Object code : (List<?>) NativeAccess.get(settings, "languages")) codes.add((String) code);
-            language.add("secondaryLanguages", codes);
-            result.add("language", language);
-            result.add("enchantment", enchantment());
-        }
         if (Loader.isModLoaded("jei") && Internal.getRuntime() != null) result.add("jei", recipeVisible());
         if (Loader.isModLoaded("emi")) result.add("emi", EmiProbe.state());
-        if (LanguageStateProbe.active()) result.add("translations", LanguageStateProbe.capture());
-        return result;
-    }
-
-    /** The enchantment name capture as the product sees it: transform-time review, runtime admission, providers. */
-    private static JsonObject enchantment() {
-        JsonObject result = new JsonObject();
-        try {
-            String product = "com.starskyxiii.polyglottooltip.legacy.";
-            Class<?> patch = NativeAccess.type(product + "bootstrap.EnchantmentCapturePatch");
-            Class<?> observer = NativeAccess.type(product + "bootstrap.NameTransformObserver");
-            for (java.util.Map.Entry<?, ?> entry : ((java.util.Map<?, ?>) NativeAccess.call(patch, "diagnostics")).entrySet()) {
-                result.addProperty(String.valueOf(entry.getKey()), String.valueOf(entry.getValue()));
-            }
-            result.addProperty("formatterAdmitted", (Boolean) NativeAccess.call(observer, "admits",
-                    "net.minecraft.enchantment.Enchantment", "func_77316_c(I)Ljava/lang/String;"));
-            java.util.function.BiPredicate<String, String> admits = (owner, method) -> {
-                try { return (Boolean) NativeAccess.call(observer, "admits", owner, method); }
-                catch (Exception error) { return false; }
-            };
-            result.addProperty("handlerAdmitted", (Boolean) NativeAccess.call(patch, "levelKeyHandlerAdmitted",
-                    net.minecraft.enchantment.Enchantment.class, admits));
-            result.add("providers", new com.google.gson.Gson().toJsonTree(NativeAccess.call(
-                    NativeAccess.type(product + "minecraft.NativeEnchantmentScope"), "providerFailures")));
-        } catch (Exception error) {
-            result.addProperty("error", error.toString());
-        }
         return result;
     }
 
