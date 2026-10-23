@@ -1,7 +1,9 @@
 package com.starskyxiii.polyglottooltip.legacy.integration.names;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -10,6 +12,7 @@ import com.starskyxiii.polyglottooltip.legacy.integration.generic.FormatNameReso
 import com.starskyxiii.polyglottooltip.legacy.integration.generic.ReverseIndex;
 import com.starskyxiii.polyglottooltip.legacy.minecraft.ConsistencyCheck;
 import com.starskyxiii.polyglottooltip.legacy.minecraft.FluidSecondaryNames;
+import com.starskyxiii.polyglottooltip.legacy.minecraft.ResolvedName;
 import com.starskyxiii.polyglottooltip.legacy.minecraft.SecondaryDictionary;
 import com.starskyxiii.polyglottooltip.legacy.minecraft.SpecialItemNameResolvers;
 
@@ -44,12 +47,74 @@ final class NameParts {
     }
 
     static String item(ItemStack stack, String languageCode, SecondaryDictionary dictionary) {
+        ResolvedName name = itemName(stack, languageCode, dictionary);
+        return name == null ? null : name.name();
+    }
+
+    static ResolvedName itemName(ItemStack stack, String languageCode, SecondaryDictionary dictionary) {
         Map<String, SecondaryDictionary> dictionaries = Collections.singletonMap(languageCode, dictionary);
         ConsistencyCheck.Result result = ConsistencyCheck.resolve(stack, dictionaries);
-        Map<String, String> names = result.handOff()
-                ? SpecialItemNameResolvers.resolve(stack, result, dictionaries)
-                : result.names();
-        return names.get(languageCode);
+        if (!result.handOff()) {
+            return ResolvedName.of(result.names().get(languageCode));
+        }
+        SpecialItemNameResolvers.Resolution resolution = SpecialItemNameResolvers.resolution(stack, result, dictionaries);
+        return ResolvedName.of(resolution.names().get(languageCode), resolution.untranslated().get(languageCode));
+    }
+
+    static Function<String, String> reverse(SecondaryDictionary dictionary) {
+        return text -> ReverseIndex.current().translate(text, dictionary);
+    }
+
+    static String orPrimary(String primary, ResolvedName secondary, Function<String, String> reverse,
+                            List<String> untranslated) {
+        if (secondary != null) {
+            untranslated.addAll(secondary.untranslated());
+            return secondary.name();
+        }
+        String reversed = reverse.apply(primary);
+        if (reversed != null) {
+            return reversed;
+        }
+        if (primary.codePoints().anyMatch(Character::isLetter)) {
+            untranslated.add(primary);
+        }
+        return primary;
+    }
+
+    static final class Joined {
+        private final Function<String, String> reverse;
+        private final StringBuilder primary = new StringBuilder();
+        private final StringBuilder secondary = new StringBuilder();
+        private final List<String> untranslated = new ArrayList<>();
+        private boolean missing;
+
+        Joined(Function<String, String> reverse) {
+            this.reverse = reverse;
+        }
+
+        Joined text(String text) {
+            primary.append(text);
+            secondary.append(text);
+            return this;
+        }
+
+        Joined part(String primaryPart, ResolvedName secondaryPart) {
+            if (primaryPart == null) {
+                missing = true;
+                return this;
+            }
+            String shown = normalize(primaryPart);
+            primary.append(shown);
+            secondary.append(orPrimary(shown, secondaryPart, reverse, untranslated));
+            return this;
+        }
+
+        ResolvedName checked(String shown) {
+            if (missing || shown == null || !normalize(primary.toString()).equals(normalize(shown))) {
+                return null;
+            }
+            return ResolvedName.of(secondary.toString(), untranslated);
+        }
     }
 
     static String fluid(FluidStack stack, String languageCode) {

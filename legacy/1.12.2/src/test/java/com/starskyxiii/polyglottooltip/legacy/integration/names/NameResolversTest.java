@@ -6,11 +6,15 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
 import org.junit.Test;
+
+import com.starskyxiii.polyglottooltip.legacy.minecraft.ResolvedName;
 
 public class NameResolversTest {
     private static final String[][] PRIMARY = {
@@ -41,6 +45,14 @@ public class NameResolversTest {
             {"ic2.fluid_cell", "通用流体单元"},
             {"mcr_face.1.name", "%s 薄板"},
             {"extracells.item.fluid.pattern", "ME流體模板"},
+            {"item.tconstruct.pick_head.name", "镐头"},
+            {"item.tconstruct.pickaxe.name", "镐"},
+            {"item.tconstruct.pick_head.paper", "纸镐头"},
+            {"material.iron.name", "铁"},
+            {"material.cobalt.name", "钴"},
+            {"material.electrical_steel.name", "Electrical"},
+            {"material.manyullyn.name", "玛玉灵"},
+            {"mod.chiselsandbits.pretty.axis-y", "上/下"},
     };
     private static final String[][] SECONDARY = {
             {"potion.effect.water", "Water Bottle"},
@@ -71,6 +83,14 @@ public class NameResolversTest {
             {"ic2.fluid_cell", "Universal Fluid Cell"},
             {"mcr_face.1.name", "%s Cover"},
             {"extracells.item.fluid.pattern", "ME Fluid Pattern"},
+            {"item.tconstruct.pick_head.name", "Pickaxe Head"},
+            {"item.tconstruct.pickaxe.name", "Pickaxe"},
+            {"item.tconstruct.pick_head.paper", "Paper Pickaxe Head"},
+            {"material.iron.name", "Iron"},
+            {"material.iron.prefix", "%s of Iron"},
+            {"material.cobalt.name", "Cobalt"},
+            {"material.electrical_steel.name", "Electrical"},
+            {"mod.chiselsandbits.pretty.axis-y", "Up/Down"},
     };
 
     private final Function<String, String> primary = lang(PRIMARY);
@@ -196,5 +216,81 @@ public class NameResolversTest {
                 primary, secondary));
         assertNull(ExtraCellsNameResolver.name("extracells.item.fluid.pattern", "熔岩", "Lava", "ME流體模板: 水",
                 primary, secondary));
+    }
+
+    @Test
+    public void tinkersPartsPrefixTheMaterialNameOrUseTheSecondaryPrefix() {
+        assertComplete("Electrical Pickaxe Head", tinkers(null, "item.tconstruct.pick_head.name", "Electrical 镐头",
+                "electrical_steel"));
+        assertComplete("Pickaxe Head of Iron", tinkers(null, "item.tconstruct.pick_head.name", "铁 镐头", "iron"));
+        assertComplete("Paper Pickaxe Head", tinkers("item.tconstruct.pick_head.paper",
+                "item.tconstruct.pick_head.name", "纸镐头", "paper"));
+    }
+
+    @Test
+    public void tinkersToolsJoinSeveralMaterialsWithHyphens() {
+        assertComplete("Iron-Cobalt Pickaxe", tinkers(null, "item.tconstruct.pickaxe.name", "铁-钴 镐",
+                "iron", "cobalt"));
+        assertComplete("Cobalt-Electrical Pickaxe", tinkers(null, "item.tconstruct.pickaxe.name",
+                "钴-Electrical 镐", "cobalt", "electrical_steel"));
+    }
+
+    @Test
+    public void tinkersGivesUpWhenTheRebuiltNameDiffersAndKeepsUntranslatedMaterials() {
+        assertNull(tinkers(null, "item.tconstruct.pick_head.name", "磁钢 镐头", "iron"));
+        assertNull(tinkers(null, "item.tconstruct.pick_head.name", "未知 镐头", "unknown_metal"));
+        assertNull(tinkers(null, "item.tconstruct.pickaxe.name", "镐", new String[0]));
+        ResolvedName partial = tinkers(null, "item.tconstruct.pick_head.name", "玛玉灵 镐头", "manyullyn");
+        assertEquals("玛玉灵 Pickaxe Head", partial.name());
+        assertEquals(Collections.singletonList("玛玉灵"), partial.untranslated());
+    }
+
+    @Test
+    public void ae2FacadesJoinTheFacadeAndBlockNames() {
+        assertComplete("Cable Facade - Stone", Ae2FacadeNameResolver.name("线缆伪装板", "Cable Facade", "石头",
+                ResolvedName.of("Stone"), "线缆伪装板 - 石头", text -> null));
+        assertComplete("Cable Facade - Mithril Ore", Ae2FacadeNameResolver.name("线缆伪装板", "Cable Facade",
+                "Mithril Ore", ResolvedName.of("Mithril Ore"), "线缆伪装板 - Mithril Ore", text -> null));
+        assertNull(Ae2FacadeNameResolver.name("线缆伪装板", "Cable Facade", "石头", ResolvedName.of("Stone"),
+                "线缆伪装板 - 花岗岩", text -> null));
+        ResolvedName partial = Ae2FacadeNameResolver.name("线缆伪装板", "Cable Facade", "錾制石头", null,
+                "线缆伪装板 - 錾制石头", text -> null);
+        assertEquals("Cable Facade - 錾制石头", partial.name());
+        assertEquals(Collections.singletonList("錾制石头"), partial.untranslated());
+        ResolvedName nested = Ae2FacadeNameResolver.name("线缆伪装板", "Cable Facade", "石灰岩 铜矿石",
+                ResolvedName.of("石灰岩 Copper Ore", Collections.singletonList("石灰岩")), "线缆伪装板 - 石灰岩 铜矿石",
+                text -> text.equals("线缆伪装板") ? "unused" : null);
+        assertEquals("Cable Facade - 石灰岩 Copper Ore", nested.name());
+        assertEquals(Collections.singletonList("石灰岩"), nested.untranslated());
+    }
+
+    @Test
+    public void chiselsAndBitsAppendThePrettyAxisName() {
+        assertComplete("Chiseled Bit - Oak Wood Up/Down", bit("橡木", "Oak Wood", "雕刻碎屑 - 橡木 上/下",
+                "mod.chiselsandbits.pretty.axis-y"));
+        assertComplete("Chiseled Bit - Stone", bit("石头", "Stone", "雕刻碎屑 - 石头"));
+        assertNull(bit("橡木", "Oak Wood", "雕刻碎屑 - 橡木", "mod.chiselsandbits.pretty.axis-y"));
+        ResolvedName partial = bit("橡木", "Oak Wood", "雕刻碎屑 - 橡木 mod.chiselsandbits.pretty.axis-q",
+                "mod.chiselsandbits.pretty.axis-q");
+        assertEquals("Chiseled Bit - Oak Wood mod.chiselsandbits.pretty.axis-q", partial.name());
+        assertEquals(Collections.singletonList("mod.chiselsandbits.pretty.axis-q"), partial.untranslated());
+    }
+
+    private ResolvedName tinkers(String customKey, String baseKey, String shown, String... materials) {
+        return TinkersNameResolver.name(customKey, Arrays.asList(materials), baseKey, shown, primary, secondary,
+                text -> null);
+    }
+
+    private ResolvedName bit(String block, String secondaryBlock, String shown, String... keys) {
+        NameParts.Joined joined = new NameParts.Joined(text -> null)
+                .part("雕刻碎屑", ResolvedName.of("Chiseled Bit")).text(ChiselsAndBitsNameResolver.SEPARATOR)
+                .part(block, ResolvedName.of(secondaryBlock));
+        return ChiselsAndBitsNameResolver.extras(joined, new java.util.HashSet<>(Arrays.asList(keys)), primary,
+                secondary).checked(shown);
+    }
+
+    private static void assertComplete(String expected, ResolvedName name) {
+        assertEquals(expected, name.name());
+        assertTrue(name.untranslated().isEmpty());
     }
 }
