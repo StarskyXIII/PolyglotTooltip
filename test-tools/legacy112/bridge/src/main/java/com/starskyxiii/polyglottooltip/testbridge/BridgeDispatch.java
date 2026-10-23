@@ -156,6 +156,9 @@ public final class BridgeDispatch {
             case "it.observe": return IntegratedTerminalProbe.observe();
             case "it.ui": return IntegratedTerminalProbe.ui(params);
             case "it.predicate": return IntegratedTerminalProbe.predicate(params);
+            case "config.mods": return ConfigScreenProbe.mods(params);
+            case "config.observe": return ConfigScreenProbe.observe();
+            case "config.set": return ConfigScreenProbe.set(params);
             case "carbon.open": return CarbonProbe.open(params);
             case "carbon.observe": return CarbonProbe.observe();
             case "carbon.action": return CarbonProbe.action(params);
