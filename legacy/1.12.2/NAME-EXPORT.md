@@ -1,57 +1,69 @@
 # Name export (1.12.2)
 
-Open a world and wait for the configured secondary languages to load. `/polyglotdump` is a client command and does not require server permissions.
+The mod itself has no export command. For translation diagnostics, the 1.12.2 devbridge (`test-tools/legacy112/bridge`) provides `probe.nameExport`. It writes each ingredient's primary name and the secondary name the mod resolves for every configured language to a TSV file, together with the layer or resolver that produced the name and the reason when a language has none. It reads the mod's own resolvers, so the file shows what tooltips and searches use in that game session.
 
-```text
-/polyglotdump start held
-/polyglotdump start defaults minecraft:stone 64
-/polyglotdump start creative appliedenergistics2 10000
-/polyglotdump start jei appliedenergistics2 10000
-/polyglotdump start creative appliedenergistics2 10000 batch
-/polyglotdump start jei appliedenergistics2 batch
-/polyglotdump stack minecraft:potion 0 1 {Potion:"minecraft:healing"}
-/polyglotdump status
-/polyglotdump pause
-/polyglotdump resume
-/polyglotdump cancel
+## Run it on a PT-Matrix clone
+
+Build the mod and the bridge first:
+
+```powershell
+Set-Location legacy/1.12.2
+..\..\gradlew.bat build :devbridge:build --no-daemon --console=plain --offline
 ```
 
-Catalog selectors accept an exact item ID, a mod ID, or an explicit `*`. The optional row limit defaults to 10,000 and accepts 1–100,000. `defaults` takes one default stack per selected registered item; `creative` asks selected items for their search and declared creative-tab variants; `jei` takes registered ItemStack ingredients from JEI/HEI. Creative callbacks that fail are recorded as source errors. Duplicate stacks are removed using the complete typed stack NBT, actual damage and count, rather than just item ID and metadata.
+Then run the `export` scenario of `core-check.py` from the repository root:
 
-The exporter observes one natural display-name call for each accepted stack and uses the guarded name plans/providers to render the configured languages. It does not call the full tooltip or repeatedly switch the game's language. The source stack is serialized and reconstructed before capture. Custom names remain literal. The export also works when the primary language is in the configured language list and the normal extra tooltip lines are consequently hidden.
+```text
+python test-tools/legacy112/name-table-reuse/core-check.py <pack|instance-name> <attempt> --scenario export --report <report> [--export-source auto|jei|creative]
+```
 
-The default `interactive` mode has a soft 4 ms budget and at most eight source steps per tick. Append `batch` when running a catalog inventory: it allows up to 512 source steps and a soft 20 ms budget per tick. The mode may follow the optional limit or replace it when the default limit is sufficient. `start held batch` is also supported. Omitting the mode on a new job always selects `interactive`, even after a batch job.
+`core-check.py` installs the jar and the passive bridge in the clone, opens a throwaway world, calls `probe.nameExport` and restores the clone afterwards. The TSV is moved to `docs/research/legacy112/<report>/run-<attempt>/names-<attempt>.tsv`; `export.json` in the same directory records the summary. The same rules apply as for the other `core-check.py` scenarios: the clone must not be running, port 19594 must be free, and only `PT-Matrix-*` clones are used unless an instance name is given.
 
-Batch mode spends more client-thread time on the export and may reduce frame smoothness. Duplicate and skipped source entries use the larger step allowance too. It preserves the same source order, stack identity, name capture, deduplication, row limits, bounded writer queue and lifecycle checks. An individual mod callback cannot be interrupted and can exceed either soft budget, especially on first use. Batch mode does not promise a hard frame-time limit or make a limited export complete. The manifest and status record the selected mode and budgets.
+## Call it directly
 
-Pause/resume continues the current job in the same session. Cancelled jobs cannot resume. Changing the world, player, language configuration or relevant resource generation invalidates an active or paused job. A new job requires the previous writer to close.
+In any game with the bridge enabled (for example a `test-tools/legacy112/launch.py` fixture), call the method from Git Bash while a world is open:
 
-## Output and interpretation
+```text
+node test-tools/legacy112/call.mjs 19594 probe.nameExport '{"source":"auto","file":"names-nova.tsv"}'
+```
 
-Each job creates a unique directory under the game's `exports/polyglot-names/` directory:
+| Parameter | Default | Meaning |
+| --- | --- | --- |
+| `source` | `auto` | `jei` reads every ItemStack ingredient from JEI/HEI; `creative` reads every registered item's creative-tab variants (or its default stack); `auto` uses JEI/HEI when it is loaded and falls back to `creative`. |
+| `file` | `names-<yyyyMMdd-HHmmss>.tsv` | File name in `polyglottooltip-export/` under the game directory, `[A-Za-z0-9_-]{1,80}.tsv`. An existing file is never overwritten. |
+| `limit` | all stacks | Stop after this many stacks. |
 
-| File | Contents |
+While writing, the file is named `<file>.partial`; it gets its final name only when every row is written. The result reports the path, the source used (and the error when JEI/HEI could not be read), the current game language, the secondary languages, the number of stacks and rows, and counts by `language:status` and by source.
+
+## File format
+
+UTF-8 without a byte order mark, one header row, then one row per stack and secondary language. A tab, newline, carriage return or backslash inside a cell is written as `\t`, `\n`, `\r` or `\\`.
+
+| Column | Contents |
 | --- | --- |
-| `manifest.json` | Source, selector, limit, languages, loaded mod versions, selected resource packs and generation context. |
-| `names.jsonl` | One item or source-error record per line, including stack identity, typed NBT, serialized NBT, native name and per-language results. |
-| `names.tsv` | One row per item/language, with escaped tabs/newlines; source errors have blank language/name cells and a `source-error` status. |
-| `summary.json` | Final state, processed/written counts, duplicates and whether the source was exhausted. |
-| `failure.json` | Writer failure marker, when it can be written. |
+| `index` | Position of the stack in the source, starting at 0; the rows of one stack share it. |
+| `id`, `metadata`, `nbt`, `class` | Registry name, metadata, NBT in Minecraft's text form (empty without NBT), item class. |
+| `key` | Translation key derived from the stack; empty when none could be derived. |
+| `primary` | Displayed name without formatting codes. |
+| `standard` | The key translated in the current language; empty when no key was derived. |
+| `consistent` | `true` when `standard` equals `primary`, so the secondary name comes from the key itself. |
+| `source` | `standard` for a consistent stack, otherwise the class of the resolver that produced the names (`CompositeNameResolver`, `FormatNameResolver`, `PotionNameResolver`, …); empty when no resolver produced a name. |
+| `language` | Secondary language code. |
+| `secondary` | Resolved secondary name, with formatting codes; empty when there is none. |
+| `shown` | `true` when the tooltip shows this name. It is `false` for a name equal to the primary name, and for the current game language unless `alwaysShow` is on. |
+| `status` | See below. |
+| `detail` | Exception class for `error` rows. |
 
-Running, paused, cancelled, invalidated and limited exports use `names.partial.jsonl` / `names.partial.tsv`. Only a cleanly exhausted source receives the final filenames. Files alone do not prove completion: require a valid summary, matching row counts and no writer/source errors. A process exit can leave partial files without a summary. Files are flushed per row; no crash-durability guarantee is made.
+| Status | Meaning |
+| --- | --- |
+| `translated` | A secondary name that differs from the primary name. Not an independent check that the translation is right. |
+| `same` | The secondary name equals the primary name; the tooltip leaves it out. Can be correct, or a mod that falls back to the primary language. |
+| `missingKey` | Consistent stack whose key is in no `.lang` file of that language. |
+| `noKey` | No translation key could be derived and no resolver named the stack in this language. |
+| `unresolved` | Inconsistent stack that no resolver could name. |
+| `resolverMissing` | A resolver named the stack in another language but not in this one. |
+| `custom` | The stack has a custom name; the mod leaves it unchanged. |
+| `error` | Reading the stack or resolving its names threw; see `detail`. |
+| `noLanguage` | No secondary language is configured. |
 
-Per-language statuses are `translated`, `same-as-native`, `literal`, `unresolved`, and `error`. `translated` means the resolved name differs from the primary native name; it is not an independent correctness verdict. `same-as-native` can be legitimate or a language fallback. An unresolved/error result is a candidate for investigation, not a confirmed translation defect. Post-capture NBT changes are recorded as `stateChanged` and `afterStack`.
-
-Generate a per-mod diagnostic report from a finished or partial export:
-
-```text
-node test-tools/legacy112/name-export-report.mjs EXPORT_DIRECTORY NEW_REPORT_JSON
-```
-
-The report retains candidate stack identities, counts each language/status separately, lists source errors, and identifies loaded mods with zero sampled items. It rejects missing summaries, mismatched counts and malformed/truncated output. `selectedSourceComplete` refers only to the selected finite source. No finite catalog enumerates arbitrary NBT, scripts, world/player state, tooltip-only title rewrites or enchantment body lines. Use an independent native-language observation to confirm candidate name defects before changing a provider.
-
-## Focused verification
-
-The regression controller `test-tools/legacy112/name-export-verify.mjs OWNED_RUN_DIRECTORY` requires a prepared, identity-bound test fixture. It supplies twelve named samples and exact `minecraft:stone` catalog requests, compares exported names with independent native observations, and checks pause/resume, deduplication, cancellation, limits and language invalidation. Its bridge restricts samples to sixteen and catalog requests to one exact item ID with a limit of at most sixty-four. It does not enumerate the full pack.
-
-`test-tools/legacy112/name-export-batch-verify.mjs OWNED_RUN_DIRECTORY PREVIOUS_CHUNKED_INVENTORY_RUN` compares interactive and batch modes in an owned Meatball fixture with retained inventory files. It caps each Microblocks catalog export at 64 accepted rows and reuses 128 frozen states from the previous inventory's third chunk for duplicate-heavy replay. Each scenario runs in interactive/batch/batch/interactive order. It compares all JSON row fields except timing, requires byte-identical TSV output, checks default-mode reset and command syntax, and exercises batch pause/resume, cancellation and language invalidation. Startup and language-resource loading are outside the reported export timings. This is a focused mode comparison, not a new full-pack inventory or a universal speedup guarantee.
+The source is a finite catalog: it does not cover arbitrary NBT, world or player state, or names that only appear in tooltips. Treat `unresolved`, `missingKey` and `same` rows as candidates to investigate and use `/polyglot why` on the item in game before changing a resolver.
