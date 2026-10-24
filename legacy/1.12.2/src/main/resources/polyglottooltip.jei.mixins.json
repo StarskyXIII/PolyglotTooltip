@@ -5,6 +5,6 @@
   "plugin": "com.starskyxiii.polyglottooltip.legacy.mixin.jei.JeiMixinPlugin",
   "refmap": "polyglottooltip.legacy.refmap.json",
   "compatibilityLevel": "JAVA_8",
-  "mixins": ["JeiFilterMixin", "HeiFilterMixin", "HeiElementSearchAccessor", "HeiConfigInvoker", "JeiTooltipStringsMixin"],
+  "mixins": ["JeiFilterMixin", "HeiFilterMixin", "HeiElementSearchAccessor", "HeiConfigInvoker", "JeiTooltipStringsMixin", "JeiFluidTooltipMixin"],
   "injectors": {"defaultRequire": 0}
 }

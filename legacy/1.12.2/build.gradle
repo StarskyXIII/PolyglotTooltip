@@ -51,6 +51,7 @@ dependencies {
     compileOnly('curse.maven:ae2-223794:2747063') { transitive = false }
     compileOnly('curse.maven:refined-storage-243076:2940914') { transitive = false }
     compileOnly('curse.maven:forestry-59751:7398359') { transitive = false }
+    compileOnly('curse.maven:mekanism-268560:2835175') { transitive = false }
     compileOnly sourceSets.heiStubs.output
     heiStubsCompileOnly('curse.maven:jei-238222:3043174') { transitive = false }
     implementation 'com.github.houbb:opencc4j:1.14.0'
@@ -67,6 +68,7 @@ renamer.enableMixinRefmaps {
     config 'polyglottooltip.ae2.mixins.json'
     config 'polyglottooltip.rs.mixins.json'
     config 'polyglottooltip.carbonconfig.mixins.json'
+    config 'polyglottooltip.mekanism.mixins.json'
     refMap = 'polyglottooltip.legacy.refmap.json'
 }
 renamer.mappings.from minecraft.dependency.toSrgFile

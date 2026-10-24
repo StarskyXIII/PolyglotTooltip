@@ -19,6 +19,7 @@ import com.starskyxiii.polyglottooltip.legacy.integration.carbonconfig.CarbonCon
 import com.starskyxiii.polyglottooltip.legacy.integration.generic.GenericIntegration;
 import com.starskyxiii.polyglottooltip.legacy.integration.hwyla.HwylaIntegration;
 import com.starskyxiii.polyglottooltip.legacy.integration.jei.JeiIntegration;
+import com.starskyxiii.polyglottooltip.legacy.integration.mekanism.MekanismIntegration;
 import com.starskyxiii.polyglottooltip.legacy.integration.names.NamesIntegration;
 import com.starskyxiii.polyglottooltip.legacy.integration.rs.RsIntegration;
 import com.starskyxiii.polyglottooltip.legacy.integration.theoneprobe.TopIntegration;
@@ -45,6 +46,7 @@ public final class Integrations {
             new Entry(HwylaIntegration.ID, HwylaIntegration.MODID, HwylaIntegration::new),
             new Entry(Ae2Integration.ID, Ae2Integration.MODID, Ae2Integration::new),
             new Entry(RsIntegration.ID, RsIntegration.MODID, RsIntegration::new),
+            new Entry(MekanismIntegration.ID, MekanismIntegration.MODID, MekanismIntegration::new),
             new Entry(NamesIntegration.POTION_ID, null, NamesIntegration::potion),
             new Entry(NamesIntegration.FORESTRY_ID, NamesIntegration.FORESTRY_MODID, NamesIntegration::forestry),
             new Entry(NamesIntegration.IC2_ID, NamesIntegration.IC2_MODID, NamesIntegration::ic2),

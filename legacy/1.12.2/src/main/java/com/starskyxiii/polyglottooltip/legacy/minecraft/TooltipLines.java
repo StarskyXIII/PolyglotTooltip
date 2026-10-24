@@ -35,8 +35,18 @@ public final class TooltipLines {
         }
     }
 
-    static boolean skipped() {
+    public static boolean skipped() {
         return SKIPPED.get();
+    }
+
+    public static void insertAfterName(List<String> lines, List<String> names, String prefix) {
+        String shown = lines.isEmpty() ? null : SecondaryNames.plain(lines.get(0));
+        int index = Math.min(1, lines.size());
+        for (String name : names) {
+            if (!SecondaryNames.plain(name).equals(shown)) {
+                lines.add(index++, prefix + name);
+            }
+        }
     }
 
     @SubscribeEvent(priority = EventPriority.LOW)
@@ -48,10 +58,7 @@ public final class TooltipLines {
         try {
             List<String> lines = event.getToolTip();
             Settings settings = Config.settings();
-            int index = Math.min(1, lines.size());
-            for (String name : names.apply(stack).names()) {
-                lines.add(index++, settings.tooltipPrefix() + name);
-            }
+            insertAfterName(lines, names.apply(stack).names(), settings.tooltipPrefix());
             if (stack != null && !stack.func_190926_b()) {
                 EnchantmentLines.apply(stack, lines, settings, SecondaryLanguages.dictionaries(),
                         SecondaryLanguages.currentLanguage());
