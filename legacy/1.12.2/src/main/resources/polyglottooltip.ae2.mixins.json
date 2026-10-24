@@ -5,6 +5,7 @@
   "plugin": "com.starskyxiii.polyglottooltip.legacy.mixin.ae2.Ae2MixinPlugin",
   "refmap": "polyglottooltip.legacy.refmap.json",
   "compatibilityLevel": "JAVA_8",
-  "mixins": ["Ae2SearchNameMixin", "Ae2NameCacheMixin", "Ae2TerminalAccessor"],
+  "mixins": ["Ae2SearchNameMixin", "Ae2NameCacheMixin", "Ae2TerminalAccessor", "Ae2FluidTerminalTooltipMixin",
+    "Ae2FluidWidgetTooltipMixin", "Ae2InterfaceLabelMixin", "Ae2LabelKeyAccessor"],
   "injectors": {"defaultRequire": 0}
 }
