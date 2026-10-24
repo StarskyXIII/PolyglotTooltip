@@ -7,6 +7,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
+import com.starskyxiii.polyglottooltip.legacy.Config;
+import com.starskyxiii.polyglottooltip.legacy.Settings;
+
 import net.minecraft.block.Block;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.util.text.translation.I18n;
@@ -34,6 +37,17 @@ public final class FluidSecondaryNames {
                     "Fluid consistency check failed for " + fluid.getClass().getName(), error);
             return Collections.emptyMap();
         }
+    }
+
+    public static SecondaryNames names(FluidStack stack) {
+        Map<String, String> names = of(stack);
+        return names.isEmpty() ? SecondaryNames.EMPTY : displayed(stack.getLocalizedName(), names);
+    }
+
+    public static SecondaryNames displayed(String primary, Map<String, String> namesByLanguage) {
+        Settings settings = Config.settings();
+        return SecondaryNames.of(primary, settings.displayLanguages(), namesByLanguage, settings.alwaysShow(),
+                SecondaryLanguages.currentLanguage());
     }
 
     static String consistentKey(String actual, List<String> candidates, Function<String, String> translate) {

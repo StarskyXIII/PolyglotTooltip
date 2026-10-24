@@ -79,4 +79,25 @@ public class TooltipLinesTest {
         });
         assertEquals(3, other.get(0).size());
     }
+
+    @Test
+    public void insertsNamesAfterTheFirstLineWithThePrefix() {
+        List<String> lines = new ArrayList<>(Arrays.asList("水", "1000 mB"));
+        TooltipLines.insertAfterName(lines, Arrays.asList("Water", "みず"), "§7");
+        assertEquals(Arrays.asList("水", "§7Water", "§7みず", "1000 mB"), lines);
+    }
+
+    @Test
+    public void skipsNamesEqualToTheShownName() {
+        List<String> lines = new ArrayList<>(Arrays.asList("§bHydrogen", "1000 mB"));
+        TooltipLines.insertAfterName(lines, Arrays.asList("Hydrogen", "水素"), "§7");
+        assertEquals(Arrays.asList("§bHydrogen", "§7水素", "1000 mB"), lines);
+    }
+
+    @Test
+    public void insertsAtTheTopOfAnEmptyTooltip() {
+        List<String> lines = new ArrayList<>();
+        TooltipLines.insertAfterName(lines, Collections.singletonList("Water"), "");
+        assertEquals(Collections.singletonList("Water"), lines);
+    }
 }
