@@ -9,6 +9,8 @@ import java.util.function.Supplier;
 
 import com.starskyxiii.polyglottooltip.legacy.Config;
 import com.starskyxiii.polyglottooltip.legacy.integration.IntegrationGuard;
+import com.starskyxiii.polyglottooltip.legacy.integration.mekanism.MekanismGasNames;
+import com.starskyxiii.polyglottooltip.legacy.minecraft.FluidSecondaryNames;
 import com.starskyxiii.polyglottooltip.legacy.minecraft.ItemNames;
 import com.starskyxiii.polyglottooltip.legacy.minecraft.SecondaryLanguages;
 import com.starskyxiii.polyglottooltip.legacy.minecraft.TooltipLines;
@@ -17,6 +19,7 @@ import mezz.jei.gui.ingredients.IIngredientListElement;
 import mezz.jei.util.Translator;
 import net.minecraft.client.Minecraft;
 import net.minecraft.item.ItemStack;
+import net.minecraftforge.fluids.FluidStack;
 
 public final class JeiSearch {
     public static final long COMPLETE = Long.MAX_VALUE;
@@ -92,12 +95,23 @@ public final class JeiSearch {
             return Collections.emptyList();
         }
         IIngredientListElement<?> listElement = (IIngredientListElement<?>) element;
-        if (!(listElement.getIngredient() instanceof ItemStack)) {
+        Object ingredient = listElement.getIngredient();
+        if (!(ingredient instanceof ItemStack) && !(ingredient instanceof FluidStack)
+                && !MekanismGasNames.isGas(ingredient)) {
             return Collections.emptyList();
         }
-        return active.call(() -> SearchTokens.of(listElement.getDisplayName(),
-                ItemNames.of((ItemStack) listElement.getIngredient()).names(),
+        return active.call(() -> SearchTokens.of(listElement.getDisplayName(), secondaryNames(ingredient),
                 Config.settings().chineseScriptMatching(),
                 Translator::toLowercaseWithLocale), Collections.<String>emptyList());
+    }
+
+    private static List<String> secondaryNames(Object ingredient) {
+        if (ingredient instanceof ItemStack) {
+            return ItemNames.of((ItemStack) ingredient).names();
+        }
+        if (ingredient instanceof FluidStack) {
+            return FluidSecondaryNames.names((FluidStack) ingredient).names();
+        }
+        return MekanismGasNames.search(ingredient);
     }
 }
