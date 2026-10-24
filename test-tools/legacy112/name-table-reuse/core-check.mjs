@@ -139,7 +139,43 @@ async function rs() {
   result.tooltips['minecraft:diamond'] = {name: observed.nativeName, tooltip: observed.tooltip};
   result.tooltipPass = /Diamond/.test(observed.tooltip.join(' '));
   await call('screen.close');
-  result.pass = result.grid.every(entry => entry.pass) && result.tooltipPass;
+  if (config.rsFluids) result.fluids = await rsFluids();
+  result.pass = result.grid.every(entry => entry.pass) && result.tooltipPass && (!result.fluids || result.fluids.pass);
+  return result;
+}
+
+// Grid item tooltips come from the layer-1 tooltip event, so they keep the secondary line with the rs integration off;
+// fluid search and fluid tooltips belong to the rs integration.
+async function rsFluids() {
+  const result = {};
+  await record('rs-open-item-warm', await call('rs.world', {operation: 'open', kind: 'item'}));
+  await call('wait.ticks', {ticks: 20});
+  await call('rs.ui', {query: ''});
+  const items = await call('rs.ui', {warm: true});
+  await record('grid-item-warm', items);
+  const diamond = items.retained.find(row => row.id === 'minecraft:diamond' && !row.literal && row.tooltip);
+  result.itemTooltip = diamond ? diamond.tooltip : null;
+  result.itemTooltipPass = Boolean(diamond) && diamond.tooltip.split('\n').some(line => plain(line) === 'Diamond');
+  await call('screen.close');
+  await record('rs-open-fluid', await call('rs.world', {operation: 'open', kind: 'fluid'}));
+  await call('wait.ticks', {ticks: 20});
+  await call('rs.ui', {query: 'water'});
+  await call('wait.ticks', {ticks: 5});
+  const searched = await call('rs.ui', {});
+  await record('grid-fluid-water', searched);
+  const byKey = new Map(searched.retained.map(row => [row.key, row.id]));
+  const found = [...new Set(searched.visible.map(key => byKey.get(key)).filter(Boolean))];
+  result.search = {...judge({query: 'water', expect: ['water'], secondary: true}, found), typed: searched.query};
+  if (found.includes('lava')) result.search.pass = false;
+  await call('rs.ui', {query: ''});
+  const warm = await call('rs.ui', {warm: true});
+  await record('grid-fluid-warm', warm);
+  const water = warm.retained.find(row => row.id === 'water');
+  result.fluidTooltip = water ? water.tooltip : null;
+  const hasLine = Boolean(water && water.tooltip) && water.tooltip.split('\n').some(line => plain(line) === 'Water');
+  result.fluidTooltipPass = integrationOn ? hasLine : Boolean(water && water.tooltip) && !hasLine;
+  await call('screen.close');
+  result.pass = result.itemTooltipPass && result.search.pass && result.fluidTooltipPass;
   return result;
 }
 
@@ -332,6 +368,212 @@ async function matrix(world) {
   return result;
 }
 
+// Scenario peripherals: AE2 add-on terminals and tooltips on a bridged clone. Every check that belongs to an integration
+// expects the secondary (en_us) name when that integration is on and no secondary name when it is turned off through
+// --set integrations.<id>=false; layer 1 and the recipe viewer are expected to work in both cases.
+const lower = text => plain(text).toLowerCase();
+const hasLineWith = (lines, name) => (lines || []).some(line => plain(line) === name);
+const containsName = (text, name) => String(text || '').split('\n').some(line => plain(line) === name);
+const isOn = id => !config.overrides.includes(`integrations.${id}=false`);
+
+function expectation(id, hit, extra = {}) {
+  const on = isOn(id);
+  return {integration: id, on, hit, ...extra, pass: on ? hit : !hit};
+}
+
+function partsExpectation(id, parts, extra = {}) {
+  const on = isOn(id);
+  return {integration: id, on, parts, ...extra, pass: on ? Object.values(parts).every(Boolean) : !Object.values(parts).some(Boolean)};
+}
+
+async function step(result, name, action) {
+  try { result[name] = await action(); } catch (error) { result[name] = {pass: false, error: String(error.message || error)}; }
+  await call('screen.close').catch(() => {});
+  await record('peripheral-' + name, result[name]);
+}
+
+async function aeFluid() {
+  const widgets = await call('ae.fluid.widgets', {});
+  const emptyUnchanged = !/Water|Lava/.test(String(widgets.empty.tank) + String(widgets.empty.slot));
+  await call('world.command', {command: '/tp @p 0 5 3'});
+  await call('wait.ticks', {ticks: 60});
+  await record('ae-fluid-world', await call('ae.world', {fluid: true}));
+  await call('wait.ticks', {ticks: 20});
+  await record('ae-fluid-open', await call('ae.world', {open: true}));
+  await call('wait.ticks', {ticks: 20});
+  const hover = await call('ae.fluid.hover', {});
+  const english = {water: 'Water', lava: 'Lava'}[hover.fluid];
+  const parts = {tankWater: containsName(widgets.water.tank, 'Water'), slotWater: containsName(widgets.water.slot, 'Water'),
+    tankLava: containsName(widgets.lava.tank, 'Lava'), terminal: hasLineWith(hover.lines, english)};
+  const result = partsExpectation('ae2', parts, {widgets, hover, emptyUnchanged});
+  result.pass = result.pass && emptyUnchanged;
+  return result;
+}
+
+async function aeLabels() {
+  await call('world.command', {command: '/tp @p 4 5 3'});
+  await call('wait.ticks', {ticks: 40});
+  await record('ae-interface-world', await call('ae.world', {mode: 'interface'}));
+  await call('wait.ticks', {ticks: 40});
+  await record('ae-interface-open', await call('ae.world', {mode: 'interface', open: true}));
+  await call('wait.ticks', {ticks: 40});
+  const before = await call('ae.interface', {});
+  const entry = before.rows.find(row => row.raw);
+  if (!entry) return {integration: 'ae2', pass: false, error: 'no interface entry', before};
+  const candidates = [entry.raw + '.name', entry.raw];
+  const keys = await call('probe.coreItem', {keys: candidates, languages: ['en_us']});
+  const english = candidates.map(key => keys.keys[key] && keys.keys[key].dictionary && keys.keys[key].dictionary.en_us).find(Boolean);
+  const word = english && plain(english).toLowerCase().split(/\s+/).find(part => part.length > 2 && !lower(entry.label).includes(part));
+  // Older AE2-UEL builds send the label already localized on the server, so there is no key to look up.
+  if (!english && entry.raw === entry.label) return {integration: 'ae2', applicable: false, pass: true, reason: 'label sent without a key', before, keys};
+  if (!word) return {integration: 'ae2', pass: false, error: 'no secondary label word', before, keys};
+  await call('ae.interface', {focus: 'searchFieldNames'});
+  await call('input.key', {key: 14, repeat: 64});
+  await call('input.type', {text: word});
+  await call('wait.ticks', {ticks: 10});
+  const after = await call('ae.interface', {});
+  return expectation('ae2', after.rows.some(row => row.raw === entry.raw), {label: entry.label, raw: entry.raw, english, word, before, after});
+}
+
+async function mekeng() {
+  await call('world.command', {command: '/tp @p 20 5 3'});
+  await call('wait.ticks', {ticks: 40});
+  await record('mek-world', await call('addon.world', {mode: 'gas'}));
+  await call('wait.ticks', {ticks: 40});
+  await record('mek-open', await call('addon.world', {mode: 'gas', open: true}));
+  await call('wait.ticks', {ticks: 40});
+  const all = await call('addon.ui', {query: ''});
+  const searched = await call('addon.ui', {query: 'hydrogen'});
+  await call('addon.ui', {query: ''});
+  await call('wait.ticks', {ticks: 5});
+  const hover = await call('addon.hover', {});
+  const widgets = await call('addon.widgets', {});
+  const row = key => widgets.rows.find(entry => entry.key === key) || {lines: []};
+  await call('screen.close').catch(() => {});
+  await record('mek-config-world', await call('addon.world', {mode: 'gasConfig'}));
+  await call('wait.ticks', {ticks: 40});
+  await record('mek-config-open', await call('addon.world', {mode: 'gasConfig', open: true}));
+  await call('wait.ticks', {ticks: 40});
+  const configAll = await call('addon.ui', {query: ''});
+  const configSearched = await call('addon.ui', {query: 'hydrogen'});
+  const parts = {
+    search: searched.rows.includes('hydrogen') && !searched.rows.includes('oxygen'),
+    hover: hasLineWith(hover.lines, 'Hydrogen') || hasLineWith(hover.lines, 'Oxygen'),
+    slot: hasLineWith(row('mek-slot-hydrogen').lines, 'Hydrogen'), tank: hasLineWith(row('mek-tank-hydrogen').lines, 'Hydrogen'),
+    configSearch: configAll.rows.length > 0 && configSearched.rows.length > 0,
+  };
+  return partsExpectation('mekanismenergistics', parts, {all, searched, hover, configAll, configSearched,
+    widgets: widgets.rows.filter(entry => entry.key.startsWith('mek-'))});
+}
+
+async function addonSearch() {
+  const setup = await call('addon.search.setup', {});
+  await record('addon-search-setup', setup);
+  const result = {};
+  if (setup.p2p) {
+    const query = '@type=redstone';
+    const observed = await call('addon.search.query', {owner: 'p2p', query});
+    const types = new Set(observed.p2p.rows.map(row => row.type));
+    const nativeHit = observed.p2p.types.some(type => types.has(type.index) && lower(type.currentNative).includes('redstone'));
+    result.betterp2p = expectation('betterp2p', observed.p2p.rows.length > 0 && types.size === 1 && !nativeHit,
+      {query, rows: observed.p2p.rows, types: observed.p2p.types});
+    await call('addon.search.query', {owner: 'p2p', query: ''});
+  }
+  if (setup.lazy) {
+    const observed = await call('addon.search.query', {owner: 'lazy', query: 'diamond'});
+    result.lazyae2 = expectation('lazyae2', observed.lazy.length > 0 && observed.lazy.every(slot => slot.matches), {slots: observed.lazy});
+  }
+  if (setup.nee) {
+    const observed = await call('addon.search.query', {owner: 'nee', query: 'diamond'});
+    const rows = observed.nee.rows;
+    result.notenoughenergistics = expectation('notenoughenergistics',
+      rows.length > 0 && rows.every(row => row.startsWith('minecraft:diamond#')), {rows});
+  }
+  result.pass = Object.values(result).every(entry => entry.pass);
+  return result;
+}
+
+async function fluidCrafting(world) {
+  const contents = [['water', 'Water'], ['lava', 'Lava'], ...(hasMod(world, 'mekeng') ? [['hydrogen', 'Hydrogen']] : [])];
+  const renders = {};
+  for (const [content] of contents) renders[content] = await call('addon.fc', {render: content});
+  const widgets = await call('addon.widgets', {});
+  const tank = widgets.rows.find(entry => entry.key === 'fc-tank-water') || {lines: []};
+  const inspected = await call('addon.fc', {}).catch(error => ({error: String(error.message || error)}));
+  const parts = {tank: hasLineWith(tank.lines, 'Water')};
+  for (const [content, english] of contents) parts[content] = hasLineWith(renders[content].lines, english);
+  return partsExpectation('ae2fc', parts, {renders, tank, inspected});
+}
+
+async function extraCells() {
+  await call('world.command', {command: '/tp @p 20 5 3'});
+  await call('wait.ticks', {ticks: 40});
+  await record('ec-world', await call('addon.world', {mode: 'ec'}));
+  await call('wait.ticks', {ticks: 40});
+  await record('ec-open', await call('addon.world', {mode: 'ec', open: true}));
+  await call('wait.ticks', {ticks: 40});
+  const all = await call('addon.ui', {query: ''});
+  const searched = await call('addon.ui', {query: 'water'});
+  await call('addon.ui', {query: ''});
+  const selector = await call('addon.hover', {});
+  const request = await call('addon.hover', {request: true});
+  const widgets = await call('addon.widgets', {});
+  const row = key => widgets.rows.find(entry => entry.key === key) || {lines: []};
+  const parts = {search: searched.rows.includes('water') && !searched.rows.includes('lava'),
+    selector: hasLineWith(selector.lines, 'Water'), request: hasLineWith(request.lines, 'Water'),
+    tankInternal: hasLineWith(row('ec-tank-INTERNAL-water').lines, 'Water'),
+    tankNorth: hasLineWith(row('ec-tank-NORTH-water').lines, 'Water'), slot: hasLineWith(row('ec-slot-water').lines, 'Water')};
+  return partsExpectation('extracells', parts, {all, searched, selector, request,
+    widgets: widgets.rows.filter(entry => entry.key.startsWith('ec-'))});
+}
+
+async function thaumicEnergistics() {
+  await call('world.command', {command: '/tp @p 20 5 3'});
+  await call('wait.ticks', {ticks: 40});
+  await record('the-world', await call('addon.world', {mode: 'the'}));
+  await call('wait.ticks', {ticks: 40});
+  await record('the-open', await call('addon.world', {mode: 'the', open: true}));
+  await call('wait.ticks', {ticks: 40});
+  const all = await call('addon.ui', {query: ''});
+  // The terminal also matches tooltips, which carry the layer-1 line, so the name predicate decides the search part.
+  const searched = await call('addon.ui', {query: 'diamond', nameQuery: 'diamond'});
+  await call('addon.ui', {query: ''});
+  await call('screen.close').catch(() => {});
+  const essentia = await call('pack.item', {item: 'thaumicenergistics:dummy_aspect', nbt: '{aspect:"aqua"}'});
+  const parts = {search: searched.nameMatches.includes('minecraft:diamond') && !searched.nameMatches.includes('minecraft:apple'),
+    essentia: hasLineWith(essentia.tooltip.slice(1), 'Water')};
+  return partsExpectation('thaumicenergistics', parts, {all, searched, essentia: {name: essentia.nativeName, tooltip: essentia.tooltip}});
+}
+
+async function peripherals(world) {
+  const languages = ['en_us'];
+  const result = {};
+  const off = config.overrides.filter(entry => entry.endsWith('=false')).map(entry => entry.slice('integrations.'.length, -'=false'.length));
+  result.whyStart = await why('start', languages);
+  const stone = await call('pack.item', {item: 'minecraft:stone'});
+  await call('screen.close').catch(() => {});
+  const viewer = await call('jei.search', {query: 'stone'});
+  await call('jei.search', {query: ''});
+  result.layer1 = {tooltip: stone.tooltip, recipeViewer: viewer.count,
+    pass: hasLineWith(stone.tooltip.slice(1), 'Stone') && ids(viewer.rows.filter(row => row.id)).includes('minecraft:stone')};
+  if (hasMod(world, 'appliedenergistics2')) {
+    await step(result, 'aeFluid', aeFluid);
+    await step(result, 'aeLabels', aeLabels);
+  }
+  if (hasMod(world, 'mekeng')) await step(result, 'mekanismenergistics', mekeng);
+  if (hasMod(world, 'threng') || hasMod(world, 'neenergistics')) await step(result, 'addonSearch', addonSearch);
+  if (hasMod(world, 'ae2fc')) await step(result, 'ae2fc', () => fluidCrafting(world));
+  if (hasMod(world, 'extracells')) await step(result, 'extracells', extraCells);
+  if (hasMod(world, 'thaumicenergistics')) await step(result, 'thaumicenergistics', thaumicEnergistics);
+  result.whyEnd = await why('end', languages);
+  const disabledOk = parsed => parsed.parsable && parsed.disabled.length === off.length && off.every(id => parsed.disabled.includes(id));
+  result.whyPass = disabledOk(result.whyStart) && disabledOk(result.whyEnd);
+  const checks = Object.entries(result).filter(([name]) => !['whyStart', 'whyEnd', 'whyPass'].includes(name));
+  result.failures = checks.filter(([, value]) => !value.pass).map(([name]) => name).concat(result.whyPass ? [] : ['why']);
+  result.pass = result.failures.length === 0;
+  return result;
+}
+
 async function nameExport() {
   const exported = await call('probe.nameExport', {source: config.exportSource ?? 'auto', file: config.exportFile}, 1200000);
   await record('export', exported);
@@ -355,8 +597,9 @@ try {
     await record('status-world', world);
     if (world.screen) await call('screen.close').catch(() => {});
     await pause(config.worldSettleMs ?? 15000);
-    assert.ok(['ae2', 'rs', 'matrix', 'export'].includes(config.scenario));
+    assert.ok(['ae2', 'rs', 'matrix', 'export', 'peripherals'].includes(config.scenario));
     const result = config.scenario === 'ae2' ? await ae2() : config.scenario === 'rs' ? await rs()
+      : config.scenario === 'peripherals' ? await peripherals(world)
       : config.scenario === 'export' ? await nameExport() : await matrix(world);
     await record('summary', {scenario: config.scenario, instance: config.instance, language: world.language,
       overrides: config.overrides, integrationOn, ...result});

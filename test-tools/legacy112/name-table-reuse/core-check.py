@@ -8,8 +8,8 @@ every config file this run touched is restored byte for byte and the world is de
 docs/research/legacy112/<report>/run-<attempt>/. Scenario export writes the probe.nameExport TSV into the game's
 polyglottooltip-export/ directory and moves it into the report directory afterwards.
 
-Usage: core-check.py <pack|instance-name> <attempt> [--scenario ae2|export] [--jar PATH] [--report DIR]
-                     [--set integrations.ae2=false] [--ae-search-tooltips NO] [--export-source auto|jei|creative]
+Usage: core-check.py <pack|instance-name> <attempt> [--scenario ae2|export|peripherals] [--jar PATH] [--report DIR]
+                     [--set integrations.ae2=false] [--ae-search-tooltips NO] [--export-source auto|jei|creative] [--menu-settle-ms N]
 
 Rules kept from consistency-run.py: the clone must not be running, port 19594 must be free (one bridged launch at a
 time), and only PT-Matrix-* clones are touched unless an explicit instance name is given.
@@ -121,7 +121,7 @@ def run_pack(key, instance, args):
     jar = Path(args.jar)
     assert jar.is_file(), 'candidate jar missing: ' + str(jar)
     assert BRIDGE.is_file(), 'bridge jar missing: ' + str(BRIDGE)
-    touched = [PRODUCT_CONFIG] + ([AE_CONFIG] if args.ae_search_tooltips or args.scenario == 'ae2' else [])
+    touched = [PRODUCT_CONFIG] + ([AE_CONFIG] if args.ae_search_tooltips or args.scenario in ('ae2', 'peripherals') else [])
     for relative in touched:
         assert not (game / (str(relative) + '.core-backup')).exists(), 'a config backup is already present: ' + str(relative)
     run = ROOT / 'docs/research/legacy112' / args.report / ('run-' + args.attempt)
@@ -156,14 +156,14 @@ def run_pack(key, instance, args):
             name, value = override.split('=', 1)
             category, option = name.split('.', 1)
             set_forge_option(game / PRODUCT_CONFIG, category, option, 'B' if value in ('true', 'false') else 'S', value)
-        tooltips = args.ae_search_tooltips or ('NO' if args.scenario == 'ae2' else None)
+        tooltips = args.ae_search_tooltips or ('NO' if args.scenario in ('ae2', 'peripherals') else None)
         if tooltips:
             set_forge_option(game / AE_CONFIG, 'client', 'SEARCH_TOOLTIPS', 'S', tooltips)
         settings.write_text('clientdevbridge.enabled=true\nclientdevbridge.port=%d\nclientdevbridge.timeoutSeconds=2400\n'
                             'clientdevbridge.lifecycleTimeoutSeconds=1200\nclientdevbridge.fixtureNonce=%s\n' % (PORT, nonce), encoding='utf-8')
         write(run / 'config.json', dict(pack=key, instance=instance, fixture=str(game), port=PORT, nonce=nonce, worldName=world,
                                         attempt=args.attempt, scenario=args.scenario, overrides=args.set, aeSearchTooltips=tooltips,
-                                        exportSource=args.export_source, exportFile='names-%s.tsv' % args.attempt,
+                                        exportSource=args.export_source, menuSettleMs=args.menu_settle_ms, exportFile='names-%s.tsv' % args.attempt,
                                         candidate=str(jar), candidateSha=sha(jar), bridge=sha(BRIDGE), backups=backups,
                                         hiddenProduct=(hidden.name if hidden else None), hiddenProductSha=(sha(hidden) if hidden else None)))
         subprocess.Popen([str(PRISM), '--launch', instance], creationflags=subprocess.CREATE_NO_WINDOW, stdin=subprocess.DEVNULL,
@@ -260,12 +260,13 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('target', help='pack key (%s) or an instance name' % ', '.join(PACKS))
     parser.add_argument('attempt')
-    parser.add_argument('--scenario', default='ae2', choices=['ae2', 'export'])
+    parser.add_argument('--scenario', default='ae2', choices=['ae2', 'export', 'peripherals'])
     parser.add_argument('--jar', default=str(JAR))
     parser.add_argument('--report', default='core-stage3-ae2-2026-10-23')
     parser.add_argument('--set', action='append', default=[], help='polyglottooltip.cfg override, category.option=value')
     parser.add_argument('--ae-search-tooltips', choices=['YES', 'NO'])
     parser.add_argument('--export-source', default='auto', choices=['auto', 'jei', 'creative'])
+    parser.add_argument('--menu-settle-ms', type=int, default=20000, help='wait at the main menu before creating the world')
     args = parser.parse_args()
     assert re.fullmatch(r'[a-z0-9-]{1,40}', args.attempt), 'attempt must be [a-z0-9-]{1,40}'
     assert re.fullmatch(r'[A-Za-z0-9._-]{1,80}', args.report), 'report must be a plain directory name'

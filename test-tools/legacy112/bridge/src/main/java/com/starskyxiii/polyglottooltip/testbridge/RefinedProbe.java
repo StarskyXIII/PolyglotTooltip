@@ -247,6 +247,8 @@ public final class RefinedProbe {
                     row.addProperty("tooltip", (String) (more() ? NativeAccess.call(value, "getTooltip", true) : NativeAccess.call(value, "getTooltip")));
                     if (more()) row.addProperty("freshTooltip", (String) NativeAccess.call(value, "getTooltip", false));
                 }
+            } else if (!raw && params.has("warm")) {
+                row.addProperty("tooltip", (String) (more() ? NativeAccess.call(value, "getTooltip", true) : NativeAccess.call(value, "getTooltip")));
             }
             retained.add(row);
         }
