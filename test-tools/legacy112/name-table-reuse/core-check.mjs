@@ -325,6 +325,10 @@ async function matrix(world) {
   if (!result.layer1.pass) failures.push('layer1');
   await call('screen.close').catch(() => {});
 
+  // DEBUG: cost breakdown of the work the product adds around the recipe-viewer filter; recorded, not part of the pass condition.
+  result.indexCost = await call('probe.indexCost', {}, 1800000).catch(error => ({error: String(error)}));
+  await record('index-cost', result.indexCost);
+
   const coverage = await call('probe.coverage', {samples: 5, classes: 30}, 1800000);
   await record('coverage', coverage);
   result.coverage = {stacks: coverage.stacks, withSecondary: coverage.withSecondary, share: coverage.share,
