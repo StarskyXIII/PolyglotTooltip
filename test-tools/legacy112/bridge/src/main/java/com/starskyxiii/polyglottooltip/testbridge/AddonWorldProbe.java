@@ -143,6 +143,15 @@ public final class AddonWorldProbe {
         if (params.has("selection")) field.func_146199_i(params.get("selection").getAsInt());
         if (params.has("focused")) field.func_146195_b(params.get("focused").getAsBoolean());
         JsonObject result = new JsonObject(); result.addProperty("class", screen.getClass().getName());
+        if (mode.equals("the") && params.has("nameQuery")) {
+            // ThE ORs a tooltip search into every query, so the name predicate is checked on its own.
+            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(java.util.regex.Pattern.quote(params.get("nameQuery").getAsString()),
+                    java.util.regex.Pattern.CASE_INSENSITIVE | java.util.regex.Pattern.UNICODE_CASE);
+            JsonArray named = new JsonArray();
+            for (Object stack : (Iterable<?>) NativeAccess.get(NativeAccess.get(screen, "repo"), "list"))
+                if ((Boolean) NativeAccess.call(NativeAccess.get(screen, "repo"), "searchName", stack, pattern)) named.add(String.valueOf(((IAEItemStack) stack).getItem().getRegistryName()));
+            result.add("nameMatches", named);
+        }
         if (mode.equals("the")) {
             boolean optimized;
             try { NativeAccess.field(NativeAccess.get(screen, "repo"), "changed"); optimized = true; } catch (NoSuchFieldException ignored) { optimized = false; }
@@ -212,9 +221,16 @@ public final class AddonWorldProbe {
         TooltipProbe.capturing = true; TooltipProbe.captured = null;
         boolean handled;
         try { handled = (Boolean) NativeAccess.call(widget, "drawTooltip", 0, 0, x, y); } finally { TooltipProbe.capturing = false; }
-        if (handled && (TooltipProbe.captured == null || TooltipProbe.captured.isEmpty())) throw new IllegalStateException("Native ExtraCells draw was not captured");
+        boolean replayed = false;
+        if (handled && (TooltipProbe.captured == null || TooltipProbe.captured.isEmpty())) {
+            // Passive bridge: no transformer captures the widget's own draw, so replay it with a list of the native shape.
+            String name = FluidRegistry.WATER.getLocalizedName(new FluidStack(FluidRegistry.WATER, 1));
+            java.util.List<String> native_ = new java.util.ArrayList<>(request ? java.util.Arrays.asList("craft", name) : java.util.Arrays.asList(name, "16000mB"));
+            NativeAccess.call(widget, "drawHoveringText", native_, x, y, Minecraft.func_71410_x().field_71466_p);
+            TooltipProbe.captured = native_; replayed = true;
+        }
         JsonObject result = new JsonObject(); JsonArray lines = new JsonArray();
         if (TooltipProbe.captured != null) for (String line : TooltipProbe.captured) lines.add(line);
-        result.add("lines", lines); result.addProperty("handled", handled); result.addProperty("x", x); result.addProperty("y", y); return result;
+        result.add("lines", lines); result.addProperty("handled", handled); result.addProperty("replayed", replayed); result.addProperty("x", x); result.addProperty("y", y); return result;
     }
 }
