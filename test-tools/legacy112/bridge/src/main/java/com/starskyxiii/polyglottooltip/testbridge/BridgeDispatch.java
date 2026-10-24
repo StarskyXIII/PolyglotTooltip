@@ -116,6 +116,7 @@ public final class BridgeDispatch {
             case "pack.item": return PackProbe.item(params);
             case "status": return status();
             case "probe.performance": return PerformanceProbe.run(params);
+            case "probe.indexCost": return IndexCostProbe.run(params);
             case "probe.emiProfile": return EmiProbe.profile();
             case "emi": return EmiProbe.run(params);
             case "jemi": return JemiProbe.run(params);
