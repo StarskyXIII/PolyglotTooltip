@@ -19,6 +19,10 @@ public final class MekanismGasTooltip {
         IngredientTooltips.append(MekanismIntegration.active, lines, () -> names(stack));
     }
 
+    static List<String> searchNames(Object stack) {
+        return names((GasStack) stack).names();
+    }
+
     @SuppressWarnings("deprecation")
     static SecondaryNames names(GasStack stack) {
         Gas gas = stack == null ? null : stack.getGas();
