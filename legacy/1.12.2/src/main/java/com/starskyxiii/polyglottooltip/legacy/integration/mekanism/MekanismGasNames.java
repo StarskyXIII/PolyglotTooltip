@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.List;
 
 import com.starskyxiii.polyglottooltip.legacy.integration.IntegrationGuard;
+import com.starskyxiii.polyglottooltip.legacy.minecraft.SecondaryNames;
 
 public final class MekanismGasNames {
     static final String GAS_STACK = "mekanism.api.gas.GasStack";
@@ -16,6 +17,13 @@ public final class MekanismGasNames {
 
     public static List<String> search(Object ingredient) {
         return search(MekanismIntegration.active, ingredient);
+    }
+
+    public static SecondaryNames names(IntegrationGuard guard, Object ingredient) {
+        if (!isGas(guard, ingredient)) {
+            return SecondaryNames.EMPTY;
+        }
+        return guard.call(() -> MekanismGasTooltip.namesOf(ingredient), SecondaryNames.EMPTY);
     }
 
     static boolean isGas(IntegrationGuard guard, Object ingredient) {

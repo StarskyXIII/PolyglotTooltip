@@ -49,6 +49,22 @@ public final class TooltipLines {
         }
     }
 
+    public static boolean insertAfterLine(List<String> lines, String nameLine, List<String> names, String prefix) {
+        String shown = SecondaryNames.plain(nameLine);
+        for (int index = 0; index < lines.size(); index++) {
+            if (SecondaryNames.plain(lines.get(index)).equals(shown)) {
+                int at = index + 1;
+                for (String name : names) {
+                    if (!SecondaryNames.plain(name).equals(shown)) {
+                        lines.add(at++, prefix + name);
+                    }
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
     @SubscribeEvent(priority = EventPriority.LOW)
     public void onTooltip(ItemTooltipEvent event) {
         if (skipped()) {

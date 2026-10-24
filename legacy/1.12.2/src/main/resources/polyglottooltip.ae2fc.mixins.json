@@ -1,0 +1,10 @@
+{
+  "required": false,
+  "minVersion": "0.8",
+  "package": "com.starskyxiii.polyglottooltip.legacy.mixin.ae2fc",
+  "plugin": "com.starskyxiii.polyglottooltip.legacy.mixin.ae2fc.Ae2FluidCraftingMixinPlugin",
+  "refmap": "polyglottooltip.legacy.refmap.json",
+  "compatibilityLevel": "JAVA_8",
+  "mixins": ["Ae2FluidCraftingRendererMixin", "Ae2FluidCraftingTankMixin", "Ae2FluidCraftingEncoderMixin"],
+  "injectors": {"defaultRequire": 0}
+}

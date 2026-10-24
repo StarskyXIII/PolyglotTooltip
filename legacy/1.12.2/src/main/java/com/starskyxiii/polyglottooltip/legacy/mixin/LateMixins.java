@@ -10,6 +10,10 @@ public final class LateMixins implements ILateMixinLoader {
     public List<String> getMixinConfigs() {
         return Arrays.asList("polyglottooltip.jei.mixins.json", "polyglottooltip.top.mixins.json",
                 "polyglottooltip.hwyla.mixins.json", "polyglottooltip.ae2.mixins.json", "polyglottooltip.rs.mixins.json",
-                "polyglottooltip.carbonconfig.mixins.json", "polyglottooltip.mekanism.mixins.json");
+                "polyglottooltip.carbonconfig.mixins.json", "polyglottooltip.mekanism.mixins.json",
+                "polyglottooltip.extracells.mixins.json", "polyglottooltip.betterp2p.mixins.json",
+                "polyglottooltip.lazyae2.mixins.json", "polyglottooltip.thaumicenergistics.mixins.json",
+                "polyglottooltip.mekanismenergistics.mixins.json", "polyglottooltip.notenoughenergistics.mixins.json",
+                "polyglottooltip.ae2fc.mixins.json");
     }
 }

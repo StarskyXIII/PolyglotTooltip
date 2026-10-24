@@ -52,6 +52,11 @@ dependencies {
     compileOnly('curse.maven:refined-storage-243076:2940914') { transitive = false }
     compileOnly('curse.maven:forestry-59751:7398359') { transitive = false }
     compileOnly('curse.maven:mekanism-268560:2835175') { transitive = false }
+    compileOnly('curse.maven:betterer-p2p-943734:4928154') { transitive = false }
+    compileOnly('curse.maven:thaumic-energistics-849094:8416527') { transitive = false }
+    compileOnly('curse.maven:thaumcraft-223628:2629023') { transitive = false }
+    compileOnly('curse.maven:mekanism-energistics-1027681:5775101') { transitive = false }
+    compileOnly('curse.maven:ae2fc-1404390:7403081') { transitive = false }
     compileOnly sourceSets.heiStubs.output
     heiStubsCompileOnly('curse.maven:jei-238222:3043174') { transitive = false }
     implementation 'com.github.houbb:opencc4j:1.14.0'
@@ -69,6 +74,13 @@ renamer.enableMixinRefmaps {
     config 'polyglottooltip.rs.mixins.json'
     config 'polyglottooltip.carbonconfig.mixins.json'
     config 'polyglottooltip.mekanism.mixins.json'
+    config 'polyglottooltip.extracells.mixins.json'
+    config 'polyglottooltip.betterp2p.mixins.json'
+    config 'polyglottooltip.lazyae2.mixins.json'
+    config 'polyglottooltip.thaumicenergistics.mixins.json'
+    config 'polyglottooltip.mekanismenergistics.mixins.json'
+    config 'polyglottooltip.notenoughenergistics.mixins.json'
+    config 'polyglottooltip.ae2fc.mixins.json'
     refMap = 'polyglottooltip.legacy.refmap.json'
 }
 renamer.mappings.from minecraft.dependency.toSrgFile

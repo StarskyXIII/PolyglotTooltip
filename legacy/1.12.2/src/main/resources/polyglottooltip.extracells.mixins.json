@@ -1,0 +1,11 @@
+{
+  "required": false,
+  "minVersion": "0.8",
+  "package": "com.starskyxiii.polyglottooltip.legacy.mixin.extracells",
+  "plugin": "com.starskyxiii.polyglottooltip.legacy.mixin.extracells.ExtraCellsMixinPlugin",
+  "refmap": "polyglottooltip.legacy.refmap.json",
+  "compatibilityLevel": "JAVA_8",
+  "mixins": ["ExtraCellsSearchMixin", "ExtraCellsTerminalAccessor", "ExtraCellsTankTooltipMixin",
+    "ExtraCellsSlotTooltipMixin", "ExtraCellsWidgetTooltipMixin"],
+  "injectors": {"defaultRequire": 0}
+}

@@ -20,7 +20,11 @@ public final class MekanismGasTooltip {
     }
 
     static List<String> searchNames(Object stack) {
-        return names((GasStack) stack).names();
+        return namesOf(stack).names();
+    }
+
+    static SecondaryNames namesOf(Object stack) {
+        return names((GasStack) stack);
     }
 
     @SuppressWarnings("deprecation")

@@ -1,0 +1,11 @@
+{
+  "required": false,
+  "minVersion": "0.8",
+  "package": "com.starskyxiii.polyglottooltip.legacy.mixin.mekanismenergistics",
+  "plugin": "com.starskyxiii.polyglottooltip.legacy.mixin.mekanismenergistics.MekanismEnergisticsMixinPlugin",
+  "refmap": "polyglottooltip.legacy.refmap.json",
+  "compatibilityLevel": "JAVA_8",
+  "mixins": ["MekanismEnergisticsRepoSearchMixin", "MekanismEnergisticsConfigSearchMixin",
+    "MekanismEnergisticsTerminalTooltipMixin", "MekanismEnergisticsSlotTooltipMixin"],
+  "injectors": {"defaultRequire": 0}
+}
