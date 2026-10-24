@@ -10,6 +10,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
@@ -32,7 +33,7 @@ public abstract class HeiFilterMixin implements SearchIndex {
 
     @Unique private int polyglot$generation;
     @Unique private IElementSearch polyglot$search;
-    @Unique private List<Object> polyglot$pending = new ArrayList<>();
+    @Unique private List<Object> polyglot$pending;
     @Unique private int polyglot$indexed;
     @Unique private boolean polyglot$force;
     @Unique private boolean polyglot$rebuildAfterBlock;
@@ -43,10 +44,20 @@ public abstract class HeiFilterMixin implements SearchIndex {
     @Shadow
     private void notifyListenersOfChange() {}
 
+    @ModifyArg(method = "<init>", at = @At(value = "INVOKE",
+            target = "Lmezz/jei/search/IElementSearch;addAll(Lnet/minecraft/util/NonNullList;)V"))
+    private NonNullList<IIngredientListElement> polyglot$initial(NonNullList<IIngredientListElement> elements) {
+        polyglot$pending = new ArrayList<>(elements);
+        return elements;
+    }
+
     @Inject(method = "<init>", at = @At("RETURN"))
     private void polyglot$track(CallbackInfo ci) {
         polyglot$generation = JeiSearch.track(this);
-        polyglot$queueAll();
+        polyglot$search = elementSearch;
+        if (polyglot$pending == null) {
+            polyglot$queueAll();
+        }
     }
 
     @Inject(method = "addIngredients", at = @At("RETURN"))
