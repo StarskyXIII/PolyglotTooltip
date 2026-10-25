@@ -15,6 +15,7 @@ public final class LateMixins implements ILateMixinLoader {
                 "polyglottooltip.lazyae2.mixins.json", "polyglottooltip.thaumicenergistics.mixins.json",
                 "polyglottooltip.mekanismenergistics.mixins.json", "polyglottooltip.notenoughenergistics.mixins.json",
                 "polyglottooltip.ae2fc.mixins.json", "polyglottooltip.controlling.mixins.json",
-                "polyglottooltip.projecte.mixins.json", "polyglottooltip.integratedterminals.mixins.json");
+                "polyglottooltip.projecte.mixins.json", "polyglottooltip.integratedterminals.mixins.json",
+                "polyglottooltip.modularui.mixins.json", "polyglottooltip.gtceu.mixins.json");
     }
 }

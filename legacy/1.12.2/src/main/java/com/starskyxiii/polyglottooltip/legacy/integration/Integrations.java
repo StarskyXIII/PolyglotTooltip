@@ -21,12 +21,14 @@ import com.starskyxiii.polyglottooltip.legacy.integration.carbonconfig.CarbonCon
 import com.starskyxiii.polyglottooltip.legacy.integration.controlling.ControllingIntegration;
 import com.starskyxiii.polyglottooltip.legacy.integration.extracells.ExtraCellsIntegration;
 import com.starskyxiii.polyglottooltip.legacy.integration.generic.GenericIntegration;
+import com.starskyxiii.polyglottooltip.legacy.integration.gtceu.GregTechIntegration;
 import com.starskyxiii.polyglottooltip.legacy.integration.hwyla.HwylaIntegration;
 import com.starskyxiii.polyglottooltip.legacy.integration.integratedterminals.IntegratedTerminalsIntegration;
 import com.starskyxiii.polyglottooltip.legacy.integration.jei.JeiIntegration;
 import com.starskyxiii.polyglottooltip.legacy.integration.lazyae2.LazyAe2Integration;
 import com.starskyxiii.polyglottooltip.legacy.integration.mekanism.MekanismIntegration;
 import com.starskyxiii.polyglottooltip.legacy.integration.mekanismenergistics.MekanismEnergisticsIntegration;
+import com.starskyxiii.polyglottooltip.legacy.integration.modularui.ModularUiIntegration;
 import com.starskyxiii.polyglottooltip.legacy.integration.names.NamesIntegration;
 import com.starskyxiii.polyglottooltip.legacy.integration.notenoughenergistics.NotEnoughEnergisticsIntegration;
 import com.starskyxiii.polyglottooltip.legacy.integration.projecte.ProjectEIntegration;
@@ -71,6 +73,8 @@ public final class Integrations {
             new Entry(ProjectEIntegration.ID, ProjectEIntegration.MODID, ProjectEIntegration::new),
             new Entry(IntegratedTerminalsIntegration.ID, IntegratedTerminalsIntegration.MODID,
                     IntegratedTerminalsIntegration::new),
+            new Entry(ModularUiIntegration.ID, ModularUiIntegration.MODID, ModularUiIntegration::new),
+            new Entry(GregTechIntegration.ID, GregTechIntegration.MODID, GregTechIntegration::new),
             new Entry(NamesIntegration.POTION_ID, null, NamesIntegration::potion),
             new Entry(NamesIntegration.FORESTRY_ID, NamesIntegration.FORESTRY_MODID, NamesIntegration::forestry),
             new Entry(NamesIntegration.IC2_ID, NamesIntegration.IC2_MODID, NamesIntegration::ic2),
