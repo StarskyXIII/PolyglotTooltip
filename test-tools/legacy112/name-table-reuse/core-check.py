@@ -8,7 +8,7 @@ every config file this run touched is restored byte for byte and the world is de
 docs/research/legacy112/<report>/run-<attempt>/. Scenario export writes the probe.nameExport TSV into the game's
 polyglottooltip-export/ directory and moves it into the report directory afterwards.
 
-Usage: core-check.py <pack|instance-name> <attempt> [--scenario ae2|export|peripherals] [--jar PATH] [--report DIR]
+Usage: core-check.py <pack|instance-name> <attempt> [--scenario ae2|export|peripherals|t19] [--jar PATH] [--report DIR]
                      [--set integrations.ae2=false] [--ae-search-tooltips NO] [--export-source auto|jei|creative] [--menu-settle-ms N]
 
 Rules kept from consistency-run.py: the clone must not be running, port 19594 must be free (one bridged launch at a
@@ -260,7 +260,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('target', help='pack key (%s) or an instance name' % ', '.join(PACKS))
     parser.add_argument('attempt')
-    parser.add_argument('--scenario', default='ae2', choices=['ae2', 'export', 'peripherals'])
+    parser.add_argument('--scenario', default='ae2', choices=['ae2', 'export', 'peripherals', 't19'])
     parser.add_argument('--jar', default=str(JAR))
     parser.add_argument('--report', default='core-stage3-ae2-2026-10-23')
     parser.add_argument('--set', action='append', default=[], help='polyglottooltip.cfg override, category.option=value')
