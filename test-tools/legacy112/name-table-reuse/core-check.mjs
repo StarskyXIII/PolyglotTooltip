@@ -578,6 +578,202 @@ async function peripherals(world) {
   return result;
 }
 
+// Scenario t19: Controlling, ProjectE, Integrated Terminals and ModularUI checks plus Reliquary and Guide-API names on a
+// bridged clone, each run when its mod is loaded. Queries are the en_us names of fixtures whose shown (zh) names do not
+// contain them, so a hit needs the integration and --set integrations.<id>=false must turn it into a miss.
+const englishNames = async keys => {
+  const observed = await call('probe.coreItem', {keys, languages: ['en_us']});
+  return Object.fromEntries(keys.map(key => [key, plain(observed.keys[key]?.dictionary?.en_us ?? '')]));
+};
+const keyRows = state => state.visible.filter(row => row.class === 'KeyEntry');
+
+async function controlling() {
+  await call('controlling.open');
+  await call('wait.ticks', {ticks: 5});
+  const query = async (text, extra = {}) => {
+    await call('controlling.ui', {query: text, ...extra});
+    await call('wait.ticks', {ticks: 3});
+    return call('controlling.observe');
+  };
+  const english = await englishNames(['key.jump', 'key.categories.movement']);
+  const all = await query('');
+  const jump = keyRows(all).find(row => row.key === 'key.jump');
+  const name = await query(english['key.jump'].toLowerCase());
+  const category = await query(english['key.categories.movement'].toLowerCase(), {boxSearchCategory: true});
+  const movement = keyRows(all).filter(row => row.category === 'key.categories.movement').map(row => row.key);
+  await query('', {boxSearchCategory: true});
+  const shownHas = (text, word) => lower(text).includes(word.toLowerCase());
+  const parts = {
+    name: keyRows(name).some(row => row.key === 'key.jump') && !keyRows(name).some(row => row.key === 'key.attack'),
+    category: movement.length > 0 && movement.every(key => keyRows(category).some(row => row.key === key))
+      && keyRows(category).every(row => row.category === 'key.categories.movement'),
+  };
+  const valid = Boolean(jump) && english['key.jump'] && !shownHas(jump.label, english['key.jump']);
+  const result = partsExpectation('controlling', parts, {english, jumpLabel: jump?.label, all: keyRows(all).length,
+    name: keyRows(name).map(row => row.key), category: keyRows(category).map(row => row.key), boxes: [category.boxSearchCategory, category.boxSearchKey]});
+  result.pass = result.pass && valid;
+  return result;
+}
+
+async function projecte() {
+  await call('world.command', {command: '/tp @p 70 5 3'});
+  await call('wait.ticks', {ticks: 60});
+  const server = await call('pe.world', {prepare: true});
+  for (let i = 0; i < 100; i++) {
+    const synced = await call('pe.observe');
+    if (synced.provider.knowledge.length === server.provider.knowledge.length) break;
+    await call('wait.ticks', {ticks: 3});
+  }
+  await call('pe.world', {open: true});
+  for (let i = 0; i < 100; i++) { if ((await call('status')).screen?.endsWith('.GUITransmutation')) break; await call('wait.ticks', {ticks: 3}); }
+  const outputs = state => state.outputs.filter(row => !row.empty).map(row => row.key);
+  const all = await call('pe.ui', {query: ''});
+  const english = (await englishNames(['item.diamond.name']))['item.diamond.name'];
+  const searched = await call('pe.ui', {query: english.toLowerCase(), predicate: 'minecraft:diamond'});
+  const control = await call('pe.ui', {predicate: 'minecraft:iron_ingot'});
+  await call('pe.ui', {query: ''});
+  const parts = {output: outputs(searched).includes('minecraft:diamond:0') && !outputs(searched).includes('minecraft:iron_ingot:0'),
+    predicate: searched.predicate === true};
+  const result = partsExpectation('projecte', parts, {english, knowledge: all.knowledge.length, outputs: outputs(searched),
+    allOutputs: outputs(all), control: control.predicate});
+  result.pass = result.pass && control.predicate === false && all.knowledge.length > 0;
+  return result;
+}
+
+async function integratedTerminals() {
+  const item = 'minecraft:itemstack', fluid = 'minecraft:fluidstack';
+  const view = (state, key, kind = 'filtered') => state.tabs.find(tab => tab.key === key)?.[kind].find(entry => entry.channel === -1)?.rows || [];
+  await call('world.command', {command: '/tp @p 80 5 3'});
+  await call('wait.ticks', {ticks: 60});
+  await call('it.world', {prepare: true});
+  let ready = null;
+  for (let i = 0; i < 100; i++) {
+    ready = await call('it.world');
+    if (ready.isInitialized && !ready.isCrashed && ready.states.every(state => state.valid && state.network)) break;
+    await call('wait.ticks', {ticks: 5});
+  }
+  await call('wait.ticks', {ticks: 10});
+  await call('it.world', {open: true});
+  for (let i = 0; i < 100; i++) { if ((await call('status')).screen?.endsWith('.GuiTerminalStorage')) break; await call('wait.ticks', {ticks: 3}); }
+  const selectTab = async key => {
+    const state = await call('it.observe');
+    for (let index = 0; index < state.tabs.filter(tab => tab.enabled === 'true').length; index++) {
+      const selected = await call('it.ui', {tab: index});
+      if (selected.tab === key) return selected;
+    }
+    throw new Error('terminal tab unavailable: ' + key);
+  };
+  await selectTab(item);
+  let initial = null;
+  for (let i = 0; i < 100; i++) {
+    await call('it.ui', {channel: -1, query: '', prime: true});
+    initial = await call('it.observe');
+    if (view(initial, item, 'views').length === 96 && view(initial, fluid, 'views').length === 2) break;
+    await call('wait.ticks', {ticks: 5});
+  }
+  const rows = view(initial, item, 'views');
+  const english = await englishNames([...new Set(rows.map(row => row.nameKey))]);
+  const candidates = rows.filter(row => english[row.nameKey] && !lower(row.nativeName).includes(english[row.nameKey].toLowerCase()));
+  const target = candidates.find(row => rows.filter(other => english[other.nameKey]?.toLowerCase().includes(english[row.nameKey].toLowerCase())).length === 1);
+  if (!target) return {integration: 'integratedterminals', pass: false, error: 'no item with a distinct en_us name', rows: rows.length};
+  const itemQuery = english[target.nameKey].toLowerCase();
+  await call('it.ui', {query: itemQuery});
+  await call('wait.ticks', {ticks: 5});
+  const itemSearch = await call('it.observe');
+  await call('it.ui', {query: ''});
+  await selectTab(fluid);
+  const fluidQuery = (await englishNames(['tile.water.name']))['tile.water.name'].toLowerCase();
+  await call('it.ui', {channel: -1, query: fluidQuery});
+  await call('wait.ticks', {ticks: 5});
+  const fluidSearch = await call('it.observe');
+  await call('it.ui', {query: ''});
+  const itemKeys = view(itemSearch, item).map(row => row.key), fluidKeys = view(fluidSearch, fluid).map(row => row.key);
+  const parts = {item: itemKeys.includes(target.key) && itemKeys.length < rows.length,
+    fluid: fluidKeys.includes('water') && !fluidKeys.includes('lava')};
+  return partsExpectation('integratedterminals', parts, {ready, target, itemQuery, itemKeys, fluidQuery, fluidKeys,
+    native: view(fluidSearch, fluid, 'views').map(row => row.nativeName)});
+}
+
+async function modularUi() {
+  await call('integration.widget.open', {kind: 'mui', fluid: 'water'});
+  await call('wait.ticks', {ticks: 15});
+  const state = await call('integration.widget.observe');
+  const widget = state.widgets.find(row => row.key === 'slot');
+  const english = (await englishNames(['tile.water.name']))['tile.water.name'];
+  const render = await call('screen.render', {name: `pt112-t19-mui-${config.attempt}-${Date.now()}.png`, x: widget.x, y: widget.y,
+    nativeEvents: true, requireTooltip: true, frames: 3}, 120000);
+  const lines = render.lines.map(plain);
+  const shown = widget.fluid?.nativeName;
+  const result = expectation('modularui', hasLineWith(render.lines, english), {english, shown, lines, events: render.tooltipEvents, path: render.path});
+  result.pass = result.pass && lines.some(line => line === plain(shown)) && plain(shown) !== english;
+  return result;
+}
+
+async function heldNames(label, id, metadata = 0) {
+  const count = await call('world.command', {command: `/replaceitem entity @p slot.hotbar.0 ${id} 1 ${metadata}`});
+  await call('wait.ticks', {ticks: 10});
+  const why = await call('client.command', {command: '/polyglot why', capture: true});
+  const item = await call('pack.item', {item: id, metadata});
+  await call('screen.close').catch(() => {});
+  const messages = why.messages.map(message => ({key: message.key, args: (message.args || []).map(arg => arg?.text ?? arg)}));
+  const languages = messages.filter(message => /\.(hit|fallback|missing)$/.test(message.key || ''));
+  const english = languages.find(message => message.args[0] === 'en_us');
+  const source = messages.find(message => message.key === 'polyglottooltip.command.source')?.args[0] ?? null;
+  const tooltip = item.tooltip.slice(1).map(plain);
+  // why lists the dictionary hits of the standard key; a special resolver's names show up only in the tooltip.
+  const resolved = /Resolver$/.test(source || '') && tooltip.length > 0 ? tooltip[0] : null;
+  const secondary = english && english.key.endsWith('.hit') ? plain(english.args[1]) : resolved;
+  let search = null;
+  if (secondary) {
+    const observed = await call('jei.search', {query: secondary.toLowerCase()});
+    await call('jei.search', {query: ''});
+    search = ids(observed.rows.filter(row => row.id)).includes(id);
+  }
+  const result = {label, id, metadata, count, name: item.nativeName, rawName: item.rawNativeName, source, secondary, tooltip, search, messages,
+    pass: count > 0 && Boolean(secondary) && tooltip.includes(secondary) && search === true};
+  await record('held-' + label, result);
+  return result;
+}
+
+const RELIQUARY_ITEMS = [['feather', 'xreliquary:angelic_feather'], ['harvest-rod', 'xreliquary:harvest_rod'], ['fragment', 'xreliquary:mob_charm_fragment']];
+const GUIDE_BOOKS = ['guideapi:bloodmagic-guide', 'guideapi:cyclicmagic-guide', 'guideapi:woot-guide'];
+
+async function t19(world) {
+  const languages = ['en_us'];
+  const result = {};
+  const off = config.overrides.filter(entry => entry.endsWith('=false')).map(entry => entry.slice('integrations.'.length, -'=false'.length));
+  result.whyStart = await why('start', languages);
+  const stone = await call('pack.item', {item: 'minecraft:stone'});
+  await call('screen.close').catch(() => {});
+  const viewer = await call('jei.search', {query: 'stone'});
+  await call('jei.search', {query: ''});
+  result.layer1 = {tooltip: stone.tooltip, recipeViewer: viewer.count,
+    pass: hasLineWith(stone.tooltip.slice(1), 'Stone') && ids(viewer.rows.filter(row => row.id)).includes('minecraft:stone')};
+  if (hasMod(world, 'controlling')) await step(result, 'controlling', controlling);
+  if (hasMod(world, 'projecte')) await step(result, 'projecte', projecte);
+  if (hasMod(world, 'integratedterminals')) await step(result, 'integratedterminals', integratedTerminals);
+  if (hasMod(world, 'modularui')) await step(result, 'modularui', modularUi);
+  // Recorded, not part of the pass condition: layer-1 names of Reliquary items and Guide-API books.
+  const recorded = {};
+  if (hasMod(world, 'xreliquary')) {
+    recorded.reliquary = [];
+    for (const [label, id] of RELIQUARY_ITEMS) recorded.reliquary.push(await heldNames('reliquary-' + label, id).catch(error => ({id, error: String(error.message || error)})));
+  }
+  if (hasMod(world, 'guideapi')) {
+    recorded.guideapi = [];
+    for (const id of GUIDE_BOOKS) recorded.guideapi.push(await heldNames('guide-' + id.split(':')[1], id).catch(error => ({id, error: String(error.message || error)})));
+  }
+  await record('t19-recorded', recorded);
+  result.whyEnd = await why('end', languages);
+  const disabledOk = parsed => parsed.parsable && parsed.disabled.length === off.length && off.every(id => parsed.disabled.includes(id));
+  result.whyPass = disabledOk(result.whyStart) && disabledOk(result.whyEnd);
+  const checks = Object.entries(result).filter(([name]) => !['whyStart', 'whyEnd', 'whyPass'].includes(name));
+  result.failures = checks.filter(([, value]) => !value.pass).map(([name]) => name).concat(result.whyPass ? [] : ['why']);
+  result.recorded = recorded;
+  result.pass = result.failures.length === 0;
+  return result;
+}
+
 async function nameExport() {
   const exported = await call('probe.nameExport', {source: config.exportSource ?? 'auto', file: config.exportFile}, 1200000);
   await record('export', exported);
@@ -601,9 +797,9 @@ try {
     await record('status-world', world);
     if (world.screen) await call('screen.close').catch(() => {});
     await pause(config.worldSettleMs ?? 15000);
-    assert.ok(['ae2', 'rs', 'matrix', 'export', 'peripherals'].includes(config.scenario));
+    assert.ok(['ae2', 'rs', 'matrix', 'export', 'peripherals', 't19'].includes(config.scenario));
     const result = config.scenario === 'ae2' ? await ae2() : config.scenario === 'rs' ? await rs()
-      : config.scenario === 'peripherals' ? await peripherals(world)
+      : config.scenario === 'peripherals' ? await peripherals(world) : config.scenario === 't19' ? await t19(world)
       : config.scenario === 'export' ? await nameExport() : await matrix(world);
     await record('summary', {scenario: config.scenario, instance: config.instance, language: world.language,
       overrides: config.overrides, integrationOn, ...result});
