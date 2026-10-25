@@ -57,6 +57,7 @@ dependencies {
     compileOnly('curse.maven:thaumcraft-223628:2629023') { transitive = false }
     compileOnly('curse.maven:mekanism-energistics-1027681:5775101') { transitive = false }
     compileOnly('curse.maven:ae2fc-1404390:7403081') { transitive = false }
+    compileOnly('curse.maven:controlling-250398:5408385') { transitive = false }
     compileOnly sourceSets.heiStubs.output
     heiStubsCompileOnly('curse.maven:jei-238222:3043174') { transitive = false }
     implementation 'com.github.houbb:opencc4j:1.14.0'
@@ -81,6 +82,9 @@ renamer.enableMixinRefmaps {
     config 'polyglottooltip.mekanismenergistics.mixins.json'
     config 'polyglottooltip.notenoughenergistics.mixins.json'
     config 'polyglottooltip.ae2fc.mixins.json'
+    config 'polyglottooltip.controlling.mixins.json'
+    config 'polyglottooltip.projecte.mixins.json'
+    config 'polyglottooltip.integratedterminals.mixins.json'
     refMap = 'polyglottooltip.legacy.refmap.json'
 }
 renamer.mappings.from minecraft.dependency.toSrgFile

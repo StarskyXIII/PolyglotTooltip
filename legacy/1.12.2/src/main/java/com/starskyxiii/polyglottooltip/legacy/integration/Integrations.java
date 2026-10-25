@@ -18,15 +18,18 @@ import com.starskyxiii.polyglottooltip.legacy.integration.ae2.Ae2Integration;
 import com.starskyxiii.polyglottooltip.legacy.integration.ae2fc.Ae2FluidCraftingIntegration;
 import com.starskyxiii.polyglottooltip.legacy.integration.betterp2p.BetterP2PIntegration;
 import com.starskyxiii.polyglottooltip.legacy.integration.carbonconfig.CarbonConfigIntegration;
+import com.starskyxiii.polyglottooltip.legacy.integration.controlling.ControllingIntegration;
 import com.starskyxiii.polyglottooltip.legacy.integration.extracells.ExtraCellsIntegration;
 import com.starskyxiii.polyglottooltip.legacy.integration.generic.GenericIntegration;
 import com.starskyxiii.polyglottooltip.legacy.integration.hwyla.HwylaIntegration;
+import com.starskyxiii.polyglottooltip.legacy.integration.integratedterminals.IntegratedTerminalsIntegration;
 import com.starskyxiii.polyglottooltip.legacy.integration.jei.JeiIntegration;
 import com.starskyxiii.polyglottooltip.legacy.integration.lazyae2.LazyAe2Integration;
 import com.starskyxiii.polyglottooltip.legacy.integration.mekanism.MekanismIntegration;
 import com.starskyxiii.polyglottooltip.legacy.integration.mekanismenergistics.MekanismEnergisticsIntegration;
 import com.starskyxiii.polyglottooltip.legacy.integration.names.NamesIntegration;
 import com.starskyxiii.polyglottooltip.legacy.integration.notenoughenergistics.NotEnoughEnergisticsIntegration;
+import com.starskyxiii.polyglottooltip.legacy.integration.projecte.ProjectEIntegration;
 import com.starskyxiii.polyglottooltip.legacy.integration.rs.RsIntegration;
 import com.starskyxiii.polyglottooltip.legacy.integration.thaumicenergistics.ThaumicEnergisticsIntegration;
 import com.starskyxiii.polyglottooltip.legacy.integration.theoneprobe.TopIntegration;
@@ -64,6 +67,10 @@ public final class Integrations {
             new Entry(NotEnoughEnergisticsIntegration.ID, NotEnoughEnergisticsIntegration.MODID,
                     NotEnoughEnergisticsIntegration::new),
             new Entry(Ae2FluidCraftingIntegration.ID, Ae2FluidCraftingIntegration.MODID, Ae2FluidCraftingIntegration::new),
+            new Entry(ControllingIntegration.ID, ControllingIntegration.MODID, ControllingIntegration::new),
+            new Entry(ProjectEIntegration.ID, ProjectEIntegration.MODID, ProjectEIntegration::new),
+            new Entry(IntegratedTerminalsIntegration.ID, IntegratedTerminalsIntegration.MODID,
+                    IntegratedTerminalsIntegration::new),
             new Entry(NamesIntegration.POTION_ID, null, NamesIntegration::potion),
             new Entry(NamesIntegration.FORESTRY_ID, NamesIntegration.FORESTRY_MODID, NamesIntegration::forestry),
             new Entry(NamesIntegration.IC2_ID, NamesIntegration.IC2_MODID, NamesIntegration::ic2),
