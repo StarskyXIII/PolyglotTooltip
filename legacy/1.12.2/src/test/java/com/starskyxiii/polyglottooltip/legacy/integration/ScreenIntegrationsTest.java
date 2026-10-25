@@ -22,6 +22,8 @@ public class ScreenIntegrationsTest {
         MODIDS.put("controlling", "controlling");
         MODIDS.put("projecte", "projecte");
         MODIDS.put("integratedterminals", "integratedterminals");
+        MODIDS.put("modularui", "modularui");
+        MODIDS.put("gtceu", "gregtech");
     }
 
     private final List<String> warnings = new ArrayList<>();

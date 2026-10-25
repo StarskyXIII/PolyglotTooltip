@@ -72,7 +72,7 @@ public final class SecondaryNames {
                 Collections.unmodifiableMap(untranslated), null);
     }
 
-    static String plain(String text) {
+    public static String plain(String text) {
         return FORMATTING.matcher(text).replaceAll("").trim();
     }
 
