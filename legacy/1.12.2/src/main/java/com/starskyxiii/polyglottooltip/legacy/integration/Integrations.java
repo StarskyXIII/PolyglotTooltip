@@ -84,6 +84,8 @@ public final class Integrations {
             new Entry(NamesIntegration.AE2_ID, NamesIntegration.AE2_MODID, NamesIntegration::ae2),
             new Entry(NamesIntegration.CHISELSANDBITS_ID, NamesIntegration.CHISELSANDBITS_MODID,
                     NamesIntegration::chiselsandbits),
+            new Entry(NamesIntegration.GUIDEAPI_ID, NamesIntegration.GUIDEAPI_MODID, NamesIntegration::guideapi),
+            new Entry(NamesIntegration.RELIQUARY_ID, NamesIntegration.RELIQUARY_MODID, NamesIntegration::reliquary),
             new Entry(GenericIntegration.BARE_KEY_ID, null, GenericIntegration::bareKey),
             new Entry(GenericIntegration.FORMAT_ID, null, GenericIntegration::format),
             new Entry(GenericIntegration.COMPOSITE_ID, null, GenericIntegration::composite),
