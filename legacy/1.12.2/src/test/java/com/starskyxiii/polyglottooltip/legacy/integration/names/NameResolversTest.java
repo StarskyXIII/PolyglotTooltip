@@ -128,6 +128,31 @@ public class NameResolversTest {
     }
 
     @Test
+    public void guideBooksUseTheBookItemNameKey() {
+        Function<String, String> shown = key -> key.equals("guide.bloodmagic.title") ? "血染知书" : null;
+        Function<String, String> english = key -> key.equals("guide.bloodmagic.title") ? "Sanguine Scientiem" : null;
+        assertEquals("Sanguine Scientiem", GuideApiNameResolver.name("guide.bloodmagic.title", "血染知书", shown, english));
+        assertNull(GuideApiNameResolver.name("guide.bloodmagic.title", "Literal book", shown, english));
+        assertNull(GuideApiNameResolver.name("", "血染知书", shown, english));
+        assertNull(GuideApiNameResolver.name(null, "血染知书", shown, english));
+    }
+
+    @Test
+    public void reliquaryNamesUseThePrefixedKeyWithoutColorMacros() {
+        Map<String, String> zh = new HashMap<>();
+        zh.put("xreliquary.item.harvest_rod.name", "{{!colors.green}}收割权杖");
+        zh.put("xreliquary.item.angelic_feather.name", "天使之羽");
+        Map<String, String> en = new HashMap<>();
+        en.put("xreliquary.item.harvest_rod.name", "{{!colors.green}}Harvest Rod");
+        en.put("xreliquary.item.angelic_feather.name", "Angelic Feather");
+        assertEquals("Harvest Rod", ReliquaryNameResolver.name("item.harvest_rod", "§2收割权杖", zh::get, en::get));
+        assertEquals("Angelic Feather", ReliquaryNameResolver.name("item.angelic_feather", "天使之羽", zh::get, en::get));
+        assertNull(ReliquaryNameResolver.name("item.angelic_feather", "Renamed feather", zh::get, en::get));
+        assertNull(ReliquaryNameResolver.name("item.unknown", "未知", zh::get, en::get));
+        assertNull(ReliquaryNameResolver.name(null, "天使之羽", zh::get, en::get));
+    }
+
+    @Test
     public void forestryContainersUseTheEmptyExactOrGrammarKey() {
         assertEquals("Can", ForestryContainerNameResolver.name("can", null, null, null, "罐", primary, secondary));
         assertEquals("Water Can",

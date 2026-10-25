@@ -25,6 +25,10 @@ public final class NamesIntegration implements Integration {
     public static final String AE2_MODID = "appliedenergistics2";
     public static final String CHISELSANDBITS_ID = "names-chiselsandbits";
     public static final String CHISELSANDBITS_MODID = "chiselsandbits";
+    public static final String GUIDEAPI_ID = "names-guideapi";
+    public static final String GUIDEAPI_MODID = "guideapi";
+    public static final String RELIQUARY_ID = "names-reliquary";
+    public static final String RELIQUARY_MODID = "xreliquary";
 
     private final String id;
     private final String modid;
@@ -75,6 +79,14 @@ public final class NamesIntegration implements Integration {
         } catch (ReflectiveOperationException error) {
             throw new IllegalStateException("Chisels & Bits bit API not found", error);
         }
+    }
+
+    public static NamesIntegration guideapi(IntegrationGuard guard) {
+        return new NamesIntegration(GUIDEAPI_ID, GUIDEAPI_MODID, new GuideApiNameResolver(guard));
+    }
+
+    public static NamesIntegration reliquary(IntegrationGuard guard) {
+        return new NamesIntegration(RELIQUARY_ID, RELIQUARY_MODID, new ReliquaryNameResolver(guard));
     }
 
     public static NamesIntegration potion(IntegrationGuard guard) {

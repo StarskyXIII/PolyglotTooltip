@@ -59,6 +59,7 @@ dependencies {
     compileOnly('curse.maven:ae2fc-1404390:7403081') { transitive = false }
     compileOnly('curse.maven:controlling-250398:5408385') { transitive = false }
     compileOnly('curse.maven:modularui-624243:7102461') { transitive = false }
+    compileOnly('curse.maven:guide-api-228832:2645992') { transitive = false }
     compileOnly sourceSets.heiStubs.output
     heiStubsCompileOnly('curse.maven:jei-238222:3043174') { transitive = false }
     implementation 'com.github.houbb:opencc4j:1.14.0'
