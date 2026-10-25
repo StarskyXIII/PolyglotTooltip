@@ -1,0 +1,10 @@
+{
+  "required": false,
+  "minVersion": "0.8",
+  "package": "com.starskyxiii.polyglottooltip.legacy.mixin.projecte",
+  "plugin": "com.starskyxiii.polyglottooltip.legacy.mixin.projecte.ProjectEMixinPlugin",
+  "refmap": "polyglottooltip.legacy.refmap.json",
+  "compatibilityLevel": "JAVA_8",
+  "mixins": ["ProjectESearchMixin"],
+  "injectors": {"defaultRequire": 0}
+}
