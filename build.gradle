@@ -77,8 +77,6 @@ neoForge {
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 // Exclude integration modules that still need porting for MC 26.1.
-sourceSets.main.java.exclude '**/integration/ae2/**'
-sourceSets.main.java.exclude '**/mixin/ae2/**'
 sourceSets.main.java.exclude '**/mixin/mekae2/**'
 
 // Keep optional dev-only mods on the local runtime classpath without publishing them as dependencies.
@@ -96,7 +94,7 @@ dependencies {
     compileOnly "mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}"
     localRuntime "mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}"
     // AE2 integration for terminal name search and tooltip-search matching.
-    // compileOnly "org.appliedenergistics:appliedenergistics2:${ae2_version}"
+    compileOnly "org.appliedenergistics:appliedenergistics2:${ae2_version}"
     // Refined Storage 2 integration for resource tooltips and grid search.
     compileOnly "com.refinedmods.refinedstorage:refinedstorage-common:${rs2_version}"
     localRuntime "com.refinedmods.refinedstorage:refinedstorage-neoforge:${rs2_version}"

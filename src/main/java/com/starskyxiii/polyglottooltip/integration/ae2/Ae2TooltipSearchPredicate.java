@@ -1,6 +1,6 @@
 package com.starskyxiii.polyglottooltip.integration.ae2;
 
-import appeng.api.client.AEKeyRendering;
+import appeng.client.api.AEKeyRendering;
 import appeng.api.stacks.AEKey;
 import appeng.core.AEConfig;
 import appeng.menu.me.common.GridInventoryEntry;
