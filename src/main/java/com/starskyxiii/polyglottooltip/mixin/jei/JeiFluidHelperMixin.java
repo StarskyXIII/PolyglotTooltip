@@ -2,9 +2,10 @@ package com.starskyxiii.polyglottooltip.mixin.jei;
 //~ forge_neoforge_package minecraft_116_packages
 
 import com.starskyxiii.polyglottooltip.SecondaryTooltipUtil;
+import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 //? if <=1.20.1 {
-/*import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
-import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
+/*import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 *///?}
 import net.minecraft.network.chat.Component;
 //? if <=1.20.1 {
@@ -16,8 +17,6 @@ import net.neoforged.neoforge.fluids.FluidStack;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.List;
 
@@ -39,20 +38,20 @@ import java.util.List;
 //?}
 public class JeiFluidHelperMixin {
 
-    @Inject(
+    @WrapMethod(
             //? if <=1.20.1 {
             /*method = "getTooltip(Ljava/util/List;Lnet/minecraftforge/fluids/FluidStack;Lnet/minecraft/world/item/TooltipFlag;)V",
             *///?} else {
             method = "getTooltip(Ljava/util/List;Lnet/neoforged/neoforge/fluids/FluidStack;Lnet/minecraft/world/item/TooltipFlag;)V",
             //?}
-            at = @At("RETURN"),
             remap = false,
             require = 0
     )
     private void onGetTooltip(List<Component> tooltip,
                                FluidStack ingredient,
                                TooltipFlag tooltipFlag,
-                               CallbackInfo ci) {
+                               Operation<Void> original) {
+        original.call(tooltip, ingredient, tooltipFlag);
         if (ingredient.isEmpty()) {
             return;
         }
