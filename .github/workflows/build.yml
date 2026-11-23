@@ -43,10 +43,13 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
-      - name: Setup JDK ${{ matrix.java }}
+      - name: Set up Java toolchains
         uses: actions/setup-java@v4
         with:
-          java-version: ${{ matrix.java }}
+          java-version: |
+            8
+            17
+            ${{ matrix.java }}
           distribution: 'temurin'
 
       - name: Setup Gradle
@@ -58,12 +61,12 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Build with Gradle
-        run: ./gradlew :${{ matrix.project }}:build
+        run: ./gradlew -Porg.gradle.java.installations.fromEnv=JAVA_HOME_8_X64,JAVA_HOME_17_X64 :${{ matrix.project }}:build
 
       - name: Export Forge production artifact path
         if: matrix.loader == 'forge'
         id: forge_production
-        run: ./gradlew :${{ matrix.project }}:exportProductionJarPath
+        run: ./gradlew -Porg.gradle.java.installations.fromEnv=JAVA_HOME_8_X64,JAVA_HOME_17_X64 :${{ matrix.project }}:exportProductionJarPath
 
       - name: Upload Forge production artifact
         if: matrix.loader == 'forge'
