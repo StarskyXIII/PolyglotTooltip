@@ -43,11 +43,16 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
-      - name: Set up Java toolchains
+      - name: Set up Java 8 toolchain
+        uses: actions/setup-java@v4
+        with:
+          java-version: '8'
+          distribution: 'zulu'
+
+      - name: Set up modern Java toolchains
         uses: actions/setup-java@v4
         with:
           java-version: |
-            8
             17
             ${{ matrix.java }}
           distribution: 'temurin'
