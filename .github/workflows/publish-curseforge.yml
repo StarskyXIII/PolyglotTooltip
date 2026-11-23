@@ -1,0 +1,121 @@
+name: Publish to CurseForge
+run-name: CurseForge ${{ inputs.release_type }} from Build ${{ inputs.build_run_id }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_run_id:
+        description: Successful Build run ID for this main commit
+        type: string
+        required: true
+      release_type:
+        description: CurseForge release type
+        type: choice
+        required: true
+        default: beta
+        options: [release, beta, alpha]
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: curseforge-publish
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    outputs:
+      targets: ${{ steps.verify.outputs.targets }}
+      version: ${{ steps.verify.outputs.version }}
+    steps:
+      - name: Check publishing configuration and source run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BUILD_RUN_ID: ${{ inputs.build_run_id }}
+          PROJECT_ID: ${{ vars.CURSEFORGE_PROJECT_ID }}
+          HAS_TOKEN: ${{ secrets.CURSEFORGE_TOKEN != '' }}
+        run: |
+          if [[ ! "$PROJECT_ID" =~ ^[1-9][0-9]*$ || "$HAS_TOKEN" != true ]]; then
+            echo 'Set the CURSEFORGE_PROJECT_ID variable and CURSEFORGE_TOKEN secret.' >&2
+            exit 1
+          fi
+          if [[ ! "$BUILD_RUN_ID" =~ ^[1-9][0-9]*$ ]]; then
+            echo 'Enter a numeric Build run ID.' >&2
+            exit 1
+          fi
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$BUILD_RUN_ID" |
+            jq -e --arg sha "$GITHUB_SHA" '
+              .path == ".github/workflows/build.yml" and .head_branch == "main" and
+              .head_sha == $sha and .conclusion == "success" and
+              (.event == "push" or .event == "workflow_dispatch")
+            ' > /dev/null
+
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: curseforge-release
+          path: release
+          run-id: ${{ inputs.build_run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Verify release manifest and checksums
+        id: verify
+        run: python3 .github/scripts/curseforge_release.py verify release
+
+  publish:
+    needs: prepare
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        include: ${{ fromJSON(needs.prepare.outputs.targets) }}
+    name: Publish ${{ matrix.target }}
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: curseforge-release
+          path: release
+          run-id: ${{ inputs.build_run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Verify upload files
+        env:
+          JAR: ${{ matrix.file }}
+          JAR_SHA: ${{ matrix.sha256 }}
+          CHANGELOG_SHA: ${{ matrix.changelog_sha256 }}
+        run: |
+          cd release
+          printf '%s  %s\n' "$JAR_SHA" "$JAR" "$CHANGELOG_SHA" changelog.md | sha256sum -c -
+
+      - name: Publish to CurseForge
+        id: upload
+        uses: Kira-NT/mc-publish@52307b03863581dec6b652b83e597aec02ebb075
+        with:
+          curseforge-id: ${{ vars.CURSEFORGE_PROJECT_ID }}
+          curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
+          files: release/${{ matrix.file }}
+          name: PolyglotTooltip ${{ needs.prepare.outputs.version }} [${{ matrix.target }}]
+          version: ${{ needs.prepare.outputs.version }}
+          version-type: ${{ inputs.release_type }}
+          changelog-file: release/changelog.md
+          loaders: ${{ matrix.loader }}
+          environment: client
+          game-versions: ${{ matrix.minecraft }}
+          java: ${{ matrix.java }}
+          dependencies: ${{ matrix.dependencies }}
+          retry-attempts: 1
+          fail-mode: fail
+
+      - name: Record uploaded file
+        env:
+          TARGET: ${{ matrix.target }}
+          FILE_ID: ${{ steps.upload.outputs.curseforge-version }}
+          FILE_URL: ${{ steps.upload.outputs.curseforge-url }}
+        run: printf '%s · [%s](%s)\n' "$TARGET" "$FILE_ID" "$FILE_URL" >> "$GITHUB_STEP_SUMMARY"
