@@ -146,9 +146,6 @@ stonecutter {
     replacements.string(sc.current.version == "1.16.5", "forge_config_set") {
         replace("Config.SPEC.acceptConfig(config);", "Config.SPEC.setConfig(config);")
     }
-    replacements.string(sc.current.version == "1.18.2", "jei_lowmem_internal_package") {
-        replace("mezz.jei.gui.search.ElementSearchLowMem", "mezz.jei.common.search.ElementSearchLowMem")
-    }
     replacements.string(sc.current.parsed <= "1.18.2", "occultism_legacy_package") {
         replace("com.klikli_dev.occultism", "com.github.klikli_dev.occultism")
         replace("com/klikli_dev/occultism", "com/github/klikli_dev/occultism")
@@ -291,7 +288,11 @@ sourceSets.main {
     java.exclude("com/starskyxiii/polyglottooltip/integration/rs2/**")
     java.exclude("com/starskyxiii/polyglottooltip/mixin/rs2/**")
     java.exclude("com/starskyxiii/polyglottooltip/mixin/mekanism/MekanismChemicalStackMixin.java")
-    java.exclude("com/starskyxiii/polyglottooltip/mixin/jei/JeiGeneralizedSuffixTreeSearchStorageMixin.java")
+    if (sc.current.version == "1.18.2") {
+        java.srcDir(rootProject.file("src/forge1182/java"))
+    } else {
+        java.exclude("com/starskyxiii/polyglottooltip/mixin/jei/JeiGeneralizedSuffixTreeSearchStorageMixin.java")
+    }
     if (sc.current.version == "1.16.5") {
         java.exclude(
             "com/starskyxiii/polyglottooltip/integration/ae2/Ae2SearchPredicate.java",
@@ -344,12 +345,16 @@ sourceSets.main {
         java.exclude(
             "com/starskyxiii/polyglottooltip/mixin/ae2/Ae2PatternAccessTermScreenMixin.java",
             "com/starskyxiii/polyglottooltip/mixin/ae2/Ae2PatternContainerRecordMixin.java",
-            "com/starskyxiii/polyglottooltip/mixin/jei/JeiListElementInfoMixin.java",
-            "com/starskyxiii/polyglottooltip/mixin/jei/JeiFluidHelperMixin.java",
             "com/starskyxiii/polyglottooltip/mixin/jei/JeiSafeIngredientUtilMixin.java",
             "com/starskyxiii/polyglottooltip/integration/jec/JecLegacySearchStoragePlugin.java",
             "com/starskyxiii/polyglottooltip/mixin/jade/JadeGtoCoreCompatMixin.java"
         )
+        if (sc.current.version == "1.16.5") {
+            java.exclude(
+                "com/starskyxiii/polyglottooltip/mixin/jei/JeiListElementInfoMixin.java",
+                "com/starskyxiii/polyglottooltip/mixin/jei/JeiFluidHelperMixin.java"
+            )
+        }
     } else {
         java.exclude(
             "com/starskyxiii/polyglottooltip/mixin/ae2/LegacyAe2InterfaceTerminalScreenMixin.java",

@@ -77,16 +77,18 @@ public final class PolyglotJeiRuntimePlugin implements IModPlugin {
                 Field filterField = filterApi.getClass().getDeclaredField("ingredientFilter");
                 filterField.setAccessible(true);
                 Object filter = filterField.get(filterApi);
+                String refreshMethodName = rebuildSearchIndex ? "rebuildItemFilter" : "invalidateCache";
+                String searchFieldName = "searchField";
                 //? if >1.16.5 && <=1.18.2 {
-                /*if (rebuildSearchIndex) {
-                    rebuildLegacyElementSearch(filter);
+                /*if (filter.getClass().getName().equals("mezz.jei.common.ingredients.IngredientFilter")) {
+                    if (rebuildSearchIndex) {
+                        rebuildLegacyElementSearch(filter);
+                    }
+                    refreshMethodName = "invalidateCache";
+                    searchFieldName = "textFieldFilter";
                 }
-                Method refreshMethod = filter.getClass().getDeclaredMethod("invalidateCache");
-                *///?} else {
-                Method refreshMethod = filter.getClass().getDeclaredMethod(
-                        rebuildSearchIndex ? "rebuildItemFilter" : "invalidateCache"
-                );
-                //?}
+                *///?}
+                Method refreshMethod = filter.getClass().getDeclaredMethod(refreshMethodName);
                 Method notifyMethod = filter.getClass().getDeclaredMethod("notifyListenersOfChange");
                 refreshMethod.setAccessible(true);
                 notifyMethod.setAccessible(true);
@@ -94,11 +96,7 @@ public final class PolyglotJeiRuntimePlugin implements IModPlugin {
                 notifyMethod.invoke(filter);
 
                 Object ingredientListOverlay = expectedRuntime.getIngredientListOverlay();
-                //? if >1.16.5 && <=1.18.2 {
-                /*Field searchField = ingredientListOverlay.getClass().getDeclaredField("textFieldFilter");
-                *///?} else {
-                Field searchField = ingredientListOverlay.getClass().getDeclaredField("searchField");
-                //?}
+                Field searchField = ingredientListOverlay.getClass().getDeclaredField(searchFieldName);
                 searchField.setAccessible(true);
                 //? if <=1.16.5 {
                 /*EditBox searchBox = (EditBox) searchField.get(ingredientListOverlay);

@@ -11,7 +11,11 @@ import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.injection.At;
 
 @Pseudo
+//? if forge && 1.18.2 {
+/*@Mixin(targets = {"mezz.jei.common.search.ElementSearchLowMem", "mezz.jei.gui.search.ElementSearchLowMem"}, remap = false)
+*///?} else {
 @Mixin(targets = "mezz.jei.gui.search.ElementSearchLowMem", remap = false)
+//?}
 public class JeiElementSearchLowMemMixin {
 
     @WrapOperation(

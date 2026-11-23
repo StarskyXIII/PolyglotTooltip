@@ -9,6 +9,9 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /** Adds simplified/traditional variants to JEI 19.43's mutable runtime index. */
+//? if forge && 1.18.2 {
+/*@org.spongepowered.asm.mixin.Pseudo
+*///?}
 @Mixin(targets = "mezz.jei.common.search.GeneralizedSuffixTreeSearchStorage", remap = false)
 public abstract class JeiGeneralizedSuffixTreeSearchStorageMixin {
 
