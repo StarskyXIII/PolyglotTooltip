@@ -1,5 +1,8 @@
 package com.starskyxiii.polyglottooltip.mixin;
 
+//? if forge && 1.20.1 {
+/*import com.starskyxiii.polyglottooltip.integration.ae2.ForgeAe2RepoSearchLayout;
+*///?}
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
@@ -54,6 +57,11 @@ public class OptionalIntegrationMixinPlugin implements IMixinConfigPlugin {
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
+        //? if forge && 1.20.1 {
+        /*if (mixinClassName.equals("com.starskyxiii.polyglottooltip.mixin.ae2.ForgeAe2RepoSearchReturnMixin")) {
+            return ForgeAe2RepoSearchLayout.prepare(targetClassName, MixinService.getService()::getResourceAsStream);
+        }
+        *///?}
         if (mixinClassName.startsWith("com.starskyxiii.polyglottooltip.mixin.carbonconfig.")) {
             try {
                 ClassNode array = metadataReader.read(CarbonConfigMixinGuard.ARRAY);
@@ -89,8 +97,7 @@ public class OptionalIntegrationMixinPlugin implements IMixinConfigPlugin {
                 return false;
             }
         }
-        if (mixinClassName.equals("com.starskyxiii.polyglottooltip.mixin.ae2.GtoAe2RepoSearchMixin")
-                || mixinClassName.equals("com.starskyxiii.polyglottooltip.mixin.ldlib.GtoModularUiFluidTooltipMixin")) {
+        if (mixinClassName.equals("com.starskyxiii.polyglottooltip.mixin.ldlib.GtoModularUiFluidTooltipMixin")) {
             try {
                 return metadataReader.read(GTO_PREDICATE) != null;
             } catch (ClassNotFoundException | IOException ignored) {

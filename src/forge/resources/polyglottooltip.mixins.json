@@ -18,7 +18,7 @@
     "arsnouveau.ArsNouveauGlyphUnlockMenuMixin",
     "arsnouveau.ArsNouveauUnlockGlyphButtonMixin",
     "ae2.Ae2RepoSearchMixin",
-    "ae2.GtoAe2RepoSearchMixin",
+    "ae2.ForgeAe2RepoSearchReturnMixin",
     "ae2.Ae2RepoMixin",
     "ae2.Ae2ExtendedPatternTerminalMixin",
     "ae2.Ae2AssemblerMatrixMixin",

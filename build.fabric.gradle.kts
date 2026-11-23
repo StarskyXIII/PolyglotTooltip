@@ -165,7 +165,6 @@ sourceSets.main {
         "com/starskyxiii/polyglottooltip/mixin/rs/**",
         "com/starskyxiii/polyglottooltip/mixin/sophisticatedcore/**",
         "com/starskyxiii/polyglottooltip/mixin/ae2/Ae2AssemblerMatrixMixin.java",
-        "com/starskyxiii/polyglottooltip/mixin/ae2/GtoAe2RepoSearchMixin.java",
         "com/starskyxiii/polyglottooltip/mixin/emi/GtoEmiSearchMixin.java",
         "com/starskyxiii/polyglottooltip/mixin/ldlib/GtoModularUiFluidTooltipMixin.java",
         "com/starskyxiii/polyglottooltip/integration/gto/**",

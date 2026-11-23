@@ -192,7 +192,6 @@ sourceSets.main {
         "com/starskyxiii/polyglottooltip/mixin/ae2/LegacyAe2SearchPredicatesMixin.java",
         "com/starskyxiii/polyglottooltip/mixin/ae2/LegacyAe2RepoSearchCacheMixin.java",
         "com/starskyxiii/polyglottooltip/mixin/ae2/LegacyAe2InterfaceTerminalScreenMixin.java",
-        "com/starskyxiii/polyglottooltip/mixin/ae2/GtoAe2RepoSearchMixin.java",
         "com/starskyxiii/polyglottooltip/mixin/emi/GtoEmiSearchMixin.java",
         "com/starskyxiii/polyglottooltip/mixin/ldlib/GtoModularUiFluidTooltipMixin.java",
         "com/starskyxiii/polyglottooltip/integration/gto/**",

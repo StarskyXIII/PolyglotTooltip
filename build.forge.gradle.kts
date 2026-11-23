@@ -293,6 +293,9 @@ sourceSets.main {
     } else {
         java.exclude("com/starskyxiii/polyglottooltip/mixin/jei/JeiGeneralizedSuffixTreeSearchStorageMixin.java")
     }
+    if (sc.current.version == "1.20.1") {
+        java.srcDir(rootProject.file("src/forge1201/java"))
+    }
     if (sc.current.version == "1.16.5") {
         java.exclude(
             "com/starskyxiii/polyglottooltip/integration/ae2/Ae2SearchPredicate.java",
@@ -369,7 +372,6 @@ sourceSets.main {
             "com/starskyxiii/polyglottooltip/integration/ae2/Ae2SearchRefresh.java",
             "com/starskyxiii/polyglottooltip/mixin/ae2/Ae2RepoMixin.java",
             "com/starskyxiii/polyglottooltip/mixin/ae2/Ae2RepoSearchMixin.java",
-            "com/starskyxiii/polyglottooltip/mixin/ae2/GtoAe2RepoSearchMixin.java",
             "com/starskyxiii/polyglottooltip/mixin/emi/GtoEmiSearchMixin.java",
             "com/starskyxiii/polyglottooltip/mixin/ldlib/GtoModularUiFluidTooltipMixin.java",
             "com/starskyxiii/polyglottooltip/integration/gto/**",

@@ -2,11 +2,13 @@ package com.starskyxiii.polyglottooltip.mixin.ae2;
 //~ forge_neoforge_package
 
 import appeng.api.stacks.AEKey;
+//? if !(forge && 1.20.1) {
 import appeng.menu.me.common.GridInventoryEntry;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.starskyxiii.polyglottooltip.integration.ae2.Ae2SearchPredicate;
-import com.starskyxiii.polyglottooltip.integration.ae2.Ae2SearchRefresh;
 import com.starskyxiii.polyglottooltip.integration.ae2.Ae2TooltipSearchPredicate;
+//?}
+import com.starskyxiii.polyglottooltip.integration.ae2.Ae2SearchRefresh;
 import it.unimi.dsi.fastutil.longs.Long2BooleanMap;
 //? !fabric {
 import net.neoforged.api.distmarker.Dist;
@@ -17,11 +19,15 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+//? if !(forge && 1.20.1) {
 import org.spongepowered.asm.mixin.injection.Redirect;
+//?}
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.Map;
+//? if !(forge && 1.20.1) {
 import java.util.function.Predicate;
+//?}
 
 //? !fabric {
 @OnlyIn(Dist.CLIENT)
@@ -29,8 +35,10 @@ import java.util.function.Predicate;
 @Mixin(targets = "appeng.client.gui.me.search.RepoSearch", remap = false)
 public class Ae2RepoSearchMixin {
 
+    //? if !(forge && 1.20.1) {
     private static final String NAME_SEARCH_PREDICATE_CLASS = "appeng.client.gui.me.search.NameSearchPredicate";
     private static final String TOOLTIPS_SEARCH_PREDICATE_CLASS = "appeng.client.gui.me.search.TooltipsSearchPredicate";
+    //?}
 
     @Shadow
     @Final
@@ -46,6 +54,7 @@ public class Ae2RepoSearchMixin {
         Ae2SearchRefresh.registerCache(tooltipCache);
     }
 
+    //? if !(forge && 1.20.1) {
     @Redirect(
             method = "getPredicates",
             at = @At(
@@ -65,4 +74,5 @@ public class Ae2RepoSearchMixin {
         }
         return instance.add(original);
     }
+    //?}
 }

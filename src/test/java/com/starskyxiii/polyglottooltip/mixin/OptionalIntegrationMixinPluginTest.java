@@ -107,22 +107,19 @@ class OptionalIntegrationMixinPluginTest {
     }
 
     @Test
-    void selectsGtoFallbacksOnlyWhenTheForkResourceExists() {
-        for (String mixin : Arrays.asList(
-                "com.starskyxiii.polyglottooltip.mixin.ae2.GtoAe2RepoSearchMixin",
-                "com.starskyxiii.polyglottooltip.mixin.ldlib.GtoModularUiFluidTooltipMixin")) {
-            OptionalIntegrationMixinPlugin present = new OptionalIntegrationMixinPlugin(name -> {
-                assertEquals("com.gtocore.integration.ae.MultiLangNameSearchPredicate", name);
-                return node("java.lang.Object");
-            });
-            OptionalIntegrationMixinPlugin absent = new OptionalIntegrationMixinPlugin(name -> {
-                throw new ClassNotFoundException(name);
-            });
+    void selectsGtoFluidFallbackOnlyWhenTheForkResourceExists() {
+        String mixin = "com.starskyxiii.polyglottooltip.mixin.ldlib.GtoModularUiFluidTooltipMixin";
+        OptionalIntegrationMixinPlugin present = new OptionalIntegrationMixinPlugin(name -> {
+            assertEquals("com.gtocore.integration.ae.MultiLangNameSearchPredicate", name);
+            return node("java.lang.Object");
+        });
+        OptionalIntegrationMixinPlugin absent = new OptionalIntegrationMixinPlugin(name -> {
+            throw new ClassNotFoundException(name);
+        });
 
-            assertTrue(present.shouldApplyMixin("optional.Target", mixin));
-            assertFalse(absent.shouldApplyMixin("optional.Target", mixin));
-            assertFalse(new OptionalIntegrationMixinPlugin(name -> null).shouldApplyMixin("optional.Target", mixin));
-        }
+        assertTrue(present.shouldApplyMixin("optional.Target", mixin));
+        assertFalse(absent.shouldApplyMixin("optional.Target", mixin));
+        assertFalse(new OptionalIntegrationMixinPlugin(name -> null).shouldApplyMixin("optional.Target", mixin));
     }
 
     @Test
@@ -131,8 +128,6 @@ class OptionalIntegrationMixinPluginTest {
             throw new IOException("unreadable fork resource");
         });
 
-        assertFalse(plugin.shouldApplyMixin("optional.Target",
-                "com.starskyxiii.polyglottooltip.mixin.ae2.GtoAe2RepoSearchMixin"));
         assertFalse(plugin.shouldApplyMixin("optional.Target",
                 "com.starskyxiii.polyglottooltip.mixin.ldlib.GtoModularUiFluidTooltipMixin"));
     }
