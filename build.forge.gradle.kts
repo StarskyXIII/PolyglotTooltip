@@ -330,7 +330,6 @@ sourceSets.main {
             "com/starskyxiii/polyglottooltip/integration/ae2/LegacyAe2InterfaceSearch.java",
             "com/starskyxiii/polyglottooltip/integration/ae2/LegacyAe2RepoRefresh.java",
             "com/starskyxiii/polyglottooltip/integration/jade/LegacyJadeTooltipHelper.java",
-            "com/starskyxiii/polyglottooltip/mixin/LegacyMixinExtrasBootstrapPlugin.java",
             "com/starskyxiii/polyglottooltip/mixin/LegacyLanguageManagerMixin.java",
             "com/starskyxiii/polyglottooltip/mixin/ae2/LegacyAe2EightInterfaceRecordMixin.java",
             "com/starskyxiii/polyglottooltip/mixin/ae2/LegacyAe2EightInterfaceTerminalMixin.java",
@@ -361,6 +360,7 @@ sourceSets.main {
         }
     } else {
         java.exclude(
+            "com/starskyxiii/polyglottooltip/mixin/LegacyMixinExtrasBootstrapPlugin.java",
             "com/starskyxiii/polyglottooltip/mixin/ae2/LegacyAe2InterfaceTerminalScreenMixin.java",
             "com/starskyxiii/polyglottooltip/mixin/ae2/LegacyAe2InterfaceRecordMixin.java",
             "com/starskyxiii/polyglottooltip/mixin/jei/LegacyJei10ElementPrefixParserMixin.java",
