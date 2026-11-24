@@ -3,7 +3,7 @@
   "minVersion": "0.8",
   "package": "com.starskyxiii.polyglottooltip.mixin",
   "compatibilityLevel": "JAVA_8",
-  "plugin": "com.starskyxiii.polyglottooltip.mixin.LegacyMixinExtrasBootstrapPlugin",
+  "plugin": "com.starskyxiii.polyglottooltip.mixin.Forge1165MixinPlugin",
   "refmap": "polyglottooltip.refmap.json",
   "mixins": [],
   "client": [
@@ -22,7 +22,9 @@
     "ae2.LegacyAe2EightInterfaceTerminalMixin",
     "ae2.LegacyAe2EightInterfaceRecordMixin",
     "controlling.LegacyControlling7ScreenMixin",
+    "controlling.LegacyControlling7Pre29ScreenMixin",
     "jei.JeiGeneralizedSuffixTreeMixin",
+    "jei.LegacyJeiIntegerSuffixTreeMixin",
     "jei.JeiElementSearchLowMemMixin",
     "jei.LegacyJei7ElementPrefixParserMixin",
     "jei.LegacyJei7FluidStackRendererMixin",

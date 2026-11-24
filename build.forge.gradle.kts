@@ -297,6 +297,7 @@ sourceSets.main {
         java.srcDir(rootProject.file("src/forge1201/java"))
     }
     if (sc.current.version == "1.16.5") {
+        java.srcDir(rootProject.file("src/forge1165/java"))
         java.exclude(
             "com/starskyxiii/polyglottooltip/integration/ae2/Ae2SearchPredicate.java",
             "com/starskyxiii/polyglottooltip/integration/ae2/Ae2TooltipSearchPredicate.java",
@@ -540,6 +541,7 @@ val verifyProductionJar = tasks.register("verifyProductionJar") {
         ZipFile(archive).use { productionZip ->
             if (sc.current.version == "1.16.5") {
                 val requiredEntries = listOf(
+                    "com/starskyxiii/polyglottooltip/mixin/Forge1165MixinPlugin.class",
                     "com/starskyxiii/polyglottooltip/mixin/LegacyMixinExtrasBootstrapPlugin.class",
                     "com/starskyxiii/polyglottooltip/shadow/mixinextras/MixinExtrasBootstrap.class",
                     "com/starskyxiii/polyglottooltip/shadow/opencc4j/core/impl/ZhConvertBootstrap.class",

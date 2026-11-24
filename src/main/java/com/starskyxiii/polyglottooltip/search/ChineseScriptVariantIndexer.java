@@ -28,7 +28,7 @@ public final class ChineseScriptVariantIndexer {
      * @param value  the value to associate with each variant
      * @param putter the {@code put(key, value)} method reference of the tree
      */
-    public static void putVariants(String key, Object value, BiConsumer<String, Object> putter) {
+    public static <T> void putVariants(String key, T value, BiConsumer<String, T> putter) {
         Set<String> variants = ChineseScriptSearchMatcher.getSearchVariants(key);
         if (variants.size() <= 1) return;
 
