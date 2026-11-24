@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 public final class LanguageCache {
@@ -115,6 +116,18 @@ public final class LanguageCache {
     }
 
     private List<String> resolveDisplayNamesUncached(ItemStack stack) {
+        return resolveDisplayNamesUncached(stack, (name, resolve) -> name);
+    }
+
+    List<String> resolveDisplayNamesWithDetail(ItemStack stack, Component detail, BiFunction<String, String, String> format) {
+        return resolveDisplayNamesUncached(stack, (name, resolve) -> resolve.apply(detail)
+                .filter(value -> !value.trim().isEmpty())
+                .map(value -> format.apply(name, value))
+                .orElse(name));
+    }
+
+    private List<String> resolveDisplayNamesUncached(ItemStack stack,
+            BiFunction<String, Function<Component, Optional<String>>, String> format) {
         LinkedHashSet<String> results = new LinkedHashSet<>();
         LanguageSnapshot snapshot = languageSnapshot;
         for (LanguageEntry entry : snapshot.entries()) {
@@ -125,6 +138,7 @@ public final class LanguageCache {
                         : ComponentLanguageResolver.resolve(component, entry.legacyEntries()::get);
             };
             itemStackNames.resolveDisplayName(stack, componentResolver, SPECIAL_NAME_RESOLVERS, NAME_DECORATORS)
+                    .map(name -> format.apply(name, componentResolver))
                     .ifPresent(results::add);
         }
         return Collections.unmodifiableList(new ArrayList<>(results));
