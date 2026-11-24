@@ -17,7 +17,7 @@ plugins {
 val legacyShade = configurations.create("legacyShade")
 
 val modId = "polyglottooltip"
-val modVersion = "2.0"
+val modVersion = "2.1"
 
 stonecutter {
     replacements.string(false, "minecraft_identifier") {

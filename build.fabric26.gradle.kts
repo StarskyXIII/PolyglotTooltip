@@ -6,7 +6,7 @@ plugins {
 }
 
 val modId = "polyglottooltip"
-val modVersion = "2.0"
+val modVersion = "2.1"
 
 stonecutter {
     for (marker in listOf(
