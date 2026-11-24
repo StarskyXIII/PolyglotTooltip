@@ -18,7 +18,11 @@ public final class JecLegacySearchStoragePlugin implements IModPlugin {
 
     @Override
     public ResourceLocation getPluginUid() {
+        //? if forge && <=1.20.1 {
+        /*return new ResourceLocation(PolyglotTooltip.MODID, "jec_legacy_search");
+        *///?} else {
         return ResourceLocation.fromNamespaceAndPath(PolyglotTooltip.MODID, "jec_legacy_search");
+        //?}
     }
 
     @Override
